@@ -13,8 +13,8 @@ Do lado do gestor, a plataforma oferece controle financeiro completo por encomen
 
 ## Professores responsáveis
 
-* [Lucila Ishitani]
-* [Soraia Lúcia da Silva]
+* Lucila Ishitani
+* Soraia Lúcia da Silva
 
 ## Instruções de utilização
 
