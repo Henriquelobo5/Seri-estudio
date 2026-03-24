@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import logo from '../../assets/images/logo.png'
 
+
 const steps = [
   {
     n: 1,
@@ -47,9 +48,9 @@ export default function Home() {
           <img src={logo} alt="Seri.estudio" className="h-12 w-12 object-contain rounded" />
         </Link>
         <nav className="flex items-center gap-8">
-          <a href="#catalogo" className="text-white/80 hover:text-white text-sm transition-colors">
+          <Link to={ROUTES.CATALOGO} className="text-white/80 hover:text-white text-sm transition-colors">
             Catálogo
-          </a>
+          </Link>
           <a href="#portfolio" className="text-white/80 hover:text-white text-sm transition-colors">
             Portfólio
           </a>

@@ -123,16 +123,16 @@ export default function ConstrutorFichaTecnica() {
           <img src={logo} alt="Seri.estudio" className="h-12 w-12 object-contain rounded" />
         </Link>
         <nav className="flex items-center gap-8">
-          <a href="#catalogo" className="text-white/80 hover:text-white text-sm transition-colors">
+          <Link to={ROUTES.CATALOGO} className="text-white/80 hover:text-white text-sm transition-colors">
             Catálogo
-          </a>
-          <a href="#portfolio" className="text-white/80 hover:text-white text-sm transition-colors">
+          </Link>
+          <a href={`${ROUTES.HOME}#portfolio`} className="text-white/80 hover:text-white text-sm transition-colors">
             Portfólio
           </a>
-          <a href="#como-funciona" className="text-white/80 hover:text-white text-sm transition-colors">
+          <a href={`${ROUTES.HOME}#como-funciona`} className="text-white/80 hover:text-white text-sm transition-colors">
             Como funciona
           </a>
-          <a href="#contato" className="text-white/80 hover:text-white text-sm transition-colors">
+          <a href={`${ROUTES.HOME}#contato`} className="text-white/80 hover:text-white text-sm transition-colors">
             Contato
           </a>
           <Link

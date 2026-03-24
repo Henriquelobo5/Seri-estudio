@@ -7,6 +7,7 @@ import Login from '../pages/auth/Login'
 import Cadastro from '../pages/auth/Cadastro'
 import Dashboard from '../pages/cliente/Dashboard'
 import ConstrutorFichaTecnica from '../pages/public/ConstrutorFichaTecnica'
+import Catalogo from '../pages/public/Catalogo'
 
 export default function RoutesApp() {
   return (
@@ -17,6 +18,7 @@ export default function RoutesApp() {
         <Route path={ROUTES.CADASTRO} element={<Cadastro />} />
         <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
         <Route path={ROUTES.CRIAR_FICHA} element={<ConstrutorFichaTecnica />} />
+        <Route path={ROUTES.CATALOGO} element={<Catalogo />} />
       </Route>
     </Routes>
   )
