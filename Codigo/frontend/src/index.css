@@ -1,1 +1,183 @@
 @import "tailwindcss";
+
+@layer components {
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-40px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(40px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-40px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes bounceIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+    70% {
+      transform: scale(0.9);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.4s ease-in-out;
+  }
+
+  .animate-slideUp {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  .animate-slideDown {
+    animation: slideDown 0.3s ease-out;
+  }
+
+  .animate-slideInLeft {
+    animation: slideInLeft 0.5s ease-out;
+  }
+
+  .animate-slideInRight {
+    animation: slideInRight 0.5s ease-out;
+  }
+
+  .animate-slideInDown {
+    animation: slideInDown 0.5s ease-out;
+  }
+
+  .animate-bounceIn {
+    animation: bounceIn 0.6s ease-out;
+  }
+
+  .animate-scaleIn {
+    animation: scaleIn 0.4s ease-out;
+  }
+
+  .animate-fadeIn-delay-100 {
+    animation: fadeIn 0.4s ease-in-out 0.1s both;
+  }
+
+  .animate-fadeIn-delay-200 {
+    animation: fadeIn 0.4s ease-in-out 0.2s both;
+  }
+
+  .animate-fadeIn-delay-300 {
+    animation: fadeIn 0.4s ease-in-out 0.3s both;
+  }
+
+  .animate-fadeIn-delay-400 {
+    animation: fadeIn 0.4s ease-in-out 0.4s both;
+  }
+
+  .animate-slideInLeft-delay-100 {
+    animation: slideInLeft 0.5s ease-out 0.1s both;
+  }
+
+  .animate-slideInLeft-delay-200 {
+    animation: slideInLeft 0.5s ease-out 0.2s both;
+  }
+
+  .animate-slideInLeft-delay-300 {
+    animation: slideInLeft 0.5s ease-out 0.3s both;
+  }
+
+  .animate-slideInRight-delay-100 {
+    animation: slideInRight 0.5s ease-out 0.1s both;
+  }
+
+  .animate-slideInRight-delay-200 {
+    animation: slideInRight 0.5s ease-out 0.2s both;
+  }
+
+  .animate-slideInDown-delay-100 {
+    animation: slideInDown 0.5s ease-out 0.1s both;
+  }
+
+  .animate-slideInDown-delay-200 {
+    animation: slideInDown 0.5s ease-out 0.2s both;
+  }
+
+  .animate-bounceIn-delay-100 {
+    animation: bounceIn 0.6s ease-out 0.1s both;
+  }
+
+  .animate-bounceIn-delay-200 {
+    animation: bounceIn 0.6s ease-out 0.2s both;
+  }
+
+  .animate-bounceIn-delay-300 {
+    animation: bounceIn 0.6s ease-out 0.3s both;
+  }
+}

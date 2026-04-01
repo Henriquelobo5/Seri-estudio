@@ -1,6 +1,8 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { ROUTES } from './routePaths'
 import PublicLayout from '../layouts/PublicLayout'
+import ProtectedRoute from './ProtectedRoute'
+import PublicOnlyRoute from './PublicOnlyRoute'
 
 import Home from '../pages/public/Home'
 import Login from '../pages/auth/Login'
@@ -12,14 +14,27 @@ import Catalogo from '../pages/public/Catalogo'
 export default function RoutesApp() {
   return (
     <Routes>
+      {/* Rotas públicas */}
       <Route element={<PublicLayout />}>
         <Route path={ROUTES.HOME} element={<Home />} />
+      </Route>
+
+      {/* Rotas apenas para usuários não autenticados */}
+      <Route element={<PublicOnlyRoute />}>
         <Route path={ROUTES.LOGIN} element={<Login />} />
         <Route path={ROUTES.CADASTRO} element={<Cadastro />} />
-        <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
-        <Route path={ROUTES.CRIAR_FICHA} element={<ConstrutorFichaTecnica />} />
-        <Route path={ROUTES.CATALOGO} element={<Catalogo />} />
       </Route>
+
+      {/* Rotas protegidas */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<PublicLayout />}>
+          <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
+          <Route path={ROUTES.CRIAR_FICHA} element={<ConstrutorFichaTecnica />} />
+          <Route path={ROUTES.CATALOGO} element={<Catalogo />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
     </Routes>
   )
 }
