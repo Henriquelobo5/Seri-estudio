@@ -1,9 +1,14 @@
 package com.seriestudio.backend.model;
 
+import com.seriestudio.backend.model.usuario.Administrador;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "portfolio")
+@Getter
+@Setter
 public class Portfolio {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,7 +21,5 @@ public class Portfolio {
 
     @ManyToOne
     @JoinColumn(name = "id_admin")
-    private usuario.Administrador administrador;
-
-    // Getters e setters
+    private Administrador administrador;
 }

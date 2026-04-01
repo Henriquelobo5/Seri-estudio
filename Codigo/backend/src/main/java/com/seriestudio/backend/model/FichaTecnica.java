@@ -1,9 +1,14 @@
 package com.seriestudio.backend.model;
 
+import com.seriestudio.backend.model.usuario.Cliente;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "ficha_tecnica")
+@Getter
+@Setter
 public class FichaTecnica {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,7 +20,5 @@ public class FichaTecnica {
 
     @ManyToOne
     @JoinColumn(name = "id_cli")
-    private usuario.Cliente cliente;
-
-    // Getters e setters
+    private Cliente cliente;
 }
