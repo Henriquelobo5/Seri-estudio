@@ -12,8 +12,9 @@ COPY .mvn .mvn
 # Copy the source code
 COPY src ./src
 
-# Install Maven and build the application
-RUN ./mvnw clean package -DskipTests
+
+# Garantir permissão de execução ao mvnw e buildar a aplicação
+RUN chmod +x mvnw && ./mvnw clean package -DskipTests
 
 # Expose port 8080
 EXPOSE 8080
