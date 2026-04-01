@@ -1,5 +1,8 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { ROUTES } from '../../routes/routePaths'
+import { useAuth } from '../../context/AuthContext'
+import PageTransition from '../../components/PageTransition'
 
 type StatusType = 'em-producao' | 'orcamento-enviado' | 'entregue'
 
@@ -65,8 +68,21 @@ const atalhos = [
 ]
 
 export default function Dashboard() {
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
+  const [isLogoutAnimating, setIsLogoutAnimating] = useState(false)
+
+  const handleLogout = () => {
+    setIsLogoutAnimating(true)
+    setTimeout(() => {
+      logout()
+      navigate(ROUTES.LOGIN, { replace: true })
+    }, 300)
+  }
+
   return (
-    <div className="min-h-screen bg-[#F0EBE3]">
+    <PageTransition>
+      <div className={`min-h-screen bg-[#F0EBE3] animate-fadeIn transition-opacity duration-300 ${isLogoutAnimating ? 'opacity-0' : 'opacity-100'}`}>
       {/* Navbar */}
       <header className="bg-[#2A5E40] px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-10">
@@ -93,33 +109,36 @@ export default function Dashboard() {
           <div className="w-8 h-8 bg-[#1D4A2F] rounded-full flex items-center justify-center text-white text-xs font-bold">
             JS
           </div>
-          <button className="bg-[#1D4A2F] hover:bg-[#163D26] text-white text-sm px-4 py-2 rounded-lg transition-colors">
-            João Silva
+          <button
+            onClick={handleLogout}
+            className="bg-[#1D4A2F] hover:bg-[#163D26] text-white text-sm px-4 py-2 rounded-lg transition-colors"
+          >
+            Sair
           </button>
         </div>
       </header>
 
       {/* Conteúdo */}
       <main className="px-8 py-10 max-w-6xl mx-auto">
-        <h1 className="text-3xl font-semibold text-[#1A1A1A] mb-1">Minha área</h1>
-        <p className="text-[#888] text-sm mb-8">Acompanhe seus pedidos e fichas técnicas</p>
+        <h1 className="text-3xl font-semibold text-[#1A1A1A] mb-1 animate-slideInDown-delay-100">Minha área</h1>
+        <p className="text-[#888] text-sm mb-8 animate-slideInDown-delay-100">Acompanhe seus pedidos e fichas técnicas</p>
 
         <div className="grid grid-cols-3 gap-6">
           {/* Coluna principal */}
           <div className="col-span-2 space-y-5">
             {/* Cards de estatísticas */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-white rounded-xl p-5 shadow-sm">
+              <div className="bg-white rounded-xl p-5 shadow-sm animate-bounceIn-delay-100 hover:shadow-md transition-shadow">
                 <p className="text-[#888] text-xs mb-3">Total de pedidos</p>
                 <p className="text-4xl font-bold text-[#1A1A1A]">4</p>
                 <p className="text-[#AAA] text-xs mt-2">desde jan/2025</p>
               </div>
-              <div className="bg-white rounded-xl p-5 shadow-sm">
+              <div className="bg-white rounded-xl p-5 shadow-sm animate-bounceIn-delay-200 hover:shadow-md transition-shadow">
                 <p className="text-[#888] text-xs mb-3">Em produção</p>
                 <p className="text-4xl font-bold text-[#2A5E40]">1</p>
                 <p className="text-[#AAA] text-xs mt-2">pedido ativo</p>
               </div>
-              <div className="bg-white rounded-xl p-5 shadow-sm">
+              <div className="bg-white rounded-xl p-5 shadow-sm animate-bounceIn-delay-300 hover:shadow-md transition-shadow">
                 <p className="text-[#888] text-xs mb-3">Total investido</p>
                 <p className="text-3xl font-bold text-[#1A1A1A] leading-tight">R$ 1.840</p>
                 <p className="text-[#AAA] text-xs mt-2">em estampas</p>
@@ -127,7 +146,7 @@ export default function Dashboard() {
             </div>
 
             {/* Lista de pedidos */}
-            <div className="bg-white rounded-xl p-6 shadow-sm">
+            <div className="bg-white rounded-xl p-6 shadow-sm animate-slideInLeft-delay-200">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-semibold text-[#1A1A1A] text-base">Meus pedidos</h2>
                 <button className="border border-[#D5CCC0] text-[#333] text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
@@ -173,12 +192,12 @@ export default function Dashboard() {
           {/* Coluna lateral */}
           <div className="space-y-4">
             {/* Card de perfil */}
-            <div className="bg-white rounded-xl p-6 shadow-sm text-center">
+            <div className="bg-white rounded-xl p-6 shadow-sm text-center animate-slideInRight-delay-100 hover:shadow-md transition-shadow">
               <div className="w-14 h-14 bg-[#2A5E40] rounded-full flex items-center justify-center text-white text-lg font-bold mx-auto mb-3">
                 JS
               </div>
-              <h3 className="font-semibold text-[#1A1A1A] mb-0.5">João Silva</h3>
-              <p className="text-[#999] text-sm mb-4">joao@email.com</p>
+              <h3 className="font-semibold text-[#1A1A1A] mb-0.5">{user?.name ?? 'Usuário'}</h3>
+              <p className="text-[#999] text-sm mb-4">{user?.email ?? '-'}</p>
 
               <div className="h-px bg-[#EEE8DF] mb-4" />
 
@@ -199,7 +218,7 @@ export default function Dashboard() {
             </div>
 
             {/* Card de atalhos */}
-            <div className="bg-white rounded-xl p-6 shadow-sm">
+            <div className="bg-white rounded-xl p-6 shadow-sm animate-slideInRight-delay-200 hover:shadow-md transition-shadow">
               <h3 className="font-semibold text-[#1A1A1A] mb-4">Atalhos</h3>
               <div className="space-y-3">
                 {atalhos.map(({ label, dotColor }) => (
@@ -219,6 +238,7 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
-    </div>
+      </div>
+    </PageTransition>
   )
 }

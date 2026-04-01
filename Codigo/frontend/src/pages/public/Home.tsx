@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
+import PageTransition from '../../components/PageTransition'
 import logo from '../../assets/images/logo.png'
 
 
@@ -41,9 +42,10 @@ const ctaItems = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen">
-      {/* Navbar */}
-      <header className="bg-[#2A5E40] px-8 py-3 flex items-center justify-between">
+    <PageTransition>
+      <div className="min-h-screen">
+        {/* Navbar */}
+        <header className="bg-[#2A5E40] px-8 py-3 flex items-center justify-between">
         <Link to={ROUTES.HOME}>
           <img src={logo} alt="Seri.estudio" className="h-12 w-12 object-contain rounded" />
         </Link>
@@ -198,6 +200,7 @@ export default function Home() {
         </div>
         <span className="text-white/35 text-sm">© 2025 Seri.estudio</span>
       </footer>
-    </div>
+      </div>
+    </PageTransition>
   )
 }
