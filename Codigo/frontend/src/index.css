@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+* {
+  font-family: 'Inter', sans-serif;
+}
+
 @layer components {
   @keyframes fadeIn {
     from {

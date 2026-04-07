@@ -61,10 +61,10 @@ const statusConfig: Record<StatusType, { label: string; className: string }> = {
 }
 
 const atalhos = [
-  { label: 'Nova ficha técnica', dotColor: 'bg-green-500' },
-  { label: 'Consultar por código', dotColor: 'bg-blue-500' },
-  { label: 'Falar com o estúdio', dotColor: 'bg-yellow-500' },
-  { label: 'Editar meu perfil', dotColor: 'bg-gray-400' },
+  { label: 'Nova ficha técnica', dotColor: 'bg-green-500', to: ROUTES.CRIAR_FICHA },
+  { label: 'Consultar por código', dotColor: 'bg-blue-500', to: null },
+  { label: 'Falar com o estúdio', dotColor: 'bg-yellow-500', to: null },
+  { label: 'Editar meu perfil', dotColor: 'bg-gray-400', to: null },
 ]
 
 export default function Dashboard() {
@@ -90,18 +90,18 @@ export default function Dashboard() {
             Seri.
           </Link>
           <nav className="flex items-center gap-7">
-            <a href="#" className="text-white/70 hover:text-white text-sm transition-colors">
+            <Link to={ROUTES.CATALOGO} className="text-white/70 hover:text-white text-sm transition-colors">
               Catálogo
-            </a>
+            </Link>
             <a href="#" className="text-white/70 hover:text-white text-sm transition-colors">
               Portfólio
             </a>
             <a href="#" className="text-white/70 hover:text-white text-sm transition-colors">
               Como funciona
             </a>
-            <a href="#" className="text-white font-medium text-sm">
+            <Link to={ROUTES.DASHBOARD} className="text-white font-medium text-sm">
               Meus pedidos
-            </a>
+            </Link>
           </nav>
         </div>
 
@@ -149,9 +149,9 @@ export default function Dashboard() {
             <div className="bg-white rounded-xl p-6 shadow-sm animate-slideInLeft-delay-200">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-semibold text-[#1A1A1A] text-base">Meus pedidos</h2>
-                <button className="border border-[#D5CCC0] text-[#333] text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                <Link to={ROUTES.CRIAR_FICHA} className="border border-[#D5CCC0] text-[#333] text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
                   + Nova ficha
-                </button>
+                </Link>
               </div>
 
               <div className="space-y-3">
@@ -221,18 +221,34 @@ export default function Dashboard() {
             <div className="bg-white rounded-xl p-6 shadow-sm animate-slideInRight-delay-200 hover:shadow-md transition-shadow">
               <h3 className="font-semibold text-[#1A1A1A] mb-4">Atalhos</h3>
               <div className="space-y-3">
-                {atalhos.map(({ label, dotColor }) => (
-                  <button
-                    key={label}
-                    className="w-full flex items-center justify-between text-sm text-[#444] hover:text-[#1A1A1A] group transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
-                      {label}
-                    </div>
-                    <span className="text-[#CCC] group-hover:text-[#888] transition-colors">›</span>
-                  </button>
-                ))}
+                {atalhos.map(({ label, dotColor, to }) => {
+                  const inner = (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
+                        {label}
+                      </div>
+                      <span className="text-[#CCC] group-hover:text-[#888] transition-colors">›</span>
+                    </>
+                  )
+                  return to ? (
+                    <Link
+                      key={label}
+                      to={to}
+                      className="w-full flex items-center justify-between text-sm text-[#444] hover:text-[#1A1A1A] group transition-colors"
+                    >
+                      {inner}
+                    </Link>
+                  ) : (
+                    <button
+                      key={label}
+                      disabled
+                      className="w-full flex items-center justify-between text-sm text-[#AAA] cursor-not-allowed group"
+                    >
+                      {inner}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>
