@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ROUTES } from '../../routes/routePaths'
 import { useAuth } from '../../context/AuthContext'
 import PageTransition from '../../components/PageTransition'
