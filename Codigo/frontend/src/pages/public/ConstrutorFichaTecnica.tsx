@@ -1,429 +1,493 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
+import { useAuth } from '../../context/AuthContext'
 import logo from '../../assets/images/logo.png'
+import './ConstrutorFichaTecnica.css'
+
+// ── Dados ────────────────────────────────────────────────────────────────────
 
 const STEPS = [
   { id: 1, label: 'Produto' },
-  { id: 2, label: 'Estampa' },
-  { id: 3, label: 'Detalhe do pedido' },
+  { id: 2, label: 'Detalhes do produto' },
+  { id: 3, label: 'Detalhes do pedido' },
 ]
 
-const PRODUCTS = [
-  {
-    id: 'camiseta',
-    name: 'Camiseta',
-    subtitle: 'Careca / V',
-    icon: (
-      <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10">
-        <path d="M6 14 L14 8 L18 14 L24 10 L30 14 L34 8 L42 14 L38 20 L34 18 L34 40 L14 40 L14 18 L10 20 Z" fill="#2A5E40" stroke="#1D4A2F" strokeWidth="1.5" strokeLinejoin="round"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'moletom',
-    name: 'Moletom',
-    subtitle: 'Canguru / Raglan',
-    icon: (
-      <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10">
-        <path d="M6 14 L14 8 Q18 6 24 8 Q30 6 34 8 L42 14 L38 20 L34 18 L34 40 L14 40 L14 18 L10 20 Z" fill="#C87941" stroke="#A0612F" strokeWidth="1.5" strokeLinejoin="round"/>
-        <path d="M18 8 Q24 12 30 8" stroke="#A0612F" strokeWidth="1.5" fill="none"/>
-        <rect x="16" y="32" width="16" height="4" rx="2" fill="#A0612F"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'regata',
-    name: 'Regata',
-    subtitle: 'Básica / Dry Fit',
-    icon: (
-      <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10">
-        <path d="M16 8 Q24 6 32 8 L34 40 L14 40 Z" fill="#2A5E40" stroke="#1D4A2F" strokeWidth="1.5" strokeLinejoin="round"/>
-        <path d="M16 8 Q20 14 24 10 Q28 14 32 8" stroke="#1D4A2F" strokeWidth="1.5" fill="none"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'polo',
-    name: 'Polo',
-    subtitle: 'Piquê / Malha',
-    icon: (
-      <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10">
-        <path d="M6 14 L14 8 L18 12 L24 8 L30 12 L34 8 L42 14 L38 20 L34 18 L34 40 L14 40 L14 18 L10 20 Z" fill="#2980B9" stroke="#1F618D" strokeWidth="1.5" strokeLinejoin="round"/>
-        <rect x="21" y="8" width="6" height="10" rx="1" fill="#1F618D"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'ecobag',
-    name: 'Ecobag',
-    subtitle: 'Algodão reforçado',
-    icon: (
-      <svg viewBox="0 0 48 48" fill="none" className="w-10 h-10">
-        <rect x="10" y="18" width="28" height="24" rx="3" fill="#8B6914" stroke="#6D5210" strokeWidth="1.5"/>
-        <path d="M18 18 Q18 10 24 10 Q30 10 30 18" stroke="#6D5210" strokeWidth="2" fill="none" strokeLinecap="round"/>
-      </svg>
-    ),
-  },
+const TIPOS = [
+  { nome: 'Camiseta', emoji: '👕', desc: 'Careca / V' },
+  { nome: 'Moletom',  emoji: '🧥', desc: 'Canguru / Raglan' },
+  { nome: 'Regata',   emoji: '🩽', desc: 'Básica / Dry Fit' },
+  { nome: 'Polo',     emoji: '👔', desc: 'Piquê / Malha' },
+  { nome: 'Ecobag',   emoji: '👜', desc: 'Algodão reforçado' },
 ]
 
-const TECIDO_OPTIONS = ['100% Algodão', 'Poliéster', 'Algodão/Poliéster', 'Dry Fit']
-const GRAMATURA_OPTIONS = ['150g/m²', '180g/m²', '200g/m²', '250g/m²', '300g/m²']
-const SIZES = ['PP', 'P', 'M', 'G', 'GG', 'XG']
-
-const COLORS = [
-  { id: 'preto', label: 'Preto', hex: '#1A1A1A' },
-  { id: 'branco', label: 'Branco', hex: '#FFFFFF' },
-  { id: 'verde', label: 'Verde', hex: '#2A5E40' },
-  { id: 'vermelho', label: 'Vermelho', hex: '#C0392B' },
-  { id: 'azul', label: 'Azul', hex: '#2980B9' },
-  { id: 'laranja', label: 'Laranja', hex: '#F39C12' },
-  { id: 'cinza', label: 'Cinza', hex: '#95A5A6' },
-  { id: 'roxo', label: 'Roxo', hex: '#8E44AD' },
+const TECIDOS = [
+  '100% Algodão',
+  'Algodão + Poliéster (50/50)',
+  'Dry-fit / Poliéster',
+  'Piquet / Malha',
+  'Moletom Fleece',
+  'Moletom Plush',
+  'Ribana',
+  'TNT (ecobag)',
+  'Lona (ecobag)',
 ]
+
+const GRAMATURAS = [
+  '100g/m² — Levíssima',
+  '120g/m² — Leve',
+  '140g/m² — Intermediária',
+  '160g/m² — Standard',
+  '180g/m² — Pesada (recomendada)',
+  '200g/m² — Extra pesada',
+  '220g/m² — Premium',
+  '280g/m² — Moletom leve',
+  '300g/m² — Moletom standard',
+  '350g/m² — Moletom pesado',
+]
+
+const CORES = [
+  { nome: 'Preto',        hex: '#111111' },
+  { nome: 'Branco',       hex: '#F4F4F0', borda: true },
+  { nome: 'Verde',        hex: '#2A5E40' },
+  { nome: 'Verde limão',  hex: '#84CC16' },
+  { nome: 'Vermelho',     hex: '#B91C1C' },
+  { nome: 'Rosa',         hex: '#EC4899' },
+  { nome: 'Azul royal',   hex: '#1D4ED8' },
+  { nome: 'Azul marinho', hex: '#0F172A' },
+  { nome: 'Azul bebê',    hex: '#7DD3FC' },
+  { nome: 'Amarelo',      hex: '#EAB308' },
+  { nome: 'Laranja',      hex: '#EA580C' },
+  { nome: 'Cinza claro',  hex: '#9CA3AF' },
+  { nome: 'Cinza escuro', hex: '#374151' },
+  { nome: 'Roxo',         hex: '#7C3AED' },
+  { nome: 'Bordô',        hex: '#7F1D1D' },
+  { nome: 'Marrom',       hex: '#78350F' },
+]
+
+const TAM_ADULTO    = ['PP', 'P', 'M', 'G', 'GG', 'XG', 'XXG']
+const TAM_BABYLOOK  = ['Babylook P', 'Babylook M', 'Babylook G', 'Inf. 2', 'Inf. 4', 'Inf. 6', 'Inf. 8', 'Inf. 10', 'Inf. 12']
+const TAM_OUTROS    = ['Único', 'Over P', 'Over M', 'Over G']
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function getInitials(name?: string, email?: string): string {
+  if (name) {
+    const parts = name.trim().split(' ')
+    return parts.length >= 2
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      : parts[0].slice(0, 2).toUpperCase()
+  }
+  return (email ?? 'U').slice(0, 2).toUpperCase()
+}
+
+function gramShort(gram: string) {
+  return gram.split(' ')[0]
+}
+
+// ── Componente ───────────────────────────────────────────────────────────────
 
 export default function ConstrutorFichaTecnica() {
+  const { user } = useAuth()
+
   const [currentStep, setCurrentStep] = useState(1)
-  const [selectedProduct, setSelectedProduct] = useState('camiseta')
-  const [tecido, setTecido] = useState('100% Algodão')
-  const [gramatura, setGramatura] = useState('180g/m²')
-  const [selectedColor, setSelectedColor] = useState('preto')
-  const [selectedSizes, setSelectedSizes] = useState<string[]>(['M', 'G'])
+  const [tipo,        setTipo]        = useState('Camiseta')
+  const [tecido,      setTecido]      = useState('100% Algodão')
+  const [gramatura,   setGramatura]   = useState('180g/m² — Pesada (recomendada)')
+  const [cor,         setCor]         = useState('Preto')
+  const [tamanhos,    setTamanhos]    = useState<string[]>(['M', 'G'])
+  const [identificacao, setIdentificacao] = useState('')
 
-  const toggleSize = (size: string) => {
-    setSelectedSizes(prev =>
-      prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]
-    )
-  }
+  const toggleTam = (tam: string) =>
+    setTamanhos(prev => prev.includes(tam) ? prev.filter(t => t !== tam) : [...prev, tam])
 
-  const selectedProductData = PRODUCTS.find(p => p.id === selectedProduct)
-  const selectedColorData = COLORS.find(c => c.id === selectedColor)
+  // progresso
+  const score = [
+    true,                        // tipo sempre selecionado
+    true,                        // cor sempre selecionada
+    tamanhos.length > 0,
+    identificacao.length > 2,
+  ].filter(Boolean).length
+  const progressPct = Math.max(15, Math.round((score / 4) * 75))
 
-  const progressPercent = ((currentStep - 1) / (STEPS.length - 1)) * 100
+  const btnNextOn = tamanhos.length > 0 && identificacao.length > 2
 
-  const stepSummary = (stepId: number) => {
-    if (stepId === 1) {
-      const parts = [
-        selectedProductData?.name,
-        selectedColorData?.label,
-        selectedSizes.length > 0 ? selectedSizes.join(', ') : null,
-      ].filter(Boolean)
-      return parts.join(' · ')
-    }
-    if (stepId < currentStep) return 'Concluído'
-    return 'Aguardando...'
-  }
+  // step detail no sidebar
+  const stepDetail = `${tipo} · ${cor}` + (tamanhos.length ? ` · ${tamanhos.join(', ')}` : '')
+
+  const initials = getInitials(user?.name, user?.email)
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F0EBE3' }}>
+    <div className="cf-page">
 
-      {/* Navbar */}
-      <header className="bg-[#2A5E40] px-8 py-3 flex items-center justify-between">
-        <Link to={ROUTES.HOME}>
-          <img src={logo} alt="Seri.estudio" className="h-12 w-12 object-contain rounded" />
+      {/* grain */}
+      <div className="cf-grain" aria-hidden="true" />
+
+      {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
+      <nav className="cf-nav">
+        <Link to={ROUTES.HOME} className="cf-nav-brand">
+          <div className="cf-nav-logo">
+            <img src={logo} alt="Seri." />
+          </div>
+          <span className="cf-nav-name">Seri.</span>
         </Link>
-        <nav className="flex items-center gap-8">
-          <Link to={ROUTES.CATALOGO} className="text-white/80 hover:text-white text-sm transition-colors">
-            Catálogo
-          </Link>
-          <a href={`${ROUTES.HOME}#portfolio`} className="text-white/80 hover:text-white text-sm transition-colors">
-            Portfólio
-          </a>
-          <a href={`${ROUTES.HOME}#como-funciona`} className="text-white/80 hover:text-white text-sm transition-colors">
-            Como funciona
-          </a>
-          <a href={`${ROUTES.HOME}#contato`} className="text-white/80 hover:text-white text-sm transition-colors">
-            Contato
-          </a>
-          <Link
-            to={ROUTES.LOGIN}
-            className="border border-white text-white px-5 py-2 rounded text-sm hover:bg-white hover:text-[#2A5E40] transition-colors"
-          >
-            Entrar
-          </Link>
-        </nav>
-      </header>
 
-      {/* Page Content */}
-      <div className="py-10 px-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="cf-nav-center">
+          <a href={`${ROUTES.HOME}#portfolio`}>Portfólio</a>
+          <a href={`${ROUTES.HOME}#como-funciona`}>Como funciona</a>
+          <Link to={ROUTES.DASHBOARD} className="cf-nav-pedidos">
+            <span className="cf-nav-pedidos-dot" />
+            Meus pedidos
+          </Link>
+        </div>
 
-          {/* Page Title */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold" style={{ color: '#1A1A1A' }}>
-              Construtor de ficha técnica
-            </h1>
-            <p className="mt-1 text-sm" style={{ color: '#888' }}>
-              Configure seu pedido passo a passo
-            </p>
+        <div className="cf-nav-right">
+          <Link to={ROUTES.DASHBOARD} className="cf-nav-cta">
+            <div className="cf-nav-avatar">{initials}</div>
+            Minha conta
+          </Link>
+        </div>
+      </nav>
+
+      {/* ── STEPPER ────────────────────────────────────────────────────────── */}
+      <div className="cf-sbar">
+        {STEPS.map((step, i) => (
+          <div key={step.id} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 'none' }}>
+            <div className={`cf-step ${currentStep === step.id ? 'active' : currentStep > step.id ? 'done' : ''}`}>
+              <div className="cf-snum">{step.id}</div>
+              <div className="cf-slabel">{step.label}</div>
+            </div>
+            {i < STEPS.length - 1 && (
+              <div className={`cf-sline ${currentStep > step.id ? 'done' : ''}`} />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* ── LAYOUT ─────────────────────────────────────────────────────────── */}
+      <div className="cf-layout">
+
+        {/* MAIN */}
+        <div className="cf-main">
+
+          <div>
+            <h1 className="cf-page-h1">Construtor de ficha técnica</h1>
+            <p className="cf-page-sub">Configure seu pedido passo a passo</p>
           </div>
 
-          {/* Step Indicator */}
-          <div className="flex items-center mb-8">
-            {STEPS.map((step, index) => (
-              <div key={step.id} className="flex items-center flex-1 last:flex-none">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
-                    style={{
-                      backgroundColor: step.id <= currentStep ? '#2A5E40' : 'transparent',
-                      color: step.id <= currentStep ? '#fff' : '#aaa',
-                      border: step.id <= currentStep ? 'none' : '2px solid #D5CCC0',
-                    }}
-                  >
-                    {step.id}
+          {currentStep === 1 && (
+            <>
+              {/* ── TIPO DE PEÇA ─────────────────────────────────────────── */}
+              <div className="cf-card">
+                <div className="cf-card-head">
+                  <div className="cf-ch-icon">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                      <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+                    </svg>
                   </div>
-                  <span
-                    className="text-sm font-medium"
-                    style={{ color: step.id <= currentStep ? '#1A1A1A' : '#aaa' }}
-                  >
-                    {step.label}
-                  </span>
+                  <div>
+                    <div className="cf-ch-title">Tipo de peça</div>
+                    <div className="cf-ch-sub">Escolha o produto que deseja personalizar</div>
+                  </div>
                 </div>
-                {index < STEPS.length - 1 && (
-                  <div className="flex-1 h-px mx-3" style={{ backgroundColor: '#D5CCC0' }} />
-                )}
+                <div className="cf-card-body">
+                  <div className="cf-tipo-grid">
+                    {TIPOS.map(({ nome, emoji, desc }) => (
+                      <button
+                        key={nome}
+                        className={`cf-tipo-btn ${tipo === nome ? 'sel' : ''}`}
+                        onClick={() => setTipo(nome)}
+                      >
+                        <div className="cf-tipo-check">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        </div>
+                        <span className="cf-tipo-emoji">{emoji}</span>
+                        <span className="cf-tipo-nome">{nome}</span>
+                        <span className="cf-tipo-desc">{desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* ── ESPECIFICAÇÕES ────────────────────────────────────────── */}
+              <div className="cf-card">
+                <div className="cf-card-head">
+                  <div className="cf-ch-icon">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="cf-ch-title">Especificações do tecido</div>
+                    <div className="cf-ch-sub">Composição, gramatura, cor e tamanhos</div>
+                  </div>
+                </div>
+                <div className="cf-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+
+                  {/* Tecido + Gramatura */}
+                  <div className="cf-spec-row">
+                    <div className="cf-fld">
+                      <label>Tecido</label>
+                      <select className="cf-select" value={tecido} onChange={e => setTecido(e.target.value)}>
+                        {TECIDOS.map(t => <option key={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div className="cf-fld">
+                      <label>Gramatura</label>
+                      <select className="cf-select" value={gramatura} onChange={e => setGramatura(e.target.value)}>
+                        {GRAMATURAS.map(g => <option key={g}>{g}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Cor */}
+                  <div className="cf-fld">
+                    <label>Cor da peça</label>
+                    <div className="cf-cores-grid">
+                      {CORES.map(({ nome, hex, borda }) => (
+                        <div
+                          key={nome}
+                          title={nome}
+                          className={`cf-cor-dot ${cor === nome ? 'sel' : ''}`}
+                          style={{
+                            background: hex,
+                            border: borda ? '2px solid rgba(255,255,255,.25)' : undefined,
+                          }}
+                          onClick={() => setCor(nome)}
+                        />
+                      ))}
+                    </div>
+                    <div className="cf-cor-label">
+                      Selecionado: <strong>{cor}</strong>
+                    </div>
+                  </div>
+
+                  {/* Tamanhos */}
+                  <div className="cf-fld">
+                    <label>
+                      Tamanhos{' '}
+                      <span style={{ fontSize: 10, color: 'rgba(250,250,248,.22)', textTransform: 'none', letterSpacing: 0 }}>
+                        (selecione um ou mais)
+                      </span>
+                    </label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div>
+                        <div className="cf-tam-group-label">Adulto</div>
+                        <div className="cf-tam-row">
+                          {TAM_ADULTO.map(t => (
+                            <button
+                              key={t}
+                              className={`cf-tam-btn ${tamanhos.includes(t) ? 'sel' : ''}`}
+                              onClick={() => toggleTam(t)}
+                            >{t}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="cf-tam-group-label">Infantil / Babylook</div>
+                        <div className="cf-tam-row">
+                          {TAM_BABYLOOK.map(t => (
+                            <button
+                              key={t}
+                              className={`cf-tam-btn ${tamanhos.includes(t) ? 'sel' : ''}`}
+                              onClick={() => toggleTam(t)}
+                            >{t}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="cf-tam-group-label">Outros</div>
+                        <div className="cf-tam-row">
+                          {TAM_OUTROS.map(t => (
+                            <button
+                              key={t}
+                              className={`cf-tam-btn ${tamanhos.includes(t) ? 'sel' : ''}`}
+                              onClick={() => toggleTam(t)}
+                            >{t}</button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* ── IDENTIFICAÇÃO ─────────────────────────────────────────── */}
+              <div className="cf-card">
+                <div className="cf-card-head">
+                  <div className="cf-ch-icon">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                      <line x1="7" y1="7" x2="7.01" y2="7"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="cf-ch-title">Identificação do pedido</div>
+                    <div className="cf-ch-sub">Um nome para encontrar fácil na sua área do cliente</div>
+                  </div>
+                </div>
+                <div className="cf-card-body">
+                  <input
+                    type="text"
+                    className="cf-id-input"
+                    placeholder="Ex: Camisetas turma 2025, Moletom evento abril..."
+                    value={identificacao}
+                    onChange={e => setIdentificacao(e.target.value)}
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  <p className="cf-id-hint">Mínimo 3 caracteres para avançar</p>
+                </div>
+              </div>
+            </>
+          )}
+
+          {currentStep === 2 && (
+            <div className="cf-card">
+              <div className="cf-card-head">
+                <div className="cf-ch-icon">
+                  <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                </div>
+                <div>
+                  <div className="cf-ch-title">Detalhes do produto</div>
+                  <div className="cf-ch-sub">Envie sua arte e configure a estampa</div>
+                </div>
+              </div>
+              <div className="cf-card-body">
+                <p style={{ fontSize: 13, color: 'rgba(250,250,248,.48)' }}>
+                  Em breve você poderá enviar sua arte e configurar a posição da estampa aqui.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {currentStep === 3 && (
+            <div className="cf-card">
+              <div className="cf-card-head">
+                <div className="cf-ch-icon">
+                  <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                </div>
+                <div>
+                  <div className="cf-ch-title">Detalhes do pedido</div>
+                  <div className="cf-ch-sub">Informe os detalhes finais e revise seu pedido</div>
+                </div>
+              </div>
+              <div className="cf-card-body">
+                <p style={{ fontSize: 13, color: 'rgba(250,250,248,.48)' }}>
+                  Revise todas as informações antes de enviar para orçamento via WhatsApp.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── FOOTER NAV ───────────────────────────────────────────────── */}
+          <div className="cf-footer-row">
+            {currentStep < STEPS.length ? (
+              <button
+                className={`cf-btn-next ${btnNextOn || currentStep > 1 ? 'on' : ''}`}
+                onClick={() => setCurrentStep(s => s + 1)}
+              >
+                {currentStep === 1 ? 'Próximo: Detalhes do produto' : `Próximo: ${STEPS[currentStep].label}`}
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
+                </svg>
+              </button>
+            ) : (
+              <button className="cf-btn-next on">
+                Finalizar e enviar orçamento
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
+                </svg>
+              </button>
+            )}
+          </div>
+
+        </div>{/* /cf-main */}
+
+        {/* ── SIDEBAR ──────────────────────────────────────────────────────── */}
+        <div className="cf-sidebar">
+
+          {/* Progresso */}
+          <div className="cf-sb-blk">
+            <div className="cf-sb-lbl">Progresso</div>
+            <div className="cf-pb-wrap">
+              <div className="cf-pb-fill" style={{ width: `${progressPct}%` }} />
+            </div>
+            {STEPS.map(step => (
+              <div key={step.id} className="cf-pi">
+                <div className={`cf-pidot ${currentStep === step.id ? 'active' : currentStep > step.id ? 'done' : ''}`}>
+                  {step.id}
+                </div>
+                <div>
+                  <div className={`cf-piname ${currentStep === step.id ? 'active' : currentStep > step.id ? 'done' : ''}`}>
+                    {step.label}
+                  </div>
+                  <div className="cf-pidet">
+                    {step.id === 1
+                      ? stepDetail
+                      : currentStep > step.id
+                      ? 'Concluído'
+                      : 'Aguardando...'}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
 
-          {/* Main Content */}
-          <div className="flex gap-6 items-start">
-
-            {/* Left Panel */}
-            <div className="flex-1 flex flex-col gap-4">
-
-              {currentStep === 1 && (
-                <>
-                  {/* Product Type */}
-                  <div className="bg-white rounded-xl p-6 shadow-sm">
-                    <h2 className="font-semibold text-base mb-4" style={{ color: '#1A1A1A' }}>
-                      Escolha o tipo de peça
-                    </h2>
-                    <div className="flex gap-3 flex-wrap">
-                      {PRODUCTS.map(product => (
-                        <button
-                          key={product.id}
-                          onClick={() => setSelectedProduct(product.id)}
-                          className="flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all cursor-pointer"
-                          style={{
-                            borderColor: selectedProduct === product.id ? '#2A5E40' : '#E5DDD3',
-                            backgroundColor: selectedProduct === product.id ? '#F0F9F4' : '#fff',
-                            minWidth: '80px',
-                          }}
-                        >
-                          {product.icon}
-                          <span className="text-xs font-semibold" style={{ color: '#1A1A1A' }}>
-                            {product.name}
-                          </span>
-                          <span className="text-xs text-center leading-tight" style={{ color: '#888' }}>
-                            {product.subtitle}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Specifications */}
-                  <div className="bg-white rounded-xl p-6 shadow-sm">
-                    <h2 className="font-semibold text-base mb-4" style={{ color: '#1A1A1A' }}>
-                      Especificações
-                    </h2>
-
-                    <div className="flex gap-4 mb-5">
-                      <div className="flex-1">
-                        <label className="block text-xs mb-1" style={{ color: '#888' }}>
-                          Tecido
-                        </label>
-                        <select
-                          value={tecido}
-                          onChange={e => setTecido(e.target.value)}
-                          className="w-full border rounded-lg px-3 py-2 text-sm outline-none"
-                          style={{ borderColor: '#D5CCC0', color: '#1A1A1A', backgroundColor: '#fff' }}
-                        >
-                          {TECIDO_OPTIONS.map(opt => (
-                            <option key={opt}>{opt}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="flex-1">
-                        <label className="block text-xs mb-1" style={{ color: '#888' }}>
-                          Gramatura
-                        </label>
-                        <select
-                          value={gramatura}
-                          onChange={e => setGramatura(e.target.value)}
-                          className="w-full border rounded-lg px-3 py-2 text-sm outline-none"
-                          style={{ borderColor: '#D5CCC0', color: '#1A1A1A', backgroundColor: '#fff' }}
-                        >
-                          {GRAMATURA_OPTIONS.map(opt => (
-                            <option key={opt}>{opt}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="mb-5">
-                      <label className="block text-xs mb-2" style={{ color: '#888' }}>
-                        Cor da peça
-                      </label>
-                      <div className="flex gap-2 flex-wrap">
-                        {COLORS.map(color => (
-                          <button
-                            key={color.id}
-                            title={color.label}
-                            onClick={() => setSelectedColor(color.id)}
-                            className="w-8 h-8 rounded-full transition-all"
-                            style={{
-                              backgroundColor: color.hex,
-                              border: selectedColor === color.id
-                                ? '3px solid #2A5E40'
-                                : color.id === 'branco'
-                                ? '2px solid #D5CCC0'
-                                : '2px solid transparent',
-                              boxShadow: selectedColor === color.id
-                                ? '0 0 0 2px #fff, 0 0 0 4px #2A5E40'
-                                : 'none',
-                            }}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-xs mt-2" style={{ color: '#888' }}>
-                        Selecionado:{' '}
-                        <span style={{ color: '#1A1A1A', fontWeight: 500 }}>
-                          {selectedColorData?.label}
-                        </span>
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs mb-2" style={{ color: '#888' }}>
-                        Tamanhos
-                      </label>
-                      <div className="flex gap-2 flex-wrap">
-                        {SIZES.map(size => (
-                          <button
-                            key={size}
-                            onClick={() => toggleSize(size)}
-                            className="w-12 h-10 rounded-lg border text-sm font-medium transition-all"
-                            style={{
-                              borderColor: selectedSizes.includes(size) ? '#2A5E40' : '#D5CCC0',
-                              backgroundColor: selectedSizes.includes(size) ? '#2A5E40' : '#fff',
-                              color: selectedSizes.includes(size) ? '#fff' : '#1A1A1A',
-                            }}
-                          >
-                            {size}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {currentStep === 2 && (
-                <div className="bg-white rounded-xl p-6 shadow-sm">
-                  <h2 className="font-semibold text-base mb-4" style={{ color: '#1A1A1A' }}>
-                    Estampa
-                  </h2>
-                  <p className="text-sm" style={{ color: '#888' }}>
-                    Configure a estampa do seu pedido.
-                  </p>
-                </div>
-              )}
-
-              {currentStep === 3 && (
-                <div className="bg-white rounded-xl p-6 shadow-sm">
-                  <h2 className="font-semibold text-base mb-4" style={{ color: '#1A1A1A' }}>
-                    Detalhe do pedido
-                  </h2>
-                  <p className="text-sm" style={{ color: '#888' }}>
-                    Informe os detalhes finais e revise seu pedido.
-                  </p>
-                </div>
-              )}
-
-              {/* Navigation */}
-              <div className="flex justify-between">
-                {currentStep > 1 ? (
-                  <button
-                    onClick={() => setCurrentStep(s => s - 1)}
-                    className="px-6 py-3 rounded-xl text-sm font-medium border transition-colors"
-                    style={{ borderColor: '#D5CCC0', color: '#1A1A1A', backgroundColor: '#fff' }}
-                  >
-                    ← Voltar
-                  </button>
-                ) : (
-                  <div />
-                )}
-
-                {currentStep < STEPS.length ? (
-                  <button
-                    onClick={() => setCurrentStep(s => s + 1)}
-                    className="px-6 py-3 rounded-xl text-sm font-medium transition-opacity hover:opacity-90"
-                    style={{ backgroundColor: '#1A1A1A', color: '#fff' }}
-                  >
-                    Próximo: {STEPS[currentStep].label} →
-                  </button>
-                ) : (
-                  <button
-                    className="px-6 py-3 rounded-xl text-sm font-medium transition-opacity hover:opacity-90"
-                    style={{ backgroundColor: '#2A5E40', color: '#fff' }}
-                  >
-                    Finalizar pedido
-                  </button>
-                )}
-              </div>
+          {/* Resumo */}
+          <div className="cf-sb-blk">
+            <div className="cf-sb-lbl">Resumo</div>
+            <div className="cf-ri">
+              <span className="cf-rk">Peça</span>
+              <span className="cf-rv">{tipo}</span>
             </div>
-
-            {/* Right Panel - Progress */}
-            <div
-              className="w-64 flex-shrink-0 bg-white rounded-xl p-5 shadow-sm"
-              style={{ position: 'sticky', top: '24px' }}
-            >
-              <h3 className="font-semibold text-sm mb-3" style={{ color: '#1A1A1A' }}>
-                Progresso
-              </h3>
-
-              <div className="w-full h-2 rounded-full mb-4" style={{ backgroundColor: '#E5DDD3' }}>
-                <div
-                  className="h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${progressPercent}%`, backgroundColor: '#2A5E40' }}
-                />
-              </div>
-
-              <div className="flex flex-col gap-3">
-                {STEPS.map(step => (
-                  <div key={step.id} className="flex items-start gap-3">
-                    <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 mt-0.5"
-                      style={{
-                        backgroundColor: step.id <= currentStep ? '#2A5E40' : 'transparent',
-                        color: step.id <= currentStep ? '#fff' : '#aaa',
-                        border: step.id <= currentStep ? 'none' : '2px solid #D5CCC0',
-                      }}
-                    >
-                      {step.id}
-                    </div>
-                    <div>
-                      <p
-                        className="text-xs font-semibold"
-                        style={{ color: step.id <= currentStep ? '#1A1A1A' : '#aaa' }}
-                      >
-                        {step.label}
-                      </p>
-                      <p className="text-xs" style={{ color: '#888' }}>
-                        {stepSummary(step.id)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="cf-ri">
+              <span className="cf-rk">Tecido</span>
+              <span className="cf-rv">{tecido.split(' (')[0]}</span>
             </div>
-
+            <div className="cf-ri">
+              <span className="cf-rk">Gramatura</span>
+              <span className="cf-rv">{gramShort(gramatura)}</span>
+            </div>
+            <div className="cf-ri">
+              <span className="cf-rk">Cor</span>
+              <span className="cf-rv">{cor}</span>
+            </div>
+            <div className="cf-ri">
+              <span className="cf-rk">Tamanhos</span>
+              <span className={`cf-rv ${tamanhos.length === 0 ? 'empty' : ''}`}>
+                {tamanhos.length ? tamanhos.join(', ') : '—'}
+              </span>
+            </div>
+            <div className="cf-ri">
+              <span className="cf-rk">Identificação</span>
+              <span className={`cf-rv ${!identificacao ? 'empty' : ''}`}>
+                {identificacao || '—'}
+              </span>
+            </div>
           </div>
-        </div>
-      </div>
+
+          {/* Dica */}
+          <div className="cf-dica">
+            <div className="cf-dica-t">💡 Dica do estúdio</div>
+            <div className="cf-dica-b">
+              Para estampas em silk, preferimos algodão 180g/m² — melhor absorção de tinta e acabamento duradouro.
+            </div>
+          </div>
+
+        </div>{/* /cf-sidebar */}
+
+      </div>{/* /cf-layout */}
     </div>
   )
 }

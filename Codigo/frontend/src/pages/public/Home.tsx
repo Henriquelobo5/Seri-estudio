@@ -319,7 +319,7 @@ export default function Home() {
               Orçamento automático pelo WhatsApp.
             </p>
             <div className="hero-btns">
-              <Link to={ROUTES.LOGIN} className="btn-primary">
+              <Link to={ROUTES.CRIAR_FICHA} className="btn-primary">
                 Montar meu pedido
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
@@ -415,7 +415,7 @@ export default function Home() {
               Nossa ficha técnica digital garante que você especifica exatamente o que quer —
               sem idas e vindas no WhatsApp.
             </p>
-            <Link to={ROUTES.LOGIN} className="btn-primary" style={{ display: 'inline-flex' }}>
+            <Link to={ROUTES.CRIAR_FICHA} className="btn-primary" style={{ display: 'inline-flex' }}>
               Começar agora
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
