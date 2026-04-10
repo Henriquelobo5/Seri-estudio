@@ -385,7 +385,7 @@ export default function Home() {
           <div className="portfolio-header reveal">
             <div>
               <p className="section-label">Portfólio</p>
-              <h2 className="section-h2" style={{ marginBottom: 0 }}>Trabalhos realizados</h2>
+              <h2 className="section-h2" style={{ marginBottom: 0 }}>Nossos Trabalhos.</h2>
             </div>
             <a href="#portfolio" className="btn-secondary" style={{ fontSize: 13, padding: '10px 22px' }}>
               Ver todos →

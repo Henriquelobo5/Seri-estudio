@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import PageTransition from '../../components/PageTransition'
 import { ROUTES } from '../../routes/routePaths'
 import logo from '../../assets/images/logo.png'
 import seri1 from '../../assets/images/produtos/seri1.jpg'
@@ -9,346 +10,670 @@ import seri4 from '../../assets/images/produtos/seri4.jpg'
 import seri5 from '../../assets/images/produtos/seri5.jpg'
 import seri6 from '../../assets/images/produtos/seri6.jpg'
 import ecobag from '../../assets/images/produtos/ecobag.png'
+import './Home.css'
+import './Catalogo.css'
 
 type Produto = {
-  id: number
+  id: string
   nome: string
-  descricao: string
   categoria: string
   tecido: string
   gramatura: string
-  preco: number
-  badge?: string
+  preco: string
   imagem?: string
+  badge?: string
 }
 
 const TODOS_PRODUTOS: Produto[] = [
-  { id: 1, nome: 'CAMISETA HOLLOWAY', descricao: 'Gola careca, corte reto, ideal para estampas grandes.', categoria: 'Camiseta', tecido: '100% Algodão', gramatura: '180g/m²', preco: 119, badge: 'Mais pedido', imagem: seri1 },
-  { id: 2, nome: 'CAMISETA CHORÃO', descricao: 'Caimento amplo, ombro caído, perfeito para silk.', categoria: 'Camiseta', tecido: 'Malha Fio 30', gramatura: '200g/m²', preco: 139, imagem: seri2 },
-  { id: 3, nome: 'CAMISETA CALAMIDADE PÚBLICA', descricao: 'Corte feminino, gola redonda, tecido leve.', categoria: 'Camiseta', tecido: '100% Algodão', gramatura: '160g/m²', preco: 109, imagem: seri3 },
-  { id: 4, nome: 'CAMISETA ARRASCAETA', descricao: 'Gola V, corte slim, ótimo para estampas frontais.', categoria: 'Camiseta', tecido: 'Malha Fio 30', gramatura: '180g/m²', preco: 124, imagem: seri4 },
-  { id: 5, nome: 'CAMISETA SERI MEMÓRIAS', descricao: 'Manga longa, ideal para clima frio ou estampas de manga.', categoria: 'Camiseta', tecido: '100% Algodão', gramatura: '200g/m²', preco: 129, imagem: seri5 },
-  { id: 6, nome: 'CAMISETA ANTI VISAGISM CLUB', descricao: 'Tecido técnico de alta performance para uniformes esportivos.', categoria: 'Camiseta', tecido: 'Dry Fit', gramatura: '160g/m²', preco: 119, imagem: seri6 },
-  { id: 7, nome: 'Moletom Canguru', descricao: 'Com bolso canguru e capuz, ótimo para bordado.', categoria: 'Moletom', tecido: 'Moletinho', gramatura: '300g/m²', preco: 189, badge: 'Novo' },
-  { id: 8, nome: 'Moletom Raglan', descricao: 'Manga contrastante, visual urbano e moderno.', categoria: 'Moletom', tecido: 'Moletinho', gramatura: '300g/m²', preco: 169 },
-  { id: 9, nome: 'Moletom Crewneck', descricao: 'Gola careca sem capuz, clássico e versátil para estampas.', categoria: 'Moletom', tecido: 'Moletinho', gramatura: '300g/m²', preco: 159 },
-  { id: 10, nome: 'Moletom Aberto', descricao: 'Com zíper frontal, ideal para uniformes e eventos.', categoria: 'Moletom', tecido: 'Moletinho', gramatura: '300g/m²', preco: 199 },
-  { id: 11, nome: 'Regata Básica', descricao: 'Regata simples, ideal para estampas grandes no torso.', categoria: 'Regata', tecido: '100% Algodão', gramatura: '160g/m²', preco: 109 },
-  { id: 12, nome: 'Regata Cavada', descricao: 'Modelo cavado, muito usado em uniformes de academia.', categoria: 'Regata', tecido: '100% Algodão', gramatura: '160g/m²', preco: 104 },
-  { id: 13, nome: 'Regata Dry Fit', descricao: 'Tecido técnico, perfeito para uniformes esportivos.', categoria: 'Regata', tecido: 'Dry Fit', gramatura: '160g/m²', preco: 119 },
-  { id: 14, nome: 'Polo Piquê', descricao: 'Polo tradicional com gola e punhos em piquê.', categoria: 'Polo', tecido: 'Malha Fio 30', gramatura: '200g/m²', preco: 149 },
-  { id: 15, nome: 'Polo Malha', descricao: 'Polo leve em malha, confortável para o dia a dia.', categoria: 'Polo', tecido: 'Malha Fio 30', gramatura: '180g/m²', preco: 134 },
-  { id: 16, nome: 'Ecobag Básica', descricao: 'Sacola de algodão reforçado, ideal para brindes.', categoria: 'Ecobag', tecido: '100% Algodão', gramatura: '180g/m²', preco: 22, imagem: ecobag },
+  {
+    id: 'camiseta-holloway',
+    nome: 'CAMISETA HOLLOWAY',
+    categoria: 'Camiseta',
+    tecido: '100% Algodao',
+    gramatura: '180g/m2',
+    preco: 'R$ 119,00',
+    imagem: seri1,
+    badge: 'Mais pedido',
+  },
+  {
+    id: 'camiseta-chorao',
+    nome: 'CAMISETA CHORAO',
+    categoria: 'Camiseta',
+    tecido: '100% Algodao',
+    gramatura: '180g/m2',
+    preco: 'R$ 130,00',
+    imagem: seri2,
+  },
+  {
+    id: 'camiseta-calamidade-publica',
+    nome: 'CAMISETA CALAMIDADE PUBLICA',
+    categoria: 'Camiseta',
+    tecido: '100% Algodao',
+    gramatura: '180g/m2',
+    preco: 'R$ 90,00',
+    imagem: seri3,
+  },
+  {
+    id: 'camiseta-arrascaeta',
+    nome: 'CAMISETA ARRASCAETA',
+    categoria: 'Camiseta',
+    tecido: '100% Algodao',
+    gramatura: '180g/m2',
+    preco: 'R$ 124,00',
+    imagem: seri4,
+  },
+  {
+    id: 'camiseta-seri-memorias',
+    nome: 'CAMISETA SERI MEMORIAS',
+    categoria: 'Camiseta',
+    tecido: '100% Algodao',
+    gramatura: '160g/m2',
+    preco: 'R$ 120,00',
+    imagem: seri5,
+  },
+  {
+    id: 'camiseta-anti-visagism-club',
+    nome: 'CAMISETA ANTI VISAGISM CLUB',
+    categoria: 'Camiseta',
+    tecido: 'Malha Fio 30',
+    gramatura: '180g/m2',
+    preco: 'R$ 110,00',
+    imagem: seri6,
+    badge: 'Novo',
+  },
+  {
+    id: 'moletom-canguru',
+    nome: 'MOLETOM CANGURU',
+    categoria: 'Moletom',
+    tecido: 'Moletinho',
+    gramatura: '300g/m2',
+    preco: 'R$ 70,00',
+  },
+  {
+    id: 'moletom-raglan',
+    nome: 'MOLETOM RAGLAN',
+    categoria: 'Moletom',
+    tecido: 'Moletinho',
+    gramatura: '300g/m2',
+    preco: 'R$ 120,00',
+  },
+  {
+    id: 'moletom-crewneck',
+    nome: 'MOLETOM CREWNECK',
+    categoria: 'Moletom',
+    tecido: 'Moletinho',
+    gramatura: '300g/m2',
+    preco: 'R$ 99,00',
+  },
+  {
+    id: 'moletom-aberto',
+    nome: 'MOLETOM ABERTO',
+    categoria: 'Moletom',
+    tecido: 'Moletinho',
+    gramatura: '300g/m2',
+    preco: 'R$ 109,00',
+  },
+  {
+    id: 'regata-basica',
+    nome: 'REGATA BASICA',
+    categoria: 'Regata',
+    tecido: 'Malha Fio 30',
+    gramatura: '160g/m2',
+    preco: 'R$ 70,00',
+  },
+  {
+    id: 'regata-cavada',
+    nome: 'REGATA CAVADA',
+    categoria: 'Regata',
+    tecido: 'Malha Fio 30',
+    gramatura: '160g/m2',
+    preco: 'R$ 104,00',
+  },
+  {
+    id: 'regata-dry-fit',
+    nome: 'REGATA DRY FIT',
+    categoria: 'Regata',
+    tecido: 'Dry Fit',
+    gramatura: '160g/m2',
+    preco: 'R$ 80,00',
+  },
+  {
+    id: 'polo-pique',
+    nome: 'POLO PIQUE',
+    categoria: 'Polo',
+    tecido: 'Malha Fio 30',
+    gramatura: '200g/m2',
+    preco: 'R$ 140,00',
+  },
+  {
+    id: 'polo-malha',
+    nome: 'POLO MALHA',
+    categoria: 'Polo',
+    tecido: 'Malha Fio 30',
+    gramatura: '200g/m2',
+    preco: 'R$ 140,00',
+  },
+  {
+    id: 'ecobag-basica',
+    nome: 'ECOBAG BASICA',
+    categoria: 'Ecobag',
+    tecido: '100% Algodao',
+    gramatura: '200g/m2',
+    preco: 'R$ 22,00',
+    imagem: ecobag,
+  },
 ]
 
 const CATEGORIAS = ['Camiseta', 'Moletom', 'Regata', 'Polo', 'Ecobag']
-const TECIDOS = ['100% Algodão', 'Malha Fio 30', 'Dry Fit', 'Moletinho']
-const GRAMATURAS = ['160g/m²', '180g/m²', '200g/m²', '300g/m²']
-const ORDENACAO = ['Mais relevantes', 'Menor preço', 'Maior preço', 'Nome A-Z']
+const TECIDOS = ['100% Algodao', 'Malha Fio 30', 'Dry Fit', 'Moletinho']
+const GRAMATURAS = ['160g/m2', '180g/m2', '200g/m2', '300g/m2']
 
-function contarPorFiltro(campo: keyof Produto, valor: string) {
-  return TODOS_PRODUTOS.filter(p => p[campo] === valor).length
+function buildAnimatedText(text: string, keyPrefix: string) {
+  let delayIndex = 0
+
+  return text.split('').map((char, index) => {
+    if (char === ' ') {
+      return <span key={`${keyPrefix}-space-${index}`}>&nbsp;</span>
+    }
+
+    const transitionDelay = `${delayIndex * 28}ms`
+    delayIndex += 1
+
+    return (
+      <span
+        key={`${keyPrefix}-${index}`}
+        className="split-char"
+        style={{ transitionDelay }}
+      >
+        {char}
+      </span>
+    )
+  })
+}
+
+function formatarNomeProduto(nome: string) {
+  return nome
+    .toLowerCase()
+    .split(' ')
+    .map((palavra) => palavra.charAt(0).toUpperCase() + palavra.slice(1))
+    .join(' ')
 }
 
 function IconeProduto({ categoria }: { categoria: string }) {
-  if (categoria === 'Camiseta') return (
-    <svg viewBox="0 0 64 64" fill="none" className="w-16 h-16 opacity-70">
-      <path d="M8 20 L20 12 L24 18 L32 14 L40 18 L44 12 L56 20 L50 28 L44 26 L44 54 L20 54 L20 26 L14 28 Z" fill="#7EC89A" />
+  if (categoria === 'Regata') {
+    return (
+      <svg
+        className="catalog-product-icon-svg"
+        viewBox="0 0 64 64"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M22 16L28 10H36L42 16L48 20V54H16V20L22 16Z"
+          fill="currentColor"
+          opacity="0.18"
+        />
+        <path
+          d="M22 16L28 10H36L42 16L48 20V54H16V20L22 16Z"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M28 10V20C28 22.2 29.8 24 32 24C34.2 24 36 22.2 36 20V10"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+        />
+      </svg>
+    )
+  }
+
+  if (categoria === 'Polo') {
+    return (
+      <svg
+        className="catalog-product-icon-svg"
+        viewBox="0 0 64 64"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M24 12L32 18L40 12L50 18L44 30V54H20V30L14 18L24 12Z"
+          fill="currentColor"
+          opacity="0.18"
+        />
+        <path
+          d="M24 12L32 18L40 12L50 18L44 30V54H20V30L14 18L24 12Z"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M28 16L32 22L36 16"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M32 22V30"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+        />
+      </svg>
+    )
+  }
+
+  if (categoria === 'Ecobag') {
+    return (
+      <svg
+        className="catalog-product-icon-svg"
+        viewBox="0 0 64 64"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M18 24H46L42 54H22L18 24Z"
+          fill="currentColor"
+          opacity="0.18"
+        />
+        <path
+          d="M18 24H46L42 54H22L18 24Z"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M24 24V20C24 15.6 27.6 12 32 12C36.4 12 40 15.6 40 20V24"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+        />
+      </svg>
+    )
+  }
+
+  return (
+    <svg
+      className="catalog-product-icon-svg"
+      viewBox="0 0 64 64"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M20 16L28 12H36L44 16L52 22L46 32V54H18V32L12 22L20 16Z"
+        fill="currentColor"
+        opacity="0.18"
+      />
+      <path
+        d="M20 16L28 12H36L44 16L52 22L46 32V54H18V32L12 22L20 16Z"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M28 12L32 18L36 12"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   )
-  if (categoria === 'Moletom') return (
-    <svg viewBox="0 0 64 64" fill="none" className="w-16 h-16 opacity-70">
-      <path d="M8 20 L20 12 Q32 9 44 12 L56 20 L50 28 L44 26 L44 54 L20 54 L20 26 L14 28 Z" fill="#C4A97A" />
-      <path d="M24 12 Q32 16 40 12" stroke="#A08050" strokeWidth="2" fill="none" />
-      <rect x="22" y="44" width="20" height="5" rx="2.5" fill="#A08050" />
-    </svg>
-  )
-  if (categoria === 'Regata') return (
-    <svg viewBox="0 0 64 64" fill="none" className="w-16 h-16 opacity-70">
-      <path d="M22 12 Q32 9 42 12 L44 54 L20 54 Z" fill="#7EC89A" />
-      <path d="M22 12 Q26 18 32 14 Q38 18 42 12" stroke="#5AAA7A" strokeWidth="2" fill="none" />
-    </svg>
-  )
-  if (categoria === 'Polo') return (
-    <svg viewBox="0 0 64 64" fill="none" className="w-16 h-16 opacity-70">
-      <path d="M8 20 L20 12 L24 17 L32 12 L40 17 L44 12 L56 20 L50 28 L44 26 L44 54 L20 54 L20 26 L14 28 Z" fill="#7A9EC4" />
-      <rect x="28" y="12" width="8" height="12" rx="1.5" fill="#5A7EA4" />
-    </svg>
-  )
-  if (categoria === 'Ecobag') return (
-    <svg viewBox="0 0 64 64" fill="none" className="w-16 h-16 opacity-70">
-      <rect x="14" y="26" width="36" height="30" rx="4" fill="#C4A97A" />
-      <path d="M24 26 Q24 14 32 14 Q40 14 40 26" stroke="#A08050" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-    </svg>
-  )
-  return null
 }
 
 export default function Catalogo() {
   const [categoriasAtivas, setCategoriasAtivas] = useState<string[]>([])
   const [tecidosAtivos, setTecidosAtivos] = useState<string[]>([])
-  const [gramaturaAtiva, setGramaturaAtiva] = useState<string[]>([])
-  const [ordenacao, setOrdenacao] = useState('Mais relevantes')
+  const [gramaturasAtivas, setGramaturasAtivas] = useState<string[]>([])
   const [filtroAberto, setFiltroAberto] = useState(false)
 
-  function toggleFiltro<T>(list: T[], item: T, setter: (v: T[]) => void) {
-    setter(list.includes(item) ? list.filter(i => i !== item) : [...list, item])
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      document
+        .querySelectorAll<HTMLElement>('.catalog-page .split-char')
+        .forEach((char) => char.classList.add('in'))
+    }, 180)
+
+    return () => window.clearTimeout(timeout)
+  }, [])
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible')
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.12 }
+    )
+
+    document
+      .querySelectorAll<HTMLElement>('.catalog-page .reveal')
+      .forEach((element) => observer.observe(element))
+
+    return () => observer.disconnect()
+  }, [])
+
+  const toggleCategoria = (categoria: string) => {
+    setCategoriasAtivas((atual) =>
+      atual.includes(categoria)
+        ? atual.filter((item) => item !== categoria)
+        : [...atual, categoria]
+    )
   }
 
-  function limparFiltros() {
+  const toggleTecido = (tecido: string) => {
+    setTecidosAtivos((atual) =>
+      atual.includes(tecido)
+        ? atual.filter((item) => item !== tecido)
+        : [...atual, tecido]
+    )
+  }
+
+  const toggleGramatura = (gramatura: string) => {
+    setGramaturasAtivas((atual) =>
+      atual.includes(gramatura)
+        ? atual.filter((item) => item !== gramatura)
+        : [...atual, gramatura]
+    )
+  }
+
+  const limparFiltros = () => {
     setCategoriasAtivas([])
     setTecidosAtivos([])
-    setGramaturaAtiva([])
+    setGramaturasAtivas([])
   }
 
   const produtosFiltrados = useMemo(() => {
-    let result = TODOS_PRODUTOS
+    return TODOS_PRODUTOS.filter((produto) => {
+      const categoriaOk =
+        categoriasAtivas.length === 0 || categoriasAtivas.includes(produto.categoria)
+      const tecidoOk =
+        tecidosAtivos.length === 0 || tecidosAtivos.includes(produto.tecido)
+      const gramaturaOk =
+        gramaturasAtivas.length === 0 || gramaturasAtivas.includes(produto.gramatura)
 
-    if (categoriasAtivas.length > 0)
-      result = result.filter(p => categoriasAtivas.includes(p.categoria))
-    if (tecidosAtivos.length > 0)
-      result = result.filter(p => tecidosAtivos.includes(p.tecido))
-    if (gramaturaAtiva.length > 0)
-      result = result.filter(p => gramaturaAtiva.includes(p.gramatura))
+      return categoriaOk && tecidoOk && gramaturaOk
+    })
+  }, [categoriasAtivas, tecidosAtivos, gramaturasAtivas])
 
-    if (ordenacao === 'Menor preço') result = [...result].sort((a, b) => a.preco - b.preco)
-    else if (ordenacao === 'Maior preço') result = [...result].sort((a, b) => b.preco - a.preco)
-    else if (ordenacao === 'Nome A-Z') result = [...result].sort((a, b) => a.nome.localeCompare(b.nome))
+  const filtrosAtivos = useMemo(
+    () => [
+      ...categoriasAtivas.map((label) => ({ label })),
+      ...tecidosAtivos.map((label) => ({ label })),
+      ...gramaturasAtivas.map((label) => ({ label })),
+    ],
+    [categoriasAtivas, tecidosAtivos, gramaturasAtivas]
+  )
 
-    return result
-  }, [categoriasAtivas, tecidosAtivos, gramaturaAtiva, ordenacao])
+  const labelsNoBotao = filtrosAtivos.slice(0, 2)
+  const filtrosRestantes = Math.max(filtrosAtivos.length - labelsNoBotao.length, 0)
 
-  const filtrosAtivos = [
-    ...categoriasAtivas.map(c => ({ label: c, remover: () => toggleFiltro(categoriasAtivas, c, setCategoriasAtivas) })),
-    ...tecidosAtivos.map(t => ({ label: t, remover: () => toggleFiltro(tecidosAtivos, t, setTecidosAtivos) })),
-    ...gramaturaAtiva.map(g => ({ label: g, remover: () => toggleFiltro(gramaturaAtiva, g, setGramaturaAtiva) })),
-  ]
+  const contarPorFiltro = (
+    campo: 'categoria' | 'tecido' | 'gramatura',
+    valor: string
+  ) => TODOS_PRODUTOS.filter((produto) => produto[campo] === valor).length
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F0EBE3' }}>
+    <PageTransition>
+      <div className="catalog-page home-page">
+        <div className="home-grain" aria-hidden="true" />
 
-      {/* Navbar */}
-      <header className="bg-[#2A5E40] px-8 py-3 flex items-center justify-between">
-        <Link to={ROUTES.HOME}>
-          <img src={logo} alt="Seri.estudio" className="h-12 w-12 object-contain rounded" />
-        </Link>
-        <nav className="flex items-center gap-8">
-          <Link to={ROUTES.CATALOGO} className="text-white text-sm font-medium transition-colors">
-            Catálogo
+        <nav className="home-nav">
+          <Link to={ROUTES.HOME} className="nav-logo">
+            <div className="nav-logo-img">
+              <img src={logo} alt="Seri." />
+            </div>
+            <span className="nav-logo-text">Seri.</span>
           </Link>
-          <a href={`${ROUTES.HOME}#portfolio`} className="text-white/80 hover:text-white text-sm transition-colors">
-            Portfólio
-          </a>
-          <a href={`${ROUTES.HOME}#como-funciona`} className="text-white/80 hover:text-white text-sm transition-colors">
-            Como funciona
-          </a>
-          <a href={`${ROUTES.HOME}#contato`} className="text-white/80 hover:text-white text-sm transition-colors">
-            Contato
-          </a>
-          <Link
-            to={ROUTES.LOGIN}
-            className="border border-white text-white px-5 py-2 rounded text-sm hover:bg-white hover:text-[#2A5E40] transition-colors"
-          >
-            Entrar
-          </Link>
+
+          <div className="nav-links">
+            <Link to={ROUTES.CATALOGO}>Catalogo</Link>
+            <a href={`${ROUTES.HOME}#portfolio`}>Portfolio</a>
+            <a href={`${ROUTES.HOME}#como-funciona`}>Como funciona</a>
+            <a href={`${ROUTES.HOME}#contato`}>Contato</a>
+            <Link to={ROUTES.LOGIN} className="nav-cta">
+              Entrar
+            </Link>
+          </div>
         </nav>
-      </header>
 
-      {/* Page Header + Toolbar */}
-      <div className="px-12 pt-10 pb-5">
-        <h1 className="text-3xl font-bold" style={{ color: '#1A1A1A' }}>Catálogo de produtos</h1>
-        <p className="text-sm mt-1" style={{ color: '#888' }}>Escolha a peça ideal para sua estampa personalizada</p>
+        <main className="catalog-main">
+          <section className="catalog-panel">
+            <div className="catalog-toolbar reveal">
+              <div className="catalog-heading reveal">
+                <p className="section-label catalog-kicker">
+                  {buildAnimatedText('Portfolio', 'catalog-kicker')}
+                </p>
+                <h1 className="catalog-title">
+                  {buildAnimatedText('Nossos', 'catalog-title')}
+                  <span>&nbsp;</span>
+                  <em>{buildAnimatedText('Trabalhos.', 'catalog-title-em')}</em>
+                </h1>
+              </div>
 
-      </div>
+              <div className="catalog-toolbar-actions">
+                <div className="catalog-filter-wrap">
+                  <button
+                    type="button"
+                    className={`catalog-filter-button ${filtroAberto ? 'is-active' : ''}`}
+                    onClick={() => setFiltroAberto((valor) => !valor)}
+                  >
+                    <span className="catalog-filter-icon" aria-hidden="true">
+                      <svg viewBox="0 0 16 16" fill="none">
+                        <path
+                          d="M2.5 4H13.5"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                        <path
+                          d="M4.5 8H11.5"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                        <path
+                          d="M6.5 12H9.5"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </span>
 
-      {/* Content */}
-      <div className="px-12 pb-16">
+                    <span className="catalog-filter-copy">
+                      <strong>Filtrar</strong>
+                    </span>
 
-        {/* Toolbar acima do grid */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
+                    {labelsNoBotao.length > 0 && (
+                      <span className="catalog-filter-inline">
+                        {labelsNoBotao.map((filtro) => (
+                          <span key={filtro.label} className="catalog-filter-inline-chip">
+                            {filtro.label}
+                          </span>
+                        ))}
 
-            {/* Filtrar button + dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setFiltroAberto(v => !v)}
-                className="flex items-center gap-2 border rounded-lg px-4 py-2 text-sm transition-colors hover:bg-white"
-                style={{ borderColor: filtroAberto ? '#2A5E40' : '#D5CCC0', color: '#1A1A1A', backgroundColor: filtrosAtivos.length > 0 ? '#E8F4ED' : '#fff' }}
-              >
-                <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M2 4h12M4 8h8M6 12h4" strokeLinecap="round" />
-                </svg>
-                Filtrar
-                {filtrosAtivos.length > 0 && (
-                  <span className="w-5 h-5 rounded-full text-xs flex items-center justify-center font-semibold" style={{ backgroundColor: '#2A5E40', color: '#fff' }}>
-                    {filtrosAtivos.length}
-                  </span>
-                )}
-              </button>
-
-              {filtroAberto && (
-                <div className="absolute left-0 top-full mt-2 z-20 bg-white rounded-xl shadow-lg border p-5 w-72" style={{ borderColor: '#E5DDD5' }}>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm font-semibold" style={{ color: '#1A1A1A' }}>Filtros</span>
-                    {filtrosAtivos.length > 0 && (
-                      <button onClick={limparFiltros} className="text-xs underline" style={{ color: '#2A5E40' }}>
-                        Limpar tudo
-                      </button>
+                        {filtrosRestantes > 0 && (
+                          <span className="catalog-filter-inline-chip">+{filtrosRestantes}</span>
+                        )}
+                      </span>
                     )}
-                  </div>
+                  </button>
 
-                  <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: '#888' }}>Categoria</p>
-                  <div className="flex flex-col gap-2 mb-4">
-                    {CATEGORIAS.map(cat => (
-                      <label key={cat} className="flex items-center justify-between cursor-pointer group">
-                        <div className="flex items-center gap-2">
-                          <input type="checkbox" checked={categoriasAtivas.includes(cat)} onChange={() => toggleFiltro(categoriasAtivas, cat, setCategoriasAtivas)} className="w-4 h-4 rounded accent-[#2A5E40] cursor-pointer" />
-                          <span className="text-sm group-hover:text-[#2A5E40] transition-colors" style={{ color: '#1A1A1A' }}>{cat}</span>
+                  {filtroAberto && (
+                    <div className="catalog-filter-popover">
+                      <div className="catalog-filter-popover-head">
+                        <div>
+                          <p>Filtros</p>
+                          <strong>Refine o catalogo</strong>
                         </div>
-                        <span className="text-xs" style={{ color: '#aaa' }}>{contarPorFiltro('categoria', cat)}</span>
-                      </label>
-                    ))}
-                  </div>
 
-                  <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: '#888' }}>Tecido</p>
-                  <div className="flex flex-col gap-2 mb-4">
-                    {TECIDOS.map(tec => (
-                      <label key={tec} className="flex items-center justify-between cursor-pointer group">
-                        <div className="flex items-center gap-2">
-                          <input type="checkbox" checked={tecidosAtivos.includes(tec)} onChange={() => toggleFiltro(tecidosAtivos, tec, setTecidosAtivos)} className="w-4 h-4 rounded accent-[#2A5E40] cursor-pointer" />
-                          <span className="text-sm group-hover:text-[#2A5E40] transition-colors" style={{ color: '#1A1A1A' }}>{tec}</span>
-                        </div>
-                        <span className="text-xs" style={{ color: '#aaa' }}>{contarPorFiltro('tecido', tec)}</span>
-                      </label>
-                    ))}
-                  </div>
+                        {filtrosAtivos.length > 0 && (
+                          <button type="button" onClick={limparFiltros}>
+                            Limpar
+                          </button>
+                        )}
+                      </div>
 
-                  <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: '#888' }}>Gramatura</p>
-                  <div className="flex flex-col gap-2">
-                    {GRAMATURAS.map(gram => (
-                      <label key={gram} className="flex items-center justify-between cursor-pointer group">
-                        <div className="flex items-center gap-2">
-                          <input type="checkbox" checked={gramaturaAtiva.includes(gram)} onChange={() => toggleFiltro(gramaturaAtiva, gram, setGramaturaAtiva)} className="w-4 h-4 rounded accent-[#2A5E40] cursor-pointer" />
-                          <span className="text-sm group-hover:text-[#2A5E40] transition-colors" style={{ color: '#1A1A1A' }}>{gram}</span>
+                      <div className="catalog-filter-group">
+                        <span className="catalog-filter-group-title">Categoria</span>
+                        <div className="catalog-filter-options">
+                          {CATEGORIAS.map((categoria) => (
+                            <button
+                              key={categoria}
+                              type="button"
+                              className={`catalog-filter-pill ${
+                                categoriasAtivas.includes(categoria) ? 'is-active' : ''
+                              }`}
+                              onClick={() => toggleCategoria(categoria)}
+                            >
+                              <span>{categoria}</span>
+                              <small>{contarPorFiltro('categoria', categoria)}</small>
+                            </button>
+                          ))}
                         </div>
-                        <span className="text-xs" style={{ color: '#aaa' }}>{contarPorFiltro('gramatura', gram)}</span>
-                      </label>
-                    ))}
-                  </div>
+                      </div>
+
+                      <div className="catalog-filter-group">
+                        <span className="catalog-filter-group-title">Tecido</span>
+                        <div className="catalog-filter-options">
+                          {TECIDOS.map((tecido) => (
+                            <button
+                              key={tecido}
+                              type="button"
+                              className={`catalog-filter-pill ${
+                                tecidosAtivos.includes(tecido) ? 'is-active' : ''
+                              }`}
+                              onClick={() => toggleTecido(tecido)}
+                            >
+                              <span>{tecido}</span>
+                              <small>{contarPorFiltro('tecido', tecido)}</small>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="catalog-filter-group">
+                        <span className="catalog-filter-group-title">Gramatura</span>
+                        <div className="catalog-filter-options">
+                          {GRAMATURAS.map((gramatura) => (
+                            <button
+                              key={gramatura}
+                              type="button"
+                              className={`catalog-filter-pill ${
+                                gramaturasAtivas.includes(gramatura) ? 'is-active' : ''
+                              }`}
+                              onClick={() => toggleGramatura(gramatura)}
+                            >
+                              <span>{gramatura}</span>
+                              <small>{contarPorFiltro('gramatura', gramatura)}</small>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
+              </div>
+            </div>
+
+            <div className="catalog-status-bar reveal">
+              <span>
+                {produtosFiltrados.length} produto
+                {produtosFiltrados.length !== 1 ? 's' : ''}
+              </span>
+
+              {filtrosAtivos.length > 0 && (
+                <button
+                  type="button"
+                  className="catalog-clear-inline"
+                  onClick={limparFiltros}
+                >
+                  Limpar filtros
+                </button>
               )}
             </div>
 
-            {/* Contagem — só aparece quando filtro ativo */}
-            {filtrosAtivos.length > 0 && (
-              <p className="text-sm" style={{ color: '#888' }}>
-                <span className="font-semibold" style={{ color: '#1A1A1A' }}>{produtosFiltrados.length}</span>{' '}
-                {produtosFiltrados.length === 1 ? 'produto encontrado' : 'produtos encontrados'}
-              </p>
-            )}
-          </div>
-
-          <select
-            value={ordenacao}
-            onChange={e => setOrdenacao(e.target.value)}
-            className="border rounded-lg px-3 py-2 text-sm outline-none"
-            style={{ borderColor: '#D5CCC0', color: '#1A1A1A', backgroundColor: '#fff' }}
-          >
-            {ORDENACAO.map(o => <option key={o}>{o}</option>)}
-          </select>
-        </div>
-
-        {/* Active filter tags */}
-        {filtrosAtivos.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap mb-5">
-            {filtrosAtivos.map(f => (
-              <span
-                key={f.label}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
-                style={{ backgroundColor: '#E8F4ED', color: '#2A5E40', border: '1px solid #C3DFD0' }}
-              >
-                {f.label}
-                <button onClick={f.remover} className="hover:opacity-70 transition-opacity leading-none" style={{ color: '#2A5E40' }}>×</button>
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Product Area */}
-        <div>
-
-          {/* Product Grid */}
-          {produtosFiltrados.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20" style={{ color: '#aaa' }}>
-              <svg viewBox="0 0 48 48" fill="none" className="w-12 h-12 mb-3 opacity-40">
-                <circle cx="24" cy="24" r="20" stroke="#aaa" strokeWidth="2" />
-                <path d="M16 24 L32 24" stroke="#aaa" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-              <p className="text-sm">Nenhum produto encontrado com esses filtros.</p>
-              <button onClick={limparFiltros} className="text-sm mt-2 underline" style={{ color: '#2A5E40' }}>
-                Limpar filtros
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-4 gap-6">
-              {produtosFiltrados.map(produto => (
-                <Link
-                  key={produto.id}
-                  to={ROUTES.CRIAR_FICHA}
-                  className="group block"
-                >
-                  {/* Image area */}
-                  <div
-                    className="relative w-full overflow-hidden"
-                    style={{ backgroundColor: '#1A1A1A', aspectRatio: '3/4' }}
+            {produtosFiltrados.length === 0 ? (
+              <div className="catalog-empty-state">
+                <h3>Nenhum produto encontrado</h3>
+                <p>Remova alguns filtros para voltar a ver as pecas disponiveis.</p>
+              </div>
+            ) : (
+              <div className="catalog-grid">
+                {produtosFiltrados.map((produto, index) => (
+                  <Link
+                    key={produto.id}
+                    to={ROUTES.CRIAR_FICHA}
+                    className="catalog-product-card reveal"
+                    style={{ transitionDelay: `${Math.min(index, 7) * 55}ms` }}
                   >
-                    {produto.imagem ? (
-                      <img
-                        src={produto.imagem}
-                        alt={produto.nome}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <IconeProduto categoria={produto.categoria} />
-                      </div>
-                    )}
-                    {produto.badge && (
-                      <span
-                        className="absolute top-3 left-3 px-2 py-0.5 rounded text-xs font-semibold"
-                        style={{ backgroundColor: '#2A5E40', color: '#fff' }}
-                      >
-                        {produto.badge}
+                    <div className="catalog-product-media">
+                      {produto.imagem ? (
+                        <img src={produto.imagem} alt={produto.nome} />
+                      ) : (
+                        <div className="catalog-product-icon">
+                          <IconeProduto categoria={produto.categoria} />
+                        </div>
+                      )}
+
+                      {produto.badge && (
+                        <span className="catalog-product-badge">{produto.badge}</span>
+                      )}
+                    </div>
+
+                    <div className="catalog-product-body">
+                      <h3 className="catalog-product-name">
+                        {formatarNomeProduto(produto.nome)}
+                      </h3>
+                      <span className="catalog-product-action">
+                        -&gt; Montar ficha tecnica &lt;-
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </main>
 
-                  {/* Info */}
-                  <div className="pt-3 text-center">
-                    <h3 className="text-xs font-light tracking-widest" style={{ color: '#1A1A1A' }}>
-                      {produto.nome}
-                    </h3>
-                    <p className="text-sm mt-1" style={{ color: '#1A1A1A' }}>
-                      R$ {produto.preco.toFixed(2).replace('.', ',')}
-                    </p>
-                  </div>
-                </Link>
-              ))}
+        <section className="catalog-cta">
+          <div className="catalog-cta-card reveal">
+            <div className="catalog-cta-copy">
+              <p className="section-label">Proximo passo</p>
+              <h2 className="catalog-cta-title">
+                {buildAnimatedText('Vamos montar sua', 'catalog-cta')}
+                <br />
+                <em>{buildAnimatedText('ficha tecnica?', 'catalog-cta-em')}</em>
+              </h2>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Footer */}
-      <footer className="bg-[#1A2E20] px-16 py-8 flex items-center justify-between">
-        <span className="text-white font-bold text-lg">Seri.</span>
-        <div className="flex gap-8">
-          <a href="#" className="text-white/50 hover:text-white text-sm transition-colors">Instagram</a>
-          <a href="#" className="text-white/50 hover:text-white text-sm transition-colors">WhatsApp</a>
-          <a href="#" className="text-white/50 hover:text-white text-sm transition-colors">Privacidade</a>
-        </div>
-        <span className="text-white/35 text-sm">© 2025 Seri.estudio</span>
-      </footer>
-    </div>
+            <div className="catalog-cta-actions">
+              <Link to={ROUTES.CRIAR_FICHA} className="btn-primary">
+                Criar ficha tecnica
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <footer id="contato" className="home-footer">
+          <span className="footer-brand">Seri.</span>
+
+          <div className="footer-links">
+            <a href="#">Instagram</a>
+            <a href="#">WhatsApp</a>
+            <a href="#">Privacidade</a>
+          </div>
+
+          <span className="footer-copy">© 2025 Seri.estudio</span>
+        </footer>
+      </div>
+    </PageTransition>
   )
 }
