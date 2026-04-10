@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import PageTransition from '../../components/PageTransition'
 import logo from '../../assets/images/logo.png'
@@ -90,12 +90,36 @@ const CTA_FEATURES = [
 ]
 
 export default function Home() {
+  const location = useLocation()
   const marqueeRef  = useRef<HTMLDivElement>(null)
   const glowRef     = useRef<HTMLDivElement>(null)
   const eyebrowRef  = useRef<HTMLSpanElement>(null)
   const stepsRef    = useRef<HTMLDivElement>(null)
   const statsRef    = useRef<HTMLDivElement>(null)
   const splineRef   = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const hash = location.hash.replace('#', '')
+
+    if (!hash) {
+      return
+    }
+
+    const scrollToHash = () => {
+      const target = document.getElementById(hash)
+
+      if (!target) {
+        return
+      }
+
+      const y = target.getBoundingClientRect().top + window.scrollY - 84
+      window.scrollTo({ top: y, behavior: 'smooth' })
+    }
+
+    const timeout = window.setTimeout(scrollToHash, 120)
+
+    return () => window.clearTimeout(timeout)
+  }, [location.hash, location.pathname])
 
   // ── overflow-x on body ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -301,8 +325,8 @@ export default function Home() {
             <span className="nav-logo-text">Seri.</span>
           </Link>
           <div className="nav-links">
-            <Link to={ROUTES.CATALOGO}>Catálogo</Link>
-            <a href="#portfolio">Portfólio</a>
+            <Link to={ROUTES.HOME}>Home</Link>
+            <Link to={ROUTES.CATALOGO}>{'Portf\u00F3lio'}</Link>
             <a href="#como-funciona">Como funciona</a>
             <a href="#contato">Contato</a>
             <Link to={ROUTES.LOGIN} className="nav-cta">Entrar</Link>

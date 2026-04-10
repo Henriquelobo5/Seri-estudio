@@ -433,8 +433,8 @@ export default function Catalogo() {
           </Link>
 
           <div className="nav-links">
-            <Link to={ROUTES.CATALOGO}>Catalogo</Link>
-            <a href={`${ROUTES.HOME}#portfolio`}>Portfolio</a>
+            <Link to={ROUTES.HOME}>Home</Link>
+            <Link to={ROUTES.CATALOGO}>{'Portf\u00F3lio'}</Link>
             <a href={`${ROUTES.HOME}#como-funciona`}>Como funciona</a>
             <a href={`${ROUTES.HOME}#contato`}>Contato</a>
             <Link to={ROUTES.LOGIN} className="nav-cta">
