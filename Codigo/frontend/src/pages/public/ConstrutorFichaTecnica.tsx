@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import { useAuth } from '../../context/AuthContext'
 import logo from '../../assets/images/logo.png'
@@ -89,6 +89,7 @@ function gramShort(gram: string) {
 
 export default function ConstrutorFichaTecnica() {
   const { user } = useAuth()
+  const navigate = useNavigate()
 
   const [currentStep, setCurrentStep] = useState(1)
   const [tipo,        setTipo]        = useState('Camiseta')
@@ -393,7 +394,13 @@ export default function ConstrutorFichaTecnica() {
             {currentStep < STEPS.length ? (
               <button
                 className={`cf-btn-next ${btnNextOn || currentStep > 1 ? 'on' : ''}`}
-                onClick={() => setCurrentStep(s => s + 1)}
+                onClick={() => {
+                  if (currentStep === 1) {
+                    navigate(ROUTES.DETALHES_PRODUTO)
+                  } else {
+                    setCurrentStep(s => s + 1)
+                  }
+                }}
               >
                 {currentStep === 1 ? 'Próximo: Detalhes do produto' : `Próximo: ${STEPS[currentStep].label}`}
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">

@@ -4,5 +4,6 @@ export const ROUTES = {
   CADASTRO: '/cadastro',
   CATALOGO: '/catalogo',
   CRIAR_FICHA: '/ficha/criar',
+  DETALHES_PRODUTO: '/ficha/detalhes',
   DASHBOARD: '/cliente',
 }

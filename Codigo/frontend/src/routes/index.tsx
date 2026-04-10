@@ -9,6 +9,7 @@ import Login from '../pages/auth/Login'
 import Cadastro from '../pages/auth/Cadastro'
 import Dashboard from '../pages/cliente/Dashboard'
 import ConstrutorFichaTecnica from '../pages/public/ConstrutorFichaTecnica'
+import DetalhesProduto from '../pages/public/DetalhesProduto'
 import Catalogo from '../pages/public/Catalogo'
 
 export default function RoutesApp() {
@@ -30,6 +31,7 @@ export default function RoutesApp() {
         <Route element={<PublicLayout />}>
           <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
           <Route path={ROUTES.CRIAR_FICHA} element={<ConstrutorFichaTecnica />} />
+          <Route path={ROUTES.DETALHES_PRODUTO} element={<DetalhesProduto />} />
           <Route path={ROUTES.CATALOGO} element={<Catalogo />} />
         </Route>
       </Route>
