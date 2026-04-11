@@ -1,0 +1,404 @@
+import { useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { ROUTES } from '../../routes/routePaths'
+import { useAuth } from '../../context/AuthContext'
+import logo from '../../assets/images/logo.png'
+import './MeusPedidos.css'
+
+// ── Tipos ─────────────────────────────────────────────────────────────────────
+
+type StatusKey = 'p' | 'o' | 'e'
+
+interface Pedido {
+  id: string
+  nome: string
+  meta: string
+  status: StatusKey
+  emoji: string
+  detalhes: {
+    tipo: string
+    tecido: string
+    gramatura: string
+    cor: string
+    tamanhos: string
+    posicao: string
+  }
+}
+
+// ── Mock data ─────────────────────────────────────────────────────────────────
+
+const PEDIDOS: Pedido[] = [
+  {
+    id: 'SERI-2025-4087',
+    nome: 'Camisetas turma 2025',
+    meta: '12 peças · Frente central · 14/03/2025',
+    status: 'p',
+    emoji: '👕',
+    detalhes: { tipo: 'Camiseta', tecido: '100% Algodão', gramatura: '180g/m²', cor: 'Preto', tamanhos: 'M, G', posicao: 'Frente central' },
+  },
+  {
+    id: 'SERI-2025-3901',
+    nome: 'Moletom evento abril',
+    meta: '8 peças · Costas central · 10/03/2025',
+    status: 'o',
+    emoji: '🧥',
+    detalhes: { tipo: 'Moletom', tecido: 'Moletom Fleece', gramatura: '300g/m²', cor: 'Preto', tamanhos: 'M, G, GG', posicao: 'Costas central' },
+  },
+  {
+    id: 'SERI-2025-3645',
+    nome: 'Ecobags brindes',
+    meta: '20 peças · Frente central · 02/02/2025',
+    status: 'e',
+    emoji: '👜',
+    detalhes: { tipo: 'Ecobag', tecido: 'Lona', gramatura: '300g/m²', cor: 'Natural', tamanhos: 'Único', posicao: 'Frente central' },
+  },
+  {
+    id: 'SERI-2025-3210',
+    nome: 'Camisetas banda',
+    meta: '30 peças · Frente e costas · 10/01/2025',
+    status: 'e',
+    emoji: '👕',
+    detalhes: { tipo: 'Camiseta', tecido: '100% Algodão', gramatura: '180g/m²', cor: 'Branco', tamanhos: 'P, M, G, GG', posicao: 'Frente e costas' },
+  },
+]
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function getInitials(name?: string, email?: string): string {
+  if (name) {
+    const parts = name.trim().split(' ')
+    return parts.length >= 2
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      : parts[0].slice(0, 2).toUpperCase()
+  }
+  return (email ?? 'U').slice(0, 2).toUpperCase()
+}
+
+function getFirstName(name?: string): string {
+  if (!name) return 'Cliente'
+  return name.trim().split(' ')[0]
+}
+
+const STATUS_LABEL: Record<StatusKey, string> = {
+  p: 'Em produção',
+  o: 'Orçamento enviado',
+  e: 'Entregue',
+}
+
+// ── Sub-componente: card de pedido ────────────────────────────────────────────
+
+function PedidoCard({ pedido, isOpen, onToggle }: {
+  pedido: Pedido
+  isOpen: boolean
+  onToggle: () => void
+}) {
+  const badgeClass = { p: 'mp-badge-p', o: 'mp-badge-o', e: 'mp-badge-e' }[pedido.status]
+  const isEntregue = pedido.status === 'e'
+  const { tipo, tecido, gramatura, cor, tamanhos, posicao } = pedido.detalhes
+
+  return (
+    <div className={`mp-pcard ${isOpen ? 'open' : ''}`}>
+      <div className="mp-pm-main" onClick={onToggle}>
+        <div className="mp-picon">{pedido.emoji}</div>
+        <div className="mp-pinfo">
+          <div className="mp-pcode"><b>SERI</b>{pedido.id.slice(4)}</div>
+          <div className="mp-pname">{pedido.nome}</div>
+          <div className="mp-pmeta">{pedido.meta}</div>
+        </div>
+        <div className="mp-pright">
+          <span className={`mp-badge ${badgeClass}`}>{STATUS_LABEL[pedido.status]}</span>
+          <svg
+            className="mp-chev"
+            width="14" height="14" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" strokeWidth="2"
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
+      </div>
+
+      {isOpen && (
+        <div className="mp-pdetail">
+          <div className="mp-dgrid">
+            {[
+              ['Tipo', tipo], ['Tecido', tecido], ['Gramatura', gramatura],
+              ['Cor', cor],   ['Tamanhos', tamanhos], ['Posição', posicao],
+            ].map(([label, val]) => (
+              <div key={label} className="mp-di">
+                <div className="mp-dil">{label}</div>
+                <div className="mp-div">{val}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mp-dacts">
+            <button className="mp-da mp-da-p">
+              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              Ver ficha completa
+            </button>
+            {isEntregue ? (
+              <button className="mp-da mp-da-d">
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <polyline points="1 4 1 10 7 10"/>
+                  <path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
+                </svg>
+                Refazer pedido
+              </button>
+            ) : (
+              <button className="mp-da mp-da-d">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="rgba(37,211,102,.75)">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/>
+                </svg>
+                Falar com estúdio
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Componente principal ──────────────────────────────────────────────────────
+
+type Filtro = 'todos' | StatusKey
+
+export default function MeusPedidos() {
+  const { user } = useAuth()
+  const searchRef = useRef<HTMLInputElement>(null)
+
+  const initials  = getInitials(user?.name, user?.email)
+  const firstName = getFirstName(user?.name)
+
+  const [filtro,  setFiltro]  = useState<Filtro>('todos')
+  const [openId,  setOpenId]  = useState<string | null>(null)
+  const [busca,   setBusca]   = useState('')
+
+  // Stats
+  const total      = PEDIDOS.length
+  const emProd     = PEDIDOS.filter(p => p.status === 'p').length
+  const entregues  = PEDIDOS.filter(p => p.status === 'e').length
+
+  // Filtragem
+  const pedidosFiltrados = PEDIDOS.filter(p => {
+    const passaFiltro = filtro === 'todos' || p.status === filtro
+    const q = busca.trim().toUpperCase()
+    const passaBusca = !q || p.id.replace(/-/g, '').includes(q.replace(/-/g, '')) || p.nome.toUpperCase().includes(q)
+    return passaFiltro && passaBusca
+  })
+
+  function toggleCard(id: string) {
+    setOpenId(prev => prev === id ? null : id)
+  }
+
+  function focusSearch() {
+    searchRef.current?.focus()
+  }
+
+  return (
+    <div className="mp-page">
+      <div className="mp-grain" aria-hidden="true" />
+
+      {/* ── NAVBAR ────────────────────────────────────────────────────────── */}
+      <nav className="mp-nav">
+        <Link to={ROUTES.HOME} className="mp-nav-brand">
+          <div className="mp-nav-logo">
+            <img src={logo} alt="Seri." />
+          </div>
+          <span className="mp-nav-name">Seri.</span>
+        </Link>
+
+        <div className="mp-nav-center">
+          <Link to={ROUTES.HOME} className="mp-nl">Home</Link>
+          <Link to={ROUTES.CATALOGO} className="mp-nl">Portfólio</Link>
+          <a href={`${ROUTES.HOME}#como-funciona`} className="mp-nl">Como funciona</a>
+          <Link to={ROUTES.MEUS_PEDIDOS} className="mp-nl mp-nl-active">
+            <span className="mp-nav-pdot" />
+            Meus pedidos
+          </Link>
+        </div>
+
+        <div className="mp-nav-right">
+          <div className="mp-nav-cta" style={{ cursor: 'default' }}>
+            <div className="mp-nav-avatar">{initials}</div>
+            Minha conta
+          </div>
+        </div>
+      </nav>
+
+      {/* ── PAGE HERO ─────────────────────────────────────────────────────── */}
+      <div className="mp-page-hero">
+        <div className="mp-hero-inner">
+          <div>
+            <div className="mp-hero-eyebrow">Olá, {firstName}</div>
+            <h1 className="mp-hero-h1">Meus pedidos</h1>
+            <p className="mp-hero-sub">Acompanhe suas fichas técnicas e o status de cada produção</p>
+          </div>
+          <div className="mp-stats-row">
+            <div className="mp-stat">
+              <div className="mp-stat-val">{total}</div>
+              <div className="mp-stat-lbl">Total</div>
+            </div>
+            <div className="mp-stat">
+              <div className="mp-stat-val mp-hi">{emProd}</div>
+              <div className="mp-stat-lbl">Em produção</div>
+            </div>
+            <div className="mp-stat">
+              <div className="mp-stat-val">{entregues}</div>
+              <div className="mp-stat-lbl">Entregues</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── LAYOUT ────────────────────────────────────────────────────────── */}
+      <div className="mp-layout">
+
+        {/* LISTA */}
+        <div>
+          <div className="mp-list-head">
+            <h2 className="mp-list-title">Fichas técnicas</h2>
+            <Link to={ROUTES.CRIAR_FICHA} className="mp-btn-nova">
+              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Nova ficha
+            </Link>
+          </div>
+
+          {/* Filtros */}
+          <div className="mp-filters">
+            {([
+              ['todos', 'Todos'],
+              ['p',     'Em produção'],
+              ['o',     'Aguardando orçamento'],
+              ['e',     'Entregues'],
+            ] as [Filtro, string][]).map(([key, label]) => (
+              <button
+                key={key}
+                className={`mp-fbtn ${filtro === key ? 'on' : ''}`}
+                onClick={() => { setFiltro(key); setOpenId(null) }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Cards */}
+          {pedidosFiltrados.length === 0 ? (
+            <div className="mp-empty">
+              <p>Nenhum pedido encontrado.</p>
+            </div>
+          ) : (
+            pedidosFiltrados.map(p => (
+              <PedidoCard
+                key={p.id}
+                pedido={p}
+                isOpen={openId === p.id}
+                onToggle={() => toggleCard(p.id)}
+              />
+            ))
+          )}
+        </div>
+
+        {/* SIDEBAR */}
+        <div className="mp-sidebar">
+          <div className="mp-scard">
+
+            {/* Perfil */}
+            <div className="mp-ps">
+              <div className="mp-pt">
+                <div className="mp-avwrap">
+                  <div className="mp-av">{initials}</div>
+                  <div className="mp-avon" />
+                </div>
+                <div>
+                  <div className="mp-uname">{user?.name ?? 'Cliente'}</div>
+                  <div className="mp-uemail">{user?.email ?? ''}</div>
+                </div>
+              </div>
+
+              {/* Mini stats */}
+              <div className="mp-pmini">
+                <div className="mp-pmi">
+                  <div className="mp-pmiv">{total}</div>
+                  <div className="mp-pmil">Pedidos</div>
+                </div>
+                <div className="mp-pmi">
+                  <div className="mp-pmiv mp-hi">{emProd}</div>
+                  <div className="mp-pmil">Ativos</div>
+                </div>
+                <div className="mp-pmi">
+                  <div className="mp-pmiv">{entregues}</div>
+                  <div className="mp-pmil">Entregues</div>
+                </div>
+              </div>
+
+              {/* Busca */}
+              <div className="mp-srch">
+                <svg className="mp-srchi" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                  ref={searchRef}
+                  type="text"
+                  placeholder="Buscar por código SERI-..."
+                  value={busca}
+                  onChange={e => setBusca(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="mp-divider" />
+
+            {/* Atalhos */}
+            <div className="mp-atls">
+              <div className="mp-atl-title">Atalhos</div>
+
+              <Link to={ROUTES.CRIAR_FICHA} className="mp-atl">
+                <span className="mp-atldot" style={{ background: 'var(--mp-lime)' }} />
+                <span className="mp-atllbl">Nova ficha técnica</span>
+                <svg className="mp-atlarr" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </Link>
+
+              <button className="mp-atl" onClick={focusSearch}>
+                <span className="mp-atldot" style={{ background: '#60a5fa' }} />
+                <span className="mp-atllbl">Consultar por código</span>
+                <svg className="mp-atlarr" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+
+              <a
+                href="https://wa.me/5500000000000"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mp-atl"
+              >
+                <span className="mp-atldot" style={{ background: 'rgba(37,211,102,.8)' }} />
+                <span className="mp-atllbl">Falar com o estúdio</span>
+                <svg className="mp-atlarr" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </a>
+
+              <Link to={ROUTES.DASHBOARD} className="mp-atl">
+                <span className="mp-atldot" style={{ background: 'var(--mp-muted2)' }} />
+                <span className="mp-atllbl">Editar meu perfil</span>
+                <svg className="mp-atlarr" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </Link>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

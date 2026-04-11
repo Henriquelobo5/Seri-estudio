@@ -138,13 +138,14 @@ export default function ConstrutorFichaTecnica() {
           <Link to={ROUTES.CATALOGO}>{'Portf\u00F3lio'}</Link>
           <a href={`${ROUTES.HOME}#como-funciona`}>Como funciona</a>
           <a href={`${ROUTES.HOME}#contato`}>Contato</a>
+          <Link to={ROUTES.MEUS_PEDIDOS}>Meus pedidos</Link>
         </div>
 
         <div className="cf-nav-right">
-          <Link to={ROUTES.DASHBOARD} className="cf-nav-cta">
+          <div className="cf-nav-cta" style={{ cursor: 'default' }}>
             <div className="cf-nav-avatar">{initials}</div>
             Minha conta
-          </Link>
+          </div>
         </div>
       </nav>
 

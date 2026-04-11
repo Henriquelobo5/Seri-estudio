@@ -260,13 +260,14 @@ export default function DetalhesProduto() {
           <Link to={ROUTES.CATALOGO}>Portfólio</Link>
           <a href={`${ROUTES.HOME}#como-funciona`}>Como funciona</a>
           <a href={`${ROUTES.HOME}#contato`}>Contato</a>
+          <Link to={ROUTES.MEUS_PEDIDOS}>Meus pedidos</Link>
         </div>
 
         <div className="dp-nav-right">
-          <Link to={ROUTES.DASHBOARD} className="dp-nav-cta">
+          <div className="dp-nav-cta" style={{ cursor: 'default' }}>
             <div className="dp-nav-avatar">{initials}</div>
             Minha conta
-          </Link>
+          </div>
         </div>
       </nav>
 
@@ -543,6 +544,7 @@ export default function DetalhesProduto() {
             <button
               className={`dp-btn-next ${btnNextOn ? 'on' : ''}`}
               disabled={!btnNextOn}
+              onClick={() => btnNextOn && navigate(ROUTES.DETALHES_PEDIDO)}
             >
               Próximo: Detalhes →
             </button>

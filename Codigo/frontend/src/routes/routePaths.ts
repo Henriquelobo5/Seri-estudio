@@ -5,5 +5,8 @@ export const ROUTES = {
   CATALOGO: '/catalogo',
   CRIAR_FICHA: '/ficha/criar',
   DETALHES_PRODUTO: '/ficha/detalhes',
+  DETALHES_PEDIDO: '/ficha/pedido',
+  CONFIRMACAO: '/ficha/confirmacao',
+  MEUS_PEDIDOS: '/pedidos',
   DASHBOARD: '/cliente',
 }

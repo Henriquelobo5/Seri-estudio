@@ -42,7 +42,7 @@ export default function Login() {
       const userName = payload.nome || payload.name || email.split('@')[0]
       
       setAuth(token, { email, name: userName })
-      navigate(ROUTES.DASHBOARD, { replace: true })
+      navigate(ROUTES.CATALOGO, { replace: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Falha no login. Verifique suas credenciais.')
     } finally {

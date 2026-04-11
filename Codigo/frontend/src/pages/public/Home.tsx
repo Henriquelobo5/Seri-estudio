@@ -329,6 +329,7 @@ export default function Home() {
             <Link to={ROUTES.CATALOGO}>{'Portf\u00F3lio'}</Link>
             <a href="#como-funciona">Como funciona</a>
             <a href="#contato">Contato</a>
+            <Link to={ROUTES.MEUS_PEDIDOS}>Meus pedidos</Link>
             <Link to={ROUTES.LOGIN} className="nav-cta">Entrar</Link>
           </div>
         </nav>

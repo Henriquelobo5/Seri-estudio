@@ -437,6 +437,7 @@ export default function Catalogo() {
             <Link to={ROUTES.CATALOGO}>{'Portf\u00F3lio'}</Link>
             <a href={`${ROUTES.HOME}#como-funciona`}>Como funciona</a>
             <a href={`${ROUTES.HOME}#contato`}>Contato</a>
+            <Link to={ROUTES.MEUS_PEDIDOS}>Meus pedidos</Link>
             <Link to={ROUTES.LOGIN} className="nav-cta">
               Entrar
             </Link>
