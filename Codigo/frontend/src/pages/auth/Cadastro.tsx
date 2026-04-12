@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import { loginRequest, registerRequest } from '../../services/auth'
 import { useAuth } from '../../context/AuthContext'
-import LoadingSpinner from '../../components/LoadingSpinner'
-import PageTransition from '../../components/PageTransition'
+import logo from '../../assets/images/logo.png'
+import './Auth.css'
 
 const onlyDigits = (value: string) => value.replace(/\D/g, '')
 
@@ -87,7 +87,7 @@ export default function Cadastro() {
 
       const token = await loginRequest(email, senha)
       setAuth(token, { email, name: nome })
-      navigate(ROUTES.DASHBOARD, { replace: true })
+      navigate(ROUTES.CATALOGO, { replace: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Falha ao cadastrar usuário.')
     } finally {
@@ -109,105 +109,190 @@ export default function Cadastro() {
   }
 
   return (
-    <PageTransition>
-      <div className="min-h-screen bg-[#F0EBE3] flex items-center justify-center px-4 py-10 animate-fadeIn">
-        <div className="w-full max-w-xl bg-white rounded-xl shadow-sm p-8 border border-[#EEE8DF] transition-all duration-300 animate-slideUp">
-          <Link to={ROUTES.LOGIN} className="text-[#2A5E40] text-2xl font-bold mb-8 inline-block hover:opacity-80 transition-opacity animate-fadeIn-delay-100">
-            Seri.
-          </Link>
+    <div className="auth-page">
+      <div className="auth-grain" aria-hidden="true" />
+      <div className="auth-bg-grid" aria-hidden="true" />
+      <div className="auth-glow-tl" aria-hidden="true" />
+      <div className="auth-glow-br" aria-hidden="true" />
 
-          <h1 className="text-2xl font-semibold text-[#1A1A1A] mb-2 animate-fadeIn-delay-200">Criar conta</h1>
-          <p className="text-[#888] text-sm mb-6 animate-fadeIn-delay-200">Preencha os dados para cadastrar.</p>
-
-          <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={onSubmit}>
-            <div className="md:col-span-2 animate-fadeIn-delay-300">
-              <label className="block text-sm text-[#444] mb-1.5">Nome</label>
-              <input
-                required
-                value={nome}
-                onChange={onInput(setNome)}
-                disabled={loading}
-                className="w-full border border-[#D5CCC0] bg-white rounded-lg px-4 py-3 text-sm disabled:opacity-50 transition-opacity"
-              />
-            </div>
-
-            <div className="md:col-span-2 animate-fadeIn-delay-300">
-              <label className="block text-sm text-[#444] mb-1.5">E-mail</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={onInput(setEmail)}
-                disabled={loading}
-                className="w-full border border-[#D5CCC0] bg-white rounded-lg px-4 py-3 text-sm disabled:opacity-50 transition-opacity"
-              />
-            </div>
-
-            <div className="md:col-span-2 animate-fadeIn-delay-300">
-              <label className="block text-sm text-[#444] mb-1.5">Senha</label>
-              <input
-                type="password"
-              required
-              value={senha}
-              onChange={onInput(setSenha)}
-              disabled={loading}
-              className="w-full border border-[#D5CCC0] bg-white rounded-lg px-4 py-3 text-sm disabled:opacity-50 transition-opacity"
-            />
+      {/* ── HEADER ── */}
+      <header className="auth-header">
+        <Link to={ROUTES.HOME} className="auth-logo">
+          <div className="auth-logo-box">
+            <img src={logo} alt="Seri." />
           </div>
-
-          <div className="animate-fadeIn-delay-300">
-            <label className="block text-sm text-[#444] mb-1.5">CPF/CNPJ</label>
-            <input
-              value={cpfCnpj}
-              onChange={onCpfCnpjInput}
-              inputMode="numeric"
-              disabled={loading}
-              placeholder="000.000.000-00 ou 00.000.000/0000-00"
-              className="w-full border border-[#D5CCC0] bg-white rounded-lg px-4 py-3 text-sm disabled:opacity-50 transition-opacity"
-            />
-          </div>
-
-          <div className="animate-fadeIn-delay-300">
-            <label className="block text-sm text-[#444] mb-1.5">WhatsApp</label>
-            <input
-              value={whatsapp}
-              onChange={onWhatsappInput}
-              inputMode="numeric"
-              disabled={loading}
-              placeholder="(00) 00000-0000"
-              className="w-full border border-[#D5CCC0] bg-white rounded-lg px-4 py-3 text-sm disabled:opacity-50 transition-opacity"
-            />
-          </div>
-
-          <div className="md:col-span-2 animate-fadeIn-delay-300">
-            <label className="block text-sm text-[#444] mb-1.5">Endereço</label>
-            <input
-              value={endereco}
-              onChange={onInput(setEndereco)}
-              disabled={loading}
-              className="w-full border border-[#D5CCC0] bg-white rounded-lg px-4 py-3 text-sm disabled:opacity-50 transition-opacity"
-            />
-          </div>
-
-          {error && <p className="md:col-span-2 text-sm text-red-600 animate-slideDown">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="md:col-span-2 w-full bg-[#2A5E40] text-white py-3 rounded-lg text-sm font-medium hover:bg-[#1D4A2F] transition-all duration-200 disabled:opacity-70 flex items-center justify-center animate-fadeIn-delay-400"
-          >
-            {loading ? <LoadingSpinner /> : 'Cadastrar e entrar'}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-[#888] mt-6 animate-fadeIn-delay-400">
+          <span className="auth-logo-name">Seri.</span>
+        </Link>
+        <p className="auth-header-hint">
           Já tem conta?{' '}
-          <Link to={ROUTES.LOGIN} className="text-[#2A5E40] font-medium hover:underline transition-colors">
-            Entrar
-          </Link>
+          <Link to={ROUTES.LOGIN}>Entrar</Link>
         </p>
+      </header>
+
+      {/* ── BODY ── */}
+      <main className="auth-page-body">
+        <div className="auth-inner">
+
+          {/* ── LADO ESQUERDO ── */}
+          <div className="auth-side-text">
+            <span className="auth-eyebrow">Plataforma de pedidos</span>
+            <h1 className="auth-big-title">
+              Crie sua conta<br />e comece <em>agora.</em>
+            </h1>
+            <p className="auth-big-desc">
+              Cadastre-se gratuitamente e tenha acesso completo ao estúdio digital para gerenciar suas peças.
+            </p>
+            <div className="auth-feats">
+              <div className="auth-feat">
+                <div className="auth-feat-icon">
+                  <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                Criação de fichas técnicas digitais
+              </div>
+              <div className="auth-feat">
+                <div className="auth-feat-icon">
+                  <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                Acompanhamento em tempo real
+              </div>
+              <div className="auth-feat">
+                <div className="auth-feat-icon">
+                  <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                Histórico completo de pedidos
+              </div>
+            </div>
+          </div>
+
+          <div className="auth-vdivider" aria-hidden="true" />
+
+          {/* ── FORMULÁRIO ── */}
+          <div className="auth-form-wrap">
+            {/* Tabs */}
+            <div className="auth-tabs">
+              <Link to={ROUTES.LOGIN} className="auth-tab">Entrar</Link>
+              <span className="auth-tab on">Cadastrar</span>
+            </div>
+
+            <h2 className="auth-form-title">Criar conta</h2>
+            <p className="auth-form-sub">Preencha os dados para começar.</p>
+
+            <form onSubmit={onSubmit}>
+              <div className="auth-field">
+                <label htmlFor="nome">Nome completo</label>
+                <input
+                  id="nome"
+                  type="text"
+                  required
+                  value={nome}
+                  onChange={onInput(setNome)}
+                  placeholder="Seu nome"
+                  disabled={loading}
+                  autoComplete="name"
+                />
+              </div>
+
+              <div className="auth-field">
+                <label htmlFor="email">E-mail</label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={onInput(setEmail)}
+                  placeholder="seu@email.com"
+                  disabled={loading}
+                  autoComplete="email"
+                />
+              </div>
+
+              <div className="auth-field">
+                <label htmlFor="senha">Senha</label>
+                <input
+                  id="senha"
+                  type="password"
+                  required
+                  value={senha}
+                  onChange={onInput(setSenha)}
+                  placeholder="••••••••"
+                  disabled={loading}
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div className="auth-field-row">
+                <div className="auth-field">
+                  <label htmlFor="cpfCnpj">CPF / CNPJ</label>
+                  <input
+                    id="cpfCnpj"
+                    inputMode="numeric"
+                    value={cpfCnpj}
+                    onChange={onCpfCnpjInput}
+                    placeholder="000.000.000-00"
+                    disabled={loading}
+                  />
+                </div>
+                <div className="auth-field">
+                  <label htmlFor="whatsapp">WhatsApp</label>
+                  <input
+                    id="whatsapp"
+                    inputMode="numeric"
+                    value={whatsapp}
+                    onChange={onWhatsappInput}
+                    placeholder="(00) 00000-0000"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              <div className="auth-field">
+                <label htmlFor="endereco">Endereço</label>
+                <input
+                  id="endereco"
+                  type="text"
+                  value={endereco}
+                  onChange={onInput(setEndereco)}
+                  placeholder="Rua, número, cidade"
+                  disabled={loading}
+                  autoComplete="street-address"
+                />
+              </div>
+
+              {error && <div className="auth-error">{error}</div>}
+
+              <button type="submit" className="auth-btn-go" disabled={loading}>
+                {loading ? (
+                  <span className="auth-spinner" />
+                ) : (
+                  <>
+                    Cadastrar e entrar
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
+                    </svg>
+                  </>
+                )}
+              </button>
+            </form>
+
+            <p className="auth-switch">
+              Já tem conta?{' '}
+              <Link to={ROUTES.LOGIN}>Entrar</Link>
+            </p>
+          </div>
+
         </div>
-      </div>
-    </PageTransition>
+      </main>
+
+      {/* ── FOOTER ── */}
+      <footer className="auth-footer">
+        © {new Date().getFullYear()} Seri. Estúdio — Todos os direitos reservados.
+      </footer>
+    </div>
   )
 }
