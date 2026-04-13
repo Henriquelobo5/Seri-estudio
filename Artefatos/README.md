@@ -1,16 +1,24 @@
 # Artefatos do projeto
 
-Este diretório mantém os artefatos do projeto. 
+Este diretorio reune os principais artefatos de analise e prototipacao da aplicacao.
 
+## Arquivos disponiveis
 
-Liste os artefatos produzidos, com suas localizações e descrição do conteúdo.
+- `DiagramaDeCasosDeUso (1).png`: diagrama de caso de uso do sistema
+- `Diagrama de Entidades e Relacionamentos.png`: diagrama ER do banco de dados
+- `Requisitos-seri-estudio.pdf`: documento de requisitos
 
-Por exemplo, pode-se criar um diretório "atas", que seria descrito da seguinte forma:
-* `/atas`
-	* **Ata_xx_ago_2020.docx**: Ata de reunião do dia xx de agosto de 2020.
+## Wireframes
 
-Pode-se também criar um diretório "canvas", que seria descrito da seguinte forma:
-* `/canvas`
-	* **BusinessModelCanvas.pdf**: Canvas do modelo de negócios.
+Os prototipos de tela estao em `Wireframes/`, incluindo:
 
-Assim, sucessivamente para outros artefatos como `processos` e `DER`, etc.
+- Home
+- Login
+- Cadastro
+- Portfolio
+- Construtor Ficha Tecnica
+- Detalhes do Produto
+- Detalhes do Pedido
+- Meus Pedidos
+- Minha Conta
+- Telas administrativas

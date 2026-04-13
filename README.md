@@ -1,118 +1,199 @@
 <p align="center">
-  <img src="Codigo/frontend/src/assets/images/logo.png" width="200"/>
+  <img src="Codigo/frontend/src/assets/images/logo.png" width="180" alt="Logo Seri.estudio" />
 </p>
 
 # Seri.Estudio
 
-A Seri. é uma plataforma web de pedidos e gestão desenvolvida para um estúdio de serigrafia sob encomenda, com o objetivo de digitalizar e organizar todo o fluxo operacional do negócio desde o primeiro contato do cliente até a expedição do pedido. O sistema permite que o cliente monte sua própria ficha técnica, selecione produtos por categoria, faça upload de arquivos de arte e receba um código único de identificação, eliminando a dependência do WhatsApp como canal principal de pedidos.
+Seri.estudio e uma plataforma web desenvolvida para digitalizar o fluxo de pedidos de um estudio de serigrafia sob encomenda. O sistema permite que o cliente monte sua ficha tecnica, envie a arte, acompanhe o pedido e centralize a comunicacao que antes acontecia de forma manual.
 
-Do lado do gestor, a plataforma oferece controle financeiro completo por encomenda, com registro de custos, cálculo automático de margem de lucro, controle de estoque e acompanhamento da produção em um fluxo Kanban com etapas de Corte, Estamparia, Costura, Revisão e Expedição. Com isso, o projeto transforma uma operação totalmente manual em um processo estruturado, profissional e escalável.
+## Equipe
 
-## Alunos integrantes da equipe
+- Arthur Goncalves Vieira
+- Henrique Lobo Leite Neves
+- Matheus Guilherme Viana Pereira
+- Thiago Costa Soares
+- Vinicius Oliveira Ramos
 
-* Arthur Gonçalves Vieira
-* Henrique Lobo Leite Neves
-* Matheus Guilherme Viana Pereira
-* Thiago Costa Soares
-* Vinicius Oliveira Ramos
+## Professores responsaveis
 
-## Professores responsáveis
+- Lucila Ishitani
+- Soraia Lucia da Silva
 
-* Lucila Ishitani
-* Soraia Lúcia da Silva
+## Estrutura do repositorio
 
-## Instruções de utilização
+- `Artefatos/`: diagramas, requisitos e wireframes
+- `Codigo/backend/`: API em Spring Boot
+- `Codigo/frontend/`: interface web em React + Vite
+- `Documentacao/`: documentos do projeto e registros formais
+- `Divulgacao/`: apresentacao e materiais de divulgacao
 
-### Pré-requisitos
+## Artefatos da segunda entrega
 
-* Node.js instalado
-* Java JDK 17 instalado
-* VS Code (ou outra IDE)
+### Planejamento da sprint
+
+- O planejamento da sprint deve ser registrado em ferramenta externa do grupo, como Trello, GitHub Projects ou equivalente. Este repositorio nao possui esse link versionado ate o momento.
+
+### Diagramas e requisitos
+
+- Caso de uso: `Artefatos/DiagramaDeCasosDeUso (1).png`
+- Diagrama ER: `Artefatos/Diagrama de Entidades e Relacionamentos.png`
+- Requisitos: `Artefatos/Requisitos-seri-estudio.pdf`
+
+### Prototipos de tela
+
+- Wireframes gerais: `Artefatos/Wireframes/`
+- Telas disponiveis: Home, Login, Cadastro, Portfolio, Construtor Ficha Tecnica, Detalhes do Produto, Detalhes do Pedido, Meus Pedidos, Minha Conta e telas administrativas.
+
+### Atas e documentos com o cliente
+
+- Documento principal do projeto: `Documentacao/SeriEstudio.pdf`
+- Ata de acordo inicial com cliente: `Documentacao/AtaAcordoInicial-ComClienteExterno-Manha_assinado_assinado_assinado_29_assinado_assinado_assinado.pdf`
+- Termo de sigilo: `Documentacao/Termo_de_Sigilo_e_Confidencialidade_29_assinado_assinado.pdf`
+- Procuracao NIT PUC Minas: `Documentacao/PROCURACAO_NIT_PUC_MINAS__assinado.pdf`
+- Pasta de atas: `Documentacao/Ata/`
+
+### Apresentacao
+
+- Apresentacao da entrega: `Divulgacao/Apresentacao/TI4 - Seri Estudio (1).pdf`
+
+## Implementacao atual
 
 ### Frontend
 
-1. Acesse a pasta do frontend:
-
-```
-cd Codigo/frontend
-```
-
-2. Instale as dependências:
-
-```
-npm install
-```
-
-3. Execute o projeto:
-
-```
-npm run dev
-```
-
-4. Acesse no navegador:
-
-```
-http://localhost:5173
-```
+- React 18
+- TypeScript
+- Vite
+- React Router
 
 ### Backend
 
-1. Acesse a pasta do backend:
+- Java 21
+- Spring Boot 3
+- Spring Security
+- Spring Data JPA
+- PostgreSQL
 
-```
+## Funcionalidades implementadas
+
+- Home publica com apresentacao do estudio
+- Portfolio de produtos
+- Cadastro e login de usuario
+- Construtor de ficha tecnica
+- Fluxo de detalhes do produto e detalhes do pedido
+- Area de meus pedidos
+- API para autenticacao, ficha tecnica e pedidos
+
+## Como rodar o projeto
+
+### Pre-requisitos
+
+- Docker Desktop
+- Node.js 18 ou superior
+- npm
+- Java 21
+
+### Opcao recomendada: banco em Docker e backend local
+
+1. Abra um terminal na raiz do projeto.
+2. Suba o banco de dados:
+
+```powershell
 cd Codigo/backend
+docker compose up -d db
 ```
 
-2. Execute a aplicação:
+3. No mesmo terminal, configure as variaveis de ambiente do backend:
 
+```powershell
+$env:SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:5432/seriestudio"
+$env:SPRING_DATASOURCE_USERNAME="seriestudio"
+$env:SPRING_DATASOURCE_PASSWORD="seriestudio"
 ```
+
+4. Rode o backend:
+
+```powershell
 .\mvnw.cmd spring-boot:run
 ```
 
-3. A API estará disponível em:
+5. Em outro terminal, rode o frontend:
 
-```
-http://localhost:8080
-```
-
-### Teste da API
-
-Para testar o backend, acesse:
-
-```
-http://localhost:8080/pedido/teste
+```powershell
+cd Codigo/frontend
+npm install
+npm run dev
 ```
 
-ou
+### Opcao alternativa: backend e banco em containers
 
+Se preferir subir o backend inteiro pelo Docker:
+
+```powershell
+cd Codigo/backend
+docker compose up -d --build
 ```
-http://localhost:8080/pedido/codigo
+
+Depois, em outro terminal:
+
+```powershell
+cd Codigo/frontend
+npm install
+npm run dev
 ```
 
-## Arquitetura do Sistema
+## URLs de execucao
 
-O sistema foi estruturado seguindo uma arquitetura cliente-servidor, dividida em frontend e backend.
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:8080`
+- PostgreSQL: `localhost:5432`
+
+## Endpoints uteis para teste
+
+- API online: `http://localhost:8080/`
+- Teste rapido do backend: `http://localhost:8080/pedido/teste`
+- Geracao de codigo de pedido: `http://localhost:8080/pedido/codigo`
+
+## Autenticacao
+
+- Nao ha credenciais padrao documentadas no repositorio.
+- Para testar a area autenticada, crie uma conta pela tela de cadastro do frontend.
+- Endpoints principais:
+  - `POST /auth/register`
+  - `POST /auth/login`
+  - `POST /auth/refresh`
+
+## Observacoes importantes
+
+- O arquivo `application.properties` do backend usa variaveis de ambiente para conexao com o banco. Nao e necessario editar esse arquivo para rodar localmente.
+- O projeto esta configurado com `spring.jpa.hibernate.ddl-auto=create`, entao a estrutura do banco pode ser recriada ao reiniciar o backend.
+- Se o Docker Desktop nao iniciar no Windows por causa do WSL, atualize com:
+
+```powershell
+wsl --update
+wsl --shutdown
+```
+
+## Organizacao do codigo
 
 ### Frontend
 
-Desenvolvido com React, Vite e Tailwind CSS, responsável pela interface do usuário. A aplicação foi organizada em páginas, componentes reutilizáveis, serviços de comunicação com a API, gerenciamento de estado e utilitários, garantindo organização e escalabilidade.
+- `Codigo/frontend/src/pages/`: paginas da aplicacao
+- `Codigo/frontend/src/components/`: componentes reutilizaveis
+- `Codigo/frontend/src/context/`: contexto de autenticacao
+- `Codigo/frontend/src/routes/`: definicao de rotas
 
 ### Backend
 
-Desenvolvido com Spring Boot, seguindo arquitetura em camadas:
+- `Codigo/backend/src/main/java/com/seriestudio/backend/controller/`: controllers REST
+- `Codigo/backend/src/main/java/com/seriestudio/backend/service/`: regras de negocio
+- `Codigo/backend/src/main/java/com/seriestudio/backend/repository/`: acesso a dados
+- `Codigo/backend/src/main/java/com/seriestudio/backend/model/`: entidades
+- `Codigo/backend/src/main/java/com/seriestudio/backend/dto/`: objetos de transferencia
 
-* Controller: responsável por receber requisições HTTP
-* Service: responsável pelas regras de negócio
-* Model: representação das entidades do sistema
-* Repository: responsável pelo acesso a dados
-* DTO: responsável pela transferência de dados entre camadas
+## Organizacao para avaliacao
 
-Foram implementados endpoints iniciais para demonstrar o funcionamento da API, como a geração de código de pedido.
+- Implementacao da sprint: `Codigo/frontend/` e `Codigo/backend/`
+- Diagramas e prototipos: `Artefatos/`
+- Documentacao atualizada: `Documentacao/`
+- Apresentacao: `Divulgacao/Apresentacao/`
 
-### Banco de Dados
-
-O sistema utilizará PostgreSQL para persistência de dados.
-
-### Comunicação
-
-A comunicação entre frontend e backend é realizada por meio de APIs REST.
