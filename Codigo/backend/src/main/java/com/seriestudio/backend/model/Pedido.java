@@ -18,6 +18,9 @@ public class Pedido {
 
     private LocalDateTime dataAbertura;
     private String statusAtual;
+    private String quantidades;
+    @Column(columnDefinition = "TEXT")
+    private String observacoes;
 
     @ManyToOne
     @JoinColumn(name = "cod_unico")

@@ -4,6 +4,7 @@ import com.seriestudio.backend.model.usuario.Cliente;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "ficha_tecnica")
@@ -14,9 +15,12 @@ public class FichaTecnica {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long codUnico;
 
+    private String identificacao;
+    private String codigoDisplay;
     private String produtoTipo;
     private String especificacoes;
     private String urlArte;
+    private LocalDateTime dataAbertura;
 
     @ManyToOne
     @JoinColumn(name = "id_cli")
