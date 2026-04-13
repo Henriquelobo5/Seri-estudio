@@ -37,6 +37,22 @@
   margin-bottom: 16px;
 }
 
+.catalog-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.12em;
+}
+
+.catalog-kicker::before {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: #7ec89a;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
 .catalog-title {
   margin: 0;
   font-family: 'DM Serif Display', serif;

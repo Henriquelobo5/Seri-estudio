@@ -448,9 +448,7 @@ export default function Catalogo() {
           <section className="catalog-panel">
             <div className="catalog-toolbar reveal">
               <div className="catalog-heading reveal">
-                <p className="section-label catalog-kicker">
-                  {buildAnimatedText('Portfolio', 'catalog-kicker')}
-                </p>
+                <p className="section-label catalog-kicker">Portfolio</p>
                 <h1 className="catalog-title">
                   {buildAnimatedText('Nossos', 'catalog-title')}
                   <span>&nbsp;</span>

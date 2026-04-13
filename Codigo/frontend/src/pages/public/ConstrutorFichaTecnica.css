@@ -172,7 +172,11 @@
   border-color: #7EC89A;
   background: rgba(126,200,154,.09);
 }
-.cf-tipo-emoji { font-size: 28px; line-height: 1; }
+.cf-tipo-emoji {
+  font-size: 28px;
+  line-height: 1;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+}
 .cf-tipo-nome { font-size: 12.5px; font-weight: 500; color: #FAFAF8; text-align: center; }
 .cf-tipo-desc { font-size: 10.5px; color: rgba(250,250,248,.48); text-align: center; line-height: 1.4; }
 .cf-tipo-check {

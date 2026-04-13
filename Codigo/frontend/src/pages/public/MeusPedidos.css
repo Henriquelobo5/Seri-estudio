@@ -111,11 +111,12 @@
 .mp-hero-eyebrow {
   font-size: 11px; font-weight: 500; text-transform: uppercase;
   letter-spacing: .13em; color: var(--mp-lime); margin-bottom: 10px;
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 12px;
 }
 .mp-hero-eyebrow::before {
-  content: ''; width: 20px; height: 1px;
+  content: ''; width: 28px; height: 1px;
   background: var(--mp-lime); opacity: .6;
+  flex-shrink: 0;
 }
 .mp-hero-h1 {
   font-family: 'DM Serif Display', serif;
@@ -209,6 +210,7 @@
   background: var(--mp-ink3); border: 1px solid var(--mp-border);
   display: flex; align-items: center; justify-content: center;
   font-size: 20px; flex-shrink: 0;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
 }
 .mp-pinfo { flex: 1; min-width: 0; }
 .mp-pcode {

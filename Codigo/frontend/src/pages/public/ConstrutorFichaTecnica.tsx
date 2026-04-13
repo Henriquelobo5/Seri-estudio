@@ -16,7 +16,7 @@ const STEPS = [
 const TIPOS = [
   { nome: 'Camiseta', emoji: '👕', desc: 'Careca / V' },
   { nome: 'Moletom',  emoji: '🧥', desc: 'Canguru / Raglan' },
-  { nome: 'Regata',   emoji: '🩽', desc: 'Básica / Dry Fit' },
+  { nome: 'Regata',   emoji: '🎽', desc: 'Básica / Dry Fit' },
   { nome: 'Polo',     emoji: '👔', desc: 'Piquê / Malha' },
   { nome: 'Ecobag',   emoji: '👜', desc: 'Algodão reforçado' },
 ]
