@@ -2,7 +2,7 @@
   <img src="Codigo/frontend/src/assets/images/logo.png" width="200"/>
 </p>
 
-# Seri.estudio
+# Seri.Estudio
 
 A Seri. é uma plataforma web de pedidos e gestão desenvolvida para um estúdio de serigrafia sob encomenda, com o objetivo de digitalizar e organizar todo o fluxo operacional do negócio desde o primeiro contato do cliente até a expedição do pedido. O sistema permite que o cliente monte sua própria ficha técnica, selecione produtos por categoria, faça upload de arquivos de arte e receba um código único de identificação, eliminando a dependência do WhatsApp como canal principal de pedidos.
 
