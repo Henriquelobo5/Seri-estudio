@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import PageTransition from '../../components/PageTransition'
+import AuthNavCta from '../../components/ui/AuthNavCta'
 import { ROUTES } from '../../routes/routePaths'
 import logo from '../../assets/images/logo.png'
 import seri1 from '../../assets/images/produtos/seri1.jpg'
@@ -324,10 +325,20 @@ function IconeProduto({ categoria }: { categoria: string }) {
 }
 
 export default function Catalogo() {
+  const navigate = useNavigate()
   const [categoriasAtivas, setCategoriasAtivas] = useState<string[]>([])
   const [tecidosAtivos, setTecidosAtivos] = useState<string[]>([])
   const [gramaturasAtivas, setGramaturasAtivas] = useState<string[]>([])
   const [filtroAberto, setFiltroAberto] = useState(false)
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+
+    navigate(ROUTES.HOME)
+  }
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -434,18 +445,28 @@ export default function Catalogo() {
 
           <div className="nav-links">
             <Link to={ROUTES.HOME}>Home</Link>
-            <Link to={ROUTES.CATALOGO}>{'Portf\u00F3lio'}</Link>
+            <Link to={ROUTES.CATALOGO} className="nav-link-active">
+              {'Portf\u00F3lio'}
+            </Link>
             <a href={`${ROUTES.HOME}#como-funciona`}>Como funciona</a>
             <a href={`${ROUTES.HOME}#contato`}>Contato</a>
             <Link to={ROUTES.MEUS_PEDIDOS}>Meus pedidos</Link>
-            <Link to={ROUTES.LOGIN} className="nav-cta">
-              Entrar
-            </Link>
+            <AuthNavCta className="nav-cta" />
           </div>
         </nav>
 
         <main className="catalog-main">
           <section className="catalog-panel">
+            <div className="catalog-back-row reveal">
+              <button type="button" className="catalog-back-button" onClick={handleBack}>
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path d="M19 12H5" />
+                  <path d="M12 19l-7-7 7-7" />
+                </svg>
+                Voltar
+              </button>
+            </div>
+
             <div className="catalog-toolbar reveal">
               <div className="catalog-heading reveal">
                 <p className="section-label catalog-kicker">Portfolio</p>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
-import { useAuth } from '../../context/AuthContext'
+import AuthNavCta from '../../components/ui/AuthNavCta'
 import logo from '../../assets/images/logo.png'
 import './DetalhesPedido.css'
 
@@ -26,22 +26,10 @@ const STEPS = [
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function getInitials(name?: string, email?: string): string {
-  if (name) {
-    const parts = name.trim().split(' ')
-    return parts.length >= 2
-      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-      : parts[0].slice(0, 2).toUpperCase()
-  }
-  return (email ?? 'U').slice(0, 2).toUpperCase()
-}
-
 // ── Componente ────────────────────────────────────────────────────────────────
 
 export default function DetalhesPedido() {
-  const { user } = useAuth()
   const navigate = useNavigate()
-  const initials = getInitials(user?.name, user?.email)
 
   // Quantidades por tamanho
   const [qtds, setQtds] = useState<Record<string, number>>(
@@ -77,10 +65,7 @@ export default function DetalhesPedido() {
         </div>
 
         <div className="dpd-nav-right">
-          <div className="dpd-nav-cta" style={{ cursor: 'default' }}>
-            <div className="dpd-nav-avatar">{initials}</div>
-            Minha conta
-          </div>
+          <AuthNavCta className="dpd-nav-cta" />
         </div>
       </nav>
 

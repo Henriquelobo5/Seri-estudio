@@ -1,21 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
-import { useAuth } from '../../context/AuthContext'
+import AuthNavCta from '../../components/ui/AuthNavCta'
 import logo from '../../assets/images/logo.png'
 import './Confirmacao.css'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function getInitials(name?: string, email?: string): string {
-  if (name) {
-    const parts = name.trim().split(' ')
-    return parts.length >= 2
-      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-      : parts[0].slice(0, 2).toUpperCase()
-  }
-  return (email ?? 'U').slice(0, 2).toUpperCase()
-}
 
 const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
 
@@ -60,9 +50,6 @@ function Confetti() {
 // ── Componente ────────────────────────────────────────────────────────────────
 
 export default function Confirmacao() {
-  const { user } = useAuth()
-  const initials = getInitials(user?.name, user?.email)
-
   const code = useMemo(() => String(Math.floor(1000 + Math.random() * 9000)), [])
   const [copied, setCopied] = useState(false)
 
@@ -99,10 +86,7 @@ export default function Confirmacao() {
         </div>
 
         <div className="conf-nav-right">
-          <div className="conf-nav-cta" style={{ cursor: 'default' }}>
-            <div className="conf-nav-avatar">{initials}</div>
-            Minha conta
-          </div>
+          <AuthNavCta className="conf-nav-cta" />
         </div>
       </nav>
 

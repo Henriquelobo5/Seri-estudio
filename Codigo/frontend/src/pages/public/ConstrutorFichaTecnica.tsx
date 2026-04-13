@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
-import { useAuth } from '../../context/AuthContext'
+import AuthNavCta from '../../components/ui/AuthNavCta'
 import logo from '../../assets/images/logo.png'
 import './ConstrutorFichaTecnica.css'
 
@@ -71,16 +71,6 @@ const TAM_OUTROS    = ['Único', 'Over P', 'Over M', 'Over G']
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function getInitials(name?: string, email?: string): string {
-  if (name) {
-    const parts = name.trim().split(' ')
-    return parts.length >= 2
-      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-      : parts[0].slice(0, 2).toUpperCase()
-  }
-  return (email ?? 'U').slice(0, 2).toUpperCase()
-}
-
 function gramShort(gram: string) {
   return gram.split(' ')[0]
 }
@@ -88,7 +78,6 @@ function gramShort(gram: string) {
 // ── Componente ───────────────────────────────────────────────────────────────
 
 export default function ConstrutorFichaTecnica() {
-  const { user } = useAuth()
   const navigate = useNavigate()
 
   const [currentStep, setCurrentStep] = useState(1)
@@ -116,8 +105,6 @@ export default function ConstrutorFichaTecnica() {
   // step detail no sidebar
   const stepDetail = `${tipo} · ${cor}` + (tamanhos.length ? ` · ${tamanhos.join(', ')}` : '')
 
-  const initials = getInitials(user?.name, user?.email)
-
   return (
     <div className="cf-page">
 
@@ -142,10 +129,7 @@ export default function ConstrutorFichaTecnica() {
         </div>
 
         <div className="cf-nav-right">
-          <div className="cf-nav-cta" style={{ cursor: 'default' }}>
-            <div className="cf-nav-avatar">{initials}</div>
-            Minha conta
-          </div>
+          <AuthNavCta className="cf-nav-cta" />
         </div>
       </nav>
 

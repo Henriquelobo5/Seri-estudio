@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
-import { useAuth } from '../../context/AuthContext'
+import AuthNavCta from '../../components/ui/AuthNavCta'
 import logo from '../../assets/images/logo.png'
 import './DetalhesProduto.css'
 
@@ -25,16 +25,6 @@ const POSICOES = [
 type PosKey = 'fc' | 'fe' | 'fd' | 'cc' | 'me' | 'md'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function getInitials(name?: string, email?: string): string {
-  if (name) {
-    const parts = name.trim().split(' ')
-    return parts.length >= 2
-      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-      : parts[0].slice(0, 2).toUpperCase()
-  }
-  return (email ?? 'U').slice(0, 2).toUpperCase()
-}
 
 const EXT_COLORS: Record<string, [string, string]> = {
   png:  ['#DBEAFE', '#1E40AF'],
@@ -94,9 +84,7 @@ const POS_CFG: Record<PosKey, PosCfg> = {
 // ── Componente ────────────────────────────────────────────────────────────────
 
 export default function DetalhesProduto() {
-  const { user } = useAuth()
   const navigate  = useNavigate()
-  const initials  = getInitials(user?.name, user?.email)
 
   // Spline
   const splineRef      = useRef<HTMLElement>(null)
@@ -370,10 +358,7 @@ export default function DetalhesProduto() {
           <Link to={ROUTES.MEUS_PEDIDOS}>Meus pedidos</Link>
         </div>
         <div className="dp-nav-right">
-          <div className="dp-nav-cta" style={{ cursor: 'default' }}>
-            <div className="dp-nav-avatar">{initials}</div>
-            Minha conta
-          </div>
+          <AuthNavCta className="dp-nav-cta" />
         </div>
       </nav>
 

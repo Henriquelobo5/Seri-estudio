@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import { useAuth } from '../../context/AuthContext'
+import AuthNavCta from '../../components/ui/AuthNavCta'
 import logo from '../../assets/images/logo.png'
 import './MeusPedidos.css'
 
@@ -167,7 +168,9 @@ type Filtro = 'todos' | StatusKey
 
 export default function MeusPedidos() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const searchRef = useRef<HTMLInputElement>(null)
+  const profileRef = useRef<HTMLDivElement>(null)
 
   const initials  = getInitials(user?.name, user?.email)
   const firstName = getFirstName(user?.name)
@@ -197,6 +200,19 @@ export default function MeusPedidos() {
     searchRef.current?.focus()
   }
 
+  function focusProfile() {
+    profileRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function handleBack() {
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+
+    navigate(ROUTES.HOME)
+  }
+
   return (
     <div className="mp-page">
       <div className="mp-grain" aria-hidden="true" />
@@ -214,19 +230,28 @@ export default function MeusPedidos() {
           <Link to={ROUTES.HOME} className="mp-nl">Home</Link>
           <Link to={ROUTES.CATALOGO} className="mp-nl">Portfólio</Link>
           <a href={`${ROUTES.HOME}#como-funciona`} className="mp-nl">Como funciona</a>
+          <a href={`${ROUTES.HOME}#contato`} className="mp-nl">Contato</a>
           <Link to={ROUTES.MEUS_PEDIDOS} className="mp-nl mp-nl-active">
-            <span className="mp-nav-pdot" />
             Meus pedidos
           </Link>
         </div>
 
         <div className="mp-nav-right">
-          <div className="mp-nav-cta" style={{ cursor: 'default' }}>
-            <div className="mp-nav-avatar">{initials}</div>
-            Minha conta
-          </div>
+          <AuthNavCta className="mp-nav-cta" />
         </div>
       </nav>
+
+      <div className="mp-back-row">
+        <div className="mp-back-inner">
+          <button type="button" className="mp-back-button" onClick={handleBack}>
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5" />
+              <path d="M12 19l-7-7 7-7" />
+            </svg>
+            Voltar
+          </button>
+        </div>
+      </div>
 
       {/* ── PAGE HERO ─────────────────────────────────────────────────────── */}
       <div className="mp-page-hero">
@@ -309,7 +334,7 @@ export default function MeusPedidos() {
           <div className="mp-scard">
 
             {/* Perfil */}
-            <div className="mp-ps">
+            <div className="mp-ps" ref={profileRef}>
               <div className="mp-pt">
                 <div className="mp-avwrap">
                   <div className="mp-av">{initials}</div>
@@ -387,13 +412,13 @@ export default function MeusPedidos() {
                 </svg>
               </a>
 
-              <Link to={ROUTES.DASHBOARD} className="mp-atl">
+              <button type="button" className="mp-atl" onClick={focusProfile}>
                 <span className="mp-atldot" style={{ background: 'var(--mp-muted2)' }} />
                 <span className="mp-atllbl">Editar meu perfil</span>
                 <svg className="mp-atlarr" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <polyline points="9 18 15 12 9 6"/>
                 </svg>
-              </Link>
+              </button>
 
             </div>
           </div>

@@ -20,7 +20,7 @@
   background: rgba(13,15,12,.88);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255,255,255,.09);
-  padding: 0 40px; height: 60px;
+  padding: 0 48px; height: 64px;
   display: flex; align-items: center;
   flex-shrink: 0; position: sticky; top: 0; z-index: 100;
 }
@@ -28,13 +28,13 @@
   display: flex; align-items: center; gap: 10px; text-decoration: none;
 }
 .cf-nav-logo {
-  width: 32px; height: 32px; border-radius: 7px; background: #2A5E40;
+  width: 34px; height: 34px; border-radius: 8px; background: #2A5E40;
   display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
 .cf-nav-logo img { width: 100%; height: 100%; object-fit: contain; }
 .cf-nav-name {
   font-family: 'DM Serif Display', serif;
-  font-size: 19px; color: #FAFAF8; letter-spacing: -.3px;
+  font-size: 20px; color: #FAFAF8; letter-spacing: -.3px;
   transition: color .2s;
 }
 .cf-nav-brand:hover .cf-nav-name { color: #7EC89A; }
@@ -42,7 +42,7 @@
 .cf-nav-center {
   display: flex;
   align-items: center;
-  gap: 34px;
+  gap: 36px;
   margin-left: auto;
 }
 .cf-nav-center a {
@@ -50,9 +50,12 @@
   text-decoration: none;
   font-size: 13px;
   font-weight: 400;
-  transition: color .22s ease;
+  transition: color .22s ease, text-shadow .22s ease;
 }
-.cf-nav-center a:hover { color: #FAFAF8; }
+.cf-nav-center a:hover {
+  color: #FAFAF8;
+  text-shadow: 0 0 12px rgba(250,250,248,.14);
+}
 
 .cf-nav-right {
   display: flex;
@@ -61,27 +64,26 @@
   margin-left: 22px;
 }
 .cf-nav-cta {
-  display: flex; align-items: center; gap: 8px;
-  border: 1px solid rgba(255,255,255,.15);
-  color: #FAFAF8; background: rgba(255,255,255,.05);
-  padding: 7px 16px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(255,255,255,.18);
+  color: rgba(250,250,248,.72); background: transparent;
+  padding: 8px 20px; border-radius: 6px;
   font-family: inherit; font-size: 13px;
   cursor: pointer; transition: all .2s; text-decoration: none;
+  white-space: nowrap;
 }
-.cf-nav-cta:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.3); }
-.cf-nav-avatar {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: #2A5E40; border: 1.5px solid rgba(126,200,154,.4);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 600; color: #fff; flex-shrink: 0;
+.cf-nav-cta:hover {
+  color: #FAFAF8;
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.34);
 }
 
 /* ── STEPPER ────────────────────────────────────────────────────────────────── */
 .cf-sbar {
   background: #141612; border-bottom: 1px solid rgba(255,255,255,.09);
-  padding: 0 40px; height: 54px;
+  padding: 0 48px; height: 54px;
   display: flex; align-items: center;
-  flex-shrink: 0; position: sticky; top: 60px; z-index: 90;
+  flex-shrink: 0; position: sticky; top: 64px; z-index: 90;
 }
 .cf-step { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .cf-snum {
@@ -302,8 +304,8 @@
   background: #141612;
   overflow-y: auto;
   display: flex; flex-direction: column;
-  position: sticky; top: 114px;
-  max-height: calc(100vh - 114px);
+  position: sticky; top: 118px;
+  max-height: calc(100vh - 118px);
 }
 .cf-sidebar::-webkit-scrollbar { width: 4px; }
 .cf-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 99px; }
