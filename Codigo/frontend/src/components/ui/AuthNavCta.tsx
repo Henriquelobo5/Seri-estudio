@@ -11,7 +11,7 @@ export default function AuthNavCta({ className }: AuthNavCtaProps) {
 
   return (
     <Link
-      to={isAuthenticated ? ROUTES.MEUS_PEDIDOS : ROUTES.LOGIN}
+      to={isAuthenticated ? ROUTES.MEU_PERFIL : ROUTES.LOGIN}
       className={className}
     >
       {isAuthenticated ? 'Minha conta' : 'Entrar'}

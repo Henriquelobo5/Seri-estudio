@@ -64,7 +64,7 @@ const atalhos = [
   { label: 'Nova ficha técnica', dotColor: 'bg-green-500', to: ROUTES.CRIAR_FICHA },
   { label: 'Consultar por código', dotColor: 'bg-blue-500', to: null },
   { label: 'Falar com o estúdio', dotColor: 'bg-yellow-500', to: null },
-  { label: 'Editar meu perfil', dotColor: 'bg-gray-400', to: null },
+  { label: 'Editar meu perfil', dotColor: 'bg-gray-400', to: ROUTES.MEU_PERFIL },
 ]
 
 export default function Dashboard() {

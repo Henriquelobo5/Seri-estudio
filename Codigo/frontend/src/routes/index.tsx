@@ -9,6 +9,7 @@ import Home from '../pages/public/Home'
 import Login from '../pages/auth/Login'
 import Cadastro from '../pages/auth/Cadastro'
 import Dashboard from '../pages/cliente/Dashboard'
+import MeuPerfil from '../pages/cliente/MeuPerfil'
 import ConstrutorFichaTecnica from '../pages/public/ConstrutorFichaTecnica'
 import DetalhesProduto from '../pages/public/DetalhesProduto'
 import DetalhesPedido from '../pages/public/DetalhesPedido'
@@ -45,6 +46,7 @@ export default function RoutesApp() {
         <Route element={<PublicLayout />}>
           <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
           <Route path={ROUTES.MEUS_PEDIDOS} element={<MeusPedidos />} />
+          <Route path={ROUTES.MEU_PERFIL} element={<MeuPerfil />} />
         </Route>
       </Route>
 

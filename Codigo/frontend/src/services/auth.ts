@@ -14,6 +14,24 @@ export type RegisterPayload = {
   nivelPermissao?: number
 }
 
+export type ProfileResponse = {
+  nome: string
+  email: string
+  tipoUsuario: string
+  cpfCnpj?: string | null
+  whatsapp?: string | null
+  endereco?: string | null
+  token?: string | null
+}
+
+export type UpdateProfilePayload = {
+  nome: string
+  email: string
+  cpfCnpj?: string
+  whatsapp?: string
+  endereco?: string
+}
+
 export async function loginRequest(email: string, senha: string): Promise<string> {
   const response = await apiRequest<{ token: string }>('/auth/login', {
     method: 'POST',
@@ -37,4 +55,15 @@ export async function refreshTokenRequest(token: string): Promise<string> {
   }, false)
 
   return response.token
+}
+
+export async function getProfileRequest(): Promise<ProfileResponse> {
+  return apiRequest<ProfileResponse>('/auth/me')
+}
+
+export async function updateProfileRequest(payload: UpdateProfilePayload): Promise<ProfileResponse> {
+  return apiRequest<ProfileResponse>('/auth/me', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
 }

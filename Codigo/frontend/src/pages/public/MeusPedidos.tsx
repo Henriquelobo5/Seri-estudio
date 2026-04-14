@@ -168,7 +168,6 @@ export default function MeusPedidos() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const searchRef = useRef<HTMLInputElement>(null)
-  const profileRef = useRef<HTMLDivElement>(null)
 
   const initials  = getInitials(user?.name, user?.email)
   const firstName = getFirstName(user?.name)
@@ -240,10 +239,6 @@ export default function MeusPedidos() {
 
   function focusSearch() {
     searchRef.current?.focus()
-  }
-
-  function focusProfile() {
-    profileRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   function handleBack() {
@@ -378,7 +373,7 @@ export default function MeusPedidos() {
           <div className="mp-scard">
 
             {/* Perfil */}
-            <div className="mp-ps" ref={profileRef}>
+            <div className="mp-ps">
               <div className="mp-pt">
                 <div className="mp-avwrap">
                   <div className="mp-av">{initials}</div>
@@ -456,13 +451,13 @@ export default function MeusPedidos() {
                 </svg>
               </a>
 
-              <button type="button" className="mp-atl" onClick={focusProfile}>
+              <Link to={ROUTES.MEU_PERFIL} className="mp-atl">
                 <span className="mp-atldot" style={{ background: 'var(--mp-muted2)' }} />
                 <span className="mp-atllbl">Editar meu perfil</span>
                 <svg className="mp-atlarr" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <polyline points="9 18 15 12 9 6"/>
                 </svg>
-              </button>
+              </Link>
 
               <button
                 type="button"

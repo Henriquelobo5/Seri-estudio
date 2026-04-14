@@ -8,5 +8,6 @@ export const ROUTES = {
   DETALHES_PEDIDO: '/ficha/pedido',
   CONFIRMACAO: '/ficha/confirmacao',
   MEUS_PEDIDOS: '/pedidos',
+  MEU_PERFIL: '/perfil',
   DASHBOARD: '/cliente',
 }
