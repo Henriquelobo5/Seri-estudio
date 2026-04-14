@@ -2,7 +2,9 @@ package com.seriestudio.backend.controller;
 
 import com.seriestudio.backend.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -18,10 +20,15 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
-        String email = body.get("email");
-        String senha = body.get("senha");
-        String token = authService.login(email, senha);
-        return ResponseEntity.ok(Map.of("token", token));
+        try {
+            String email = body.get("email");
+            String senha = body.get("senha");
+            String token = authService.login(email, senha);
+            return ResponseEntity.ok(Map.of("token", token));
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Email ou senha inválidos"));
+        }
     }
 
     @PostMapping("/register")

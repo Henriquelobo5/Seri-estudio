@@ -240,10 +240,14 @@
   font-family: inherit; font-size: 14px; font-weight: 500;
   border: none; cursor: pointer; transition: all var(--dpd-t);
 }
-.dpd-btn-send:hover {
+.dpd-btn-send:hover:not(:disabled) {
   background: #e8e3dc;
   transform: translateY(-1px);
   box-shadow: 0 8px 28px rgba(0,0,0,.4);
+}
+.dpd-btn-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* ── SIDEBAR ────────────────────────────────────────────────────────────────── */

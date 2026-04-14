@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import AuthNavCta from '../../components/ui/AuthNavCta'
 import logo from '../../assets/images/logo.png'
@@ -85,6 +85,8 @@ const POS_CFG: Record<PosKey, PosCfg> = {
 
 export default function DetalhesProduto() {
   const navigate  = useNavigate()
+  const location  = useLocation()
+  const locState  = (location.state ?? {}) as { fichaId?: number; fichaData?: any }
 
   // Spline
   const splineRef      = useRef<HTMLElement>(null)
@@ -552,7 +554,7 @@ export default function DetalhesProduto() {
                   </div>
                   <div>
                     <div className="dp-pname done">Produto</div>
-                    <div className="dp-pdet">Camiseta · Preto · M, G</div>
+                    <div className="dp-pdet">{locState.fichaData ? `${locState.fichaData.tipo} · ${locState.fichaData.cor} · ${(locState.fichaData.tamanhos ?? []).join(', ')}` : 'Concluído'}</div>
                   </div>
                 </div>
                 <div className="dp-pi">
@@ -584,7 +586,12 @@ export default function DetalhesProduto() {
             <button
               className={`dp-btn-next ${btnNextOn ? 'on' : ''}`}
               disabled={!btnNextOn}
-              onClick={() => btnNextOn && navigate(ROUTES.DETALHES_PEDIDO)}
+              onClick={() => btnNextOn && navigate(ROUTES.DETALHES_PEDIDO, {
+                state: {
+                  fichaId: locState.fichaId,
+                  fichaData: { ...locState.fichaData, posicao: POSICOES.find(p => p.key === pos)?.label ?? '', arquivos: file ? 1 : 0 },
+                },
+              })}
             >
               Próximo: Detalhes →
             </button>

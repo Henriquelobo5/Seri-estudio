@@ -284,6 +284,10 @@
   background: rgba(126,200,154,.1); border: 1px solid rgba(126,200,154,.24); color: var(--mp-lime);
 }
 .mp-badge-e::before { background: var(--mp-lime); }
+.mp-badge-c {
+  background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.24); color: #f87171;
+}
+.mp-badge-c::before { background: #f87171; }
 
 /* Detalhe expandido */
 .mp-pdetail {
@@ -325,6 +329,11 @@
   color: var(--mp-muted);
 }
 .mp-da-d:hover { border-color: rgba(255,255,255,.2); color: var(--mp-white); }
+.mp-da-cancel {
+  background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.24);
+  color: #f87171;
+}
+.mp-da-cancel:hover { background: rgba(239,68,68,.18); }
 
 /* ── SIDEBAR ────────────────────────────────────────────────────────────────── */
 .mp-sidebar {

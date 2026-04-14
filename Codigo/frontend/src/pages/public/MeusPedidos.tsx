@@ -1,16 +1,18 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import { useAuth } from '../../context/AuthContext'
 import AuthNavCta from '../../components/ui/AuthNavCta'
 import logo from '../../assets/images/logo.png'
+import { apiRequest } from '../../services/api'
 import './MeusPedidos.css'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type StatusKey = 'p' | 'o' | 'e'
+type StatusKey = 'p' | 'o' | 'e' | 'c'
 
 interface Pedido {
+  pedidoId: number
   id: string
   nome: string
   meta: string
@@ -26,42 +28,30 @@ interface Pedido {
   }
 }
 
-// ── Mock data ─────────────────────────────────────────────────────────────────
+// ── Helpers de mapeamento da API ──────────────────────────────────────────────
 
-const PEDIDOS: Pedido[] = [
-  {
-    id: 'SERI-2025-4087',
-    nome: 'Camisetas turma 2025',
-    meta: '12 peças · Frente central · 14/03/2025',
-    status: 'p',
-    emoji: '👕',
-    detalhes: { tipo: 'Camiseta', tecido: '100% Algodão', gramatura: '180g/m²', cor: 'Preto', tamanhos: 'M, G', posicao: 'Frente central' },
-  },
-  {
-    id: 'SERI-2025-3901',
-    nome: 'Moletom evento abril',
-    meta: '8 peças · Costas central · 10/03/2025',
-    status: 'o',
-    emoji: '🧥',
-    detalhes: { tipo: 'Moletom', tecido: 'Moletom Fleece', gramatura: '300g/m²', cor: 'Preto', tamanhos: 'M, G, GG', posicao: 'Costas central' },
-  },
-  {
-    id: 'SERI-2025-3645',
-    nome: 'Ecobags brindes',
-    meta: '20 peças · Frente central · 02/02/2025',
-    status: 'e',
-    emoji: '👜',
-    detalhes: { tipo: 'Ecobag', tecido: 'Lona', gramatura: '300g/m²', cor: 'Natural', tamanhos: 'Único', posicao: 'Frente central' },
-  },
-  {
-    id: 'SERI-2025-3210',
-    nome: 'Camisetas banda',
-    meta: '30 peças · Frente e costas · 10/01/2025',
-    status: 'e',
-    emoji: '👕',
-    detalhes: { tipo: 'Camiseta', tecido: '100% Algodão', gramatura: '180g/m²', cor: 'Branco', tamanhos: 'P, M, G, GG', posicao: 'Frente e costas' },
-  },
-]
+const EMOJI_MAP: Record<string, string> = {
+  Camiseta: '👕', Moletom: '🧥', Regata: '🎽', Polo: '👔', Ecobag: '👜',
+}
+
+function statusFromApi(s: string): StatusKey {
+  if (s === 'AGUARDANDO_ORCAMENTO') return 'o'
+  if (s === 'EM_PRODUCAO') return 'p'
+  if (s === 'ORCAMENTO_ENVIADO') return 'o'
+  if (s === 'ENTREGUE') return 'e'
+  if (s === 'CANCELADO') return 'c'
+  return 'o'
+}
+
+function parseDateShort(iso: string): string {
+  const d = new Date(iso)
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+}
+
+function parseEspecificacoes(esp: string): { tecido: string; gramatura: string; cor: string; tamanhos: string } {
+  const parts = esp.split(',').map(s => s.trim())
+  return { tecido: parts[0] ?? '—', gramatura: parts[1] ?? '—', cor: parts[2] ?? '—', tamanhos: parts.slice(3).join(', ') || '—' }
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -82,19 +72,23 @@ function getFirstName(name?: string): string {
 
 const STATUS_LABEL: Record<StatusKey, string> = {
   p: 'Em produção',
-  o: 'Orçamento enviado',
+  o: 'Aguardando orçamento',
   e: 'Entregue',
+  c: 'Cancelado',
 }
 
 // ── Sub-componente: card de pedido ────────────────────────────────────────────
 
-function PedidoCard({ pedido, isOpen, onToggle }: {
+function PedidoCard({ pedido, isOpen, onToggle, onCancelar, onRefazer }: {
   pedido: Pedido
   isOpen: boolean
   onToggle: () => void
+  onCancelar: (id: number) => void
+  onRefazer: () => void
 }) {
-  const badgeClass = { p: 'mp-badge-p', o: 'mp-badge-o', e: 'mp-badge-e' }[pedido.status]
+  const badgeClass = { p: 'mp-badge-p', o: 'mp-badge-o', e: 'mp-badge-e', c: 'mp-badge-c' }[pedido.status]
   const isEntregue = pedido.status === 'e'
+  const isCancelado = pedido.status === 'c'
   const { tipo, tecido, gramatura, cor, tamanhos, posicao } = pedido.detalhes
 
   return (
@@ -132,15 +126,8 @@ function PedidoCard({ pedido, isOpen, onToggle }: {
             ))}
           </div>
           <div className="mp-dacts">
-            <button className="mp-da mp-da-p">
-              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              Ver ficha completa
-            </button>
-            {isEntregue ? (
-              <button className="mp-da mp-da-d">
+            {isEntregue || isCancelado ? (
+              <button className="mp-da mp-da-d" onClick={onRefazer}>
                 <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <polyline points="1 4 1 10 7 10"/>
                   <path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
@@ -155,6 +142,17 @@ function PedidoCard({ pedido, isOpen, onToggle }: {
                 Falar com estúdio
               </button>
             )}
+            {!isCancelado && !isEntregue && pedido.status === 'o' && (
+              <button
+                className="mp-da mp-da-cancel"
+                onClick={e => { e.stopPropagation(); onCancelar(pedido.pedidoId) }}
+              >
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                Cancelar pedido
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -167,7 +165,7 @@ function PedidoCard({ pedido, isOpen, onToggle }: {
 type Filtro = 'todos' | StatusKey
 
 export default function MeusPedidos() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
   const searchRef = useRef<HTMLInputElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
@@ -178,14 +176,58 @@ export default function MeusPedidos() {
   const [filtro,  setFiltro]  = useState<Filtro>('todos')
   const [openId,  setOpenId]  = useState<string | null>(null)
   const [busca,   setBusca]   = useState('')
+  const [pedidos, setPedidos] = useState<Pedido[]>([])
+
+  async function handleCancelar(pedidoId: number) {
+    if (!confirm('Tem certeza que deseja cancelar este pedido?')) return
+    try {
+      await apiRequest(`/pedido/${pedidoId}/cancelar`, { method: 'PATCH' })
+      setPedidos(prev => prev.map(p =>
+        p.pedidoId === pedidoId ? { ...p, status: 'c' as StatusKey } : p
+      ))
+    } catch (e: any) {
+      alert(e.message ?? 'Erro ao cancelar pedido.')
+    }
+  }
+
+  useEffect(() => {
+    apiRequest<any[]>('/pedido/meus').then(data => {
+      const mapped: Pedido[] = data.map(p => {
+        const ficha = p.fichaTecnica ?? {}
+        const esp = parseEspecificacoes(ficha.especificacoes ?? '')
+        const data_ = ficha.dataAbertura ? parseDateShort(ficha.dataAbertura) : ''
+        const qtdTotal = (p.quantidades ?? '').split(',').reduce((s: number, q: string) => {
+          const n = parseInt(q.split(':')[1] ?? '0')
+          return s + (isNaN(n) ? 0 : n)
+        }, 0)
+        return {
+          pedidoId: p.id,
+          id: ficha.codigoDisplay ?? String(p.id),
+          nome: ficha.identificacao ?? 'Pedido',
+          meta: `${qtdTotal} peças · ${esp.tamanhos} · ${data_}`,
+          status: statusFromApi(p.statusAtual ?? ''),
+          emoji: EMOJI_MAP[ficha.produtoTipo ?? ''] ?? '👕',
+          detalhes: {
+            tipo: ficha.produtoTipo ?? '—',
+            tecido: esp.tecido,
+            gramatura: esp.gramatura,
+            cor: esp.cor,
+            tamanhos: esp.tamanhos,
+            posicao: '—',
+          },
+        }
+      })
+      setPedidos(mapped)
+    }).catch(() => {})
+  }, [])
 
   // Stats
-  const total      = PEDIDOS.length
-  const emProd     = PEDIDOS.filter(p => p.status === 'p').length
-  const entregues  = PEDIDOS.filter(p => p.status === 'e').length
+  const total      = pedidos.length
+  const emProd     = pedidos.filter((p: Pedido) => p.status === 'p').length
+  const entregues  = pedidos.filter((p: Pedido) => p.status === 'e').length
 
   // Filtragem
-  const pedidosFiltrados = PEDIDOS.filter(p => {
+  const pedidosFiltrados = pedidos.filter((p: Pedido) => {
     const passaFiltro = filtro === 'todos' || p.status === filtro
     const q = busca.trim().toUpperCase()
     const passaBusca = !q || p.id.replace(/-/g, '').includes(q.replace(/-/g, '')) || p.nome.toUpperCase().includes(q)
@@ -318,12 +360,14 @@ export default function MeusPedidos() {
               <p>Nenhum pedido encontrado.</p>
             </div>
           ) : (
-            pedidosFiltrados.map(p => (
+            pedidosFiltrados.map((p: Pedido) => (
               <PedidoCard
-                key={p.id}
+                key={p.pedidoId}
                 pedido={p}
                 isOpen={openId === p.id}
                 onToggle={() => toggleCard(p.id)}
+                onCancelar={handleCancelar}
+                onRefazer={() => navigate(ROUTES.CRIAR_FICHA, { state: { prefill: p } })}
               />
             ))
           )}
@@ -415,6 +459,19 @@ export default function MeusPedidos() {
               <button type="button" className="mp-atl" onClick={focusProfile}>
                 <span className="mp-atldot" style={{ background: 'var(--mp-muted2)' }} />
                 <span className="mp-atllbl">Editar meu perfil</span>
+                <svg className="mp-atlarr" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                className="mp-atl"
+                style={{ color: '#e05252' }}
+                onClick={() => { logout(); navigate(ROUTES.LOGIN) }}
+              >
+                <span className="mp-atldot" style={{ background: '#e05252' }} />
+                <span className="mp-atllbl">Sair da conta</span>
                 <svg className="mp-atlarr" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <polyline points="9 18 15 12 9 6"/>
                 </svg>

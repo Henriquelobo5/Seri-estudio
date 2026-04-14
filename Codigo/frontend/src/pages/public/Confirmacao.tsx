@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import AuthNavCta from '../../components/ui/AuthNavCta'
 import logo from '../../assets/images/logo.png'
@@ -50,12 +50,19 @@ function Confetti() {
 // ── Componente ────────────────────────────────────────────────────────────────
 
 export default function Confirmacao() {
-  const code = useMemo(() => String(Math.floor(1000 + Math.random() * 9000)), [])
+  const location = useLocation()
+  const state = (location.state ?? {}) as { total?: number; codigoDisplay?: string; fichaData?: any }
+  const totalPecas: number = state.total ?? 0
+  const fichaData = state.fichaData ?? {}
+
+  const fallbackCode = useMemo(() => String(Math.floor(1000 + Math.random() * 9000)), [])
+  // Usa o código real do backend se disponível, senão gera localmente
+  const code = state.codigoDisplay ?? `SERI-2025-${fallbackCode}`
   const [copied, setCopied] = useState(false)
 
   const now    = useMemo(() => new Date(), [])
   const ts     = `${now.getDate()} ${MESES[now.getMonth()]} ${now.getFullYear()} · ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`
-  const fullCode = `SERI-2025-${code}`
+  const fullCode = code
 
   function copyCode() {
     navigator.clipboard.writeText(fullCode).catch(() => {})
@@ -123,7 +130,7 @@ export default function Confirmacao() {
             </div>
             <div className="conf-code-mid">
               <div className="conf-code-val">
-                <span className="conf-prefix">SERI</span>‑2025‑{code}
+                {code}
               </div>
               <button
                 className={`conf-btn-copy ${copied ? 'ok' : ''}`}
@@ -229,14 +236,14 @@ export default function Confirmacao() {
             <div className="conf-g-title">Resumo da ficha</div>
           </div>
           <div className="conf-gcard-body">
-            <div className="conf-ri"><span className="conf-rk">Identificação</span><span className="conf-rv">Camisetas turma 2025</span></div>
-            <div className="conf-ri"><span className="conf-rk">Tipo de peça</span><span className="conf-rv">Camiseta</span></div>
-            <div className="conf-ri"><span className="conf-rk">Tecido</span><span className="conf-rv">100% Algodão · 180g/m²</span></div>
-            <div className="conf-ri"><span className="conf-rk">Cor</span><span className="conf-rv">Preto</span></div>
-            <div className="conf-ri"><span className="conf-rk">Tamanhos</span><span className="conf-rv">M, G</span></div>
-            <div className="conf-ri"><span className="conf-rk">Posição da estampa</span><span className="conf-rv">Frente central</span></div>
-            <div className="conf-ri"><span className="conf-rk">Total de peças</span><span className="conf-rv hi">12 peças</span></div>
-            <div className="conf-ri"><span className="conf-rk">Arquivos</span><span className="conf-rv">1 arquivo enviado</span></div>
+            <div className="conf-ri"><span className="conf-rk">Identificação</span><span className="conf-rv">{fichaData.identificacao || '—'}</span></div>
+            <div className="conf-ri"><span className="conf-rk">Tipo de peça</span><span className="conf-rv">{fichaData.tipo || '—'}</span></div>
+            <div className="conf-ri"><span className="conf-rk">Tecido</span><span className="conf-rv">{fichaData.tecido ? `${fichaData.tecido} · ${fichaData.gramatura}` : '—'}</span></div>
+            <div className="conf-ri"><span className="conf-rk">Cor</span><span className="conf-rv">{fichaData.cor || '—'}</span></div>
+            <div className="conf-ri"><span className="conf-rk">Tamanhos</span><span className="conf-rv">{Array.isArray(fichaData.tamanhos) ? fichaData.tamanhos.join(', ') : fichaData.tamanhos || '—'}</span></div>
+            <div className="conf-ri"><span className="conf-rk">Posição da estampa</span><span className="conf-rv">{fichaData.posicao || '—'}</span></div>
+            <div className="conf-ri"><span className="conf-rk">Total de peças</span><span className="conf-rv hi">{totalPecas} peça{totalPecas !== 1 ? 's' : ''}</span></div>
+            <div className="conf-ri"><span className="conf-rk">Arquivos</span><span className="conf-rv">{fichaData.arquivos ?? 0} arquivo{(fichaData.arquivos ?? 0) !== 1 ? 's' : ''} enviado{(fichaData.arquivos ?? 0) !== 1 ? 's' : ''}</span></div>
             <div className="conf-ri conf-ri-last">
               <span className="conf-rk">Orçamento</span>
               <span className="conf-rv-italic">Acordado via WhatsApp</span>

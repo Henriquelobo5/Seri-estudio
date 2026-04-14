@@ -57,4 +57,13 @@ public class PedidoService {
         }
         return pedido;
     }
+
+    public Pedido cancelar(Long id, String email) {
+        Pedido pedido = buscarPorId(id, email);
+        if (!"AGUARDANDO_ORCAMENTO".equals(pedido.getStatusAtual())) {
+            throw new RuntimeException("Só é possível cancelar pedidos aguardando orçamento");
+        }
+        pedido.setStatusAtual("CANCELADO");
+        return pedidoRepository.save(pedido);
+    }
 }

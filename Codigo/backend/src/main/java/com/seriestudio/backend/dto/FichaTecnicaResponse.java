@@ -3,7 +3,7 @@ package com.seriestudio.backend.dto;
 import java.time.LocalDateTime;
 
 public class FichaTecnicaResponse {
-    public Long id;
+    public Long codUnico;
     public String codigoDisplay;
     public String identificacao;
     public String produtoTipo;
@@ -11,10 +11,10 @@ public class FichaTecnicaResponse {
     public String urlArte;
     public LocalDateTime dataAbertura;
 
-    public FichaTecnicaResponse(Long id, String codigoDisplay, String identificacao,
+    public FichaTecnicaResponse(Long codUnico, String codigoDisplay, String identificacao,
                                  String produtoTipo, String especificacoes,
                                  String urlArte, LocalDateTime dataAbertura) {
-        this.id = id;
+        this.codUnico = codUnico;
         this.codigoDisplay = codigoDisplay;
         this.identificacao = identificacao;
         this.produtoTipo = produtoTipo;

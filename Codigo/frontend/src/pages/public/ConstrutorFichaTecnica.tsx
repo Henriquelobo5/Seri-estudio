@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import AuthNavCta from '../../components/ui/AuthNavCta'
 import logo from '../../assets/images/logo.png'
+import { apiRequest } from '../../services/api'
 import './ConstrutorFichaTecnica.css'
 
 // ── Dados ────────────────────────────────────────────────────────────────────
@@ -79,14 +80,28 @@ function gramShort(gram: string) {
 
 export default function ConstrutorFichaTecnica() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const prefill = (location.state as any)?.prefill
+
+  function resolveGramatura(curta: string): string {
+    return GRAMATURAS.find(g => g.startsWith(curta)) ?? '180g/m² — Pesada (recomendada)'
+  }
+
+  function resolveTamanhos(tam: string | string[]): string[] {
+    if (Array.isArray(tam)) return tam
+    return tam === '—' || !tam ? ['M', 'G'] : tam.split(',').map((t: string) => t.trim()).filter(Boolean)
+  }
 
   const [currentStep, setCurrentStep] = useState(1)
-  const [tipo,        setTipo]        = useState('Camiseta')
-  const [tecido,      setTecido]      = useState('100% Algodão')
-  const [gramatura,   setGramatura]   = useState('180g/m² — Pesada (recomendada)')
-  const [cor,         setCor]         = useState('Preto')
-  const [tamanhos,    setTamanhos]    = useState<string[]>(['M', 'G'])
-  const [identificacao, setIdentificacao] = useState('')
+  const [tipo,        setTipo]        = useState(prefill?.detalhes?.tipo ?? 'Camiseta')
+  const [tecido,      setTecido]      = useState(prefill?.detalhes?.tecido ?? '100% Algodão')
+  const [gramatura,   setGramatura]   = useState(resolveGramatura(prefill?.detalhes?.gramatura ?? ''))
+  const [cor,         setCor]         = useState(prefill?.detalhes?.cor ?? 'Preto')
+  const [tamanhos,    setTamanhos]    = useState<string[]>(resolveTamanhos(prefill?.detalhes?.tamanhos ?? ['M', 'G']))
+  const [identificacao, setIdentificacao] = useState(prefill?.nome ?? '')
+
+  const [loading, setLoading] = useState(false)
+  const [erro, setErro] = useState('')
 
   const toggleTam = (tam: string) =>
     setTamanhos(prev => prev.includes(tam) ? prev.filter(t => t !== tam) : [...prev, tam])
@@ -377,21 +392,46 @@ export default function ConstrutorFichaTecnica() {
           {/* ── FOOTER NAV ───────────────────────────────────────────────── */}
           <div className="cf-footer-row">
             {currentStep < STEPS.length ? (
-              <button
-                className={`cf-btn-next ${btnNextOn || currentStep > 1 ? 'on' : ''}`}
-                onClick={() => {
-                  if (currentStep === 1) {
-                    navigate(ROUTES.DETALHES_PRODUTO)
-                  } else {
-                    setCurrentStep(s => s + 1)
-                  }
-                }}
-              >
-                {currentStep === 1 ? 'Próximo: Detalhes do produto' : `Próximo: ${STEPS[currentStep].label}`}
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
-                </svg>
-              </button>
+              <>
+                {erro && <p style={{ color: '#e05252', fontSize: 13, marginBottom: 8 }}>{erro}</p>}
+                <button
+                  className={`cf-btn-next ${btnNextOn || currentStep > 1 ? 'on' : ''}`}
+                  disabled={loading}
+                  onClick={async () => {
+                    if (currentStep === 1) {
+                      if (!btnNextOn) return
+                      setLoading(true)
+                      setErro('')
+                      try {
+                        const especificacoes = `${tecido}, ${gramShort(gramatura)}, ${cor}, ${tamanhos.join(', ')}`
+                        const ficha = await apiRequest<{ codUnico: number; codigoDisplay: string }>('/ficha-tecnica', {
+                          method: 'POST',
+                          body: JSON.stringify({ identificacao, produtoTipo: tipo, especificacoes, urlArte: '' }),
+                        })
+                        navigate(ROUTES.DETALHES_PRODUTO, {
+                          state: {
+                            fichaId: ficha.codUnico,
+                            fichaData: { identificacao, tipo, tecido, gramatura: gramShort(gramatura), cor, tamanhos, posicao: '' },
+                          },
+                        })
+                      } catch (e: any) {
+                        setErro(e.message ?? 'Erro ao salvar ficha. Tente novamente.')
+                      } finally {
+                        setLoading(false)
+                      }
+                    } else {
+                      setCurrentStep(s => s + 1)
+                    }
+                  }}
+                >
+                  {loading ? 'Salvando...' : currentStep === 1 ? 'Próximo: Detalhes do produto' : `Próximo: ${STEPS[currentStep].label}`}
+                  {!loading && (
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
+                    </svg>
+                  )}
+                </button>
+              </>
             ) : (
               <button className="cf-btn-next on">
                 Finalizar e enviar orçamento

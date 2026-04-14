@@ -201,6 +201,13 @@ export default function Dashboard() {
 
               <div className="h-px bg-[#EEE8DF] mb-4" />
 
+              <button
+                onClick={handleLogout}
+                className="w-full mb-4 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg py-2 transition-colors"
+              >
+                Sair da conta
+              </button>
+
               <div className="grid grid-cols-3 gap-1 text-center">
                 <div>
                   <p className="text-xl font-bold text-[#1A1A1A]">4</p>

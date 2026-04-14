@@ -49,6 +49,16 @@ public class PedidoController {
         return ResponseEntity.ok(toResponse(pedido));
     }
 
+    @PatchMapping("/{id}/cancelar")
+    public ResponseEntity<?> cancelar(@PathVariable Long id, Authentication auth) {
+        try {
+            Pedido pedido = pedidoService.cancelar(id, auth.getName());
+            return ResponseEntity.ok(toResponse(pedido));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
     @GetMapping("/teste")
     public String teste() {
         return "Backend funcionando";

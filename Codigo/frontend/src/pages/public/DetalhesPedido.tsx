@@ -1,22 +1,10 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import AuthNavCta from '../../components/ui/AuthNavCta'
 import logo from '../../assets/images/logo.png'
+import { apiRequest } from '../../services/api'
 import './DetalhesPedido.css'
-
-// ── Dados mock (virão do contexto/estado global futuramente) ──────────────────
-
-const RESUMO = {
-  identificacao: 'Camisetas turma 2025',
-  tipo: 'Camiseta',
-  tecido: '100% Algodão',
-  gramatura: '180g/m²',
-  cor: 'Preto',
-  tamanhos: ['M', 'G'],
-  posicao: 'Frente central',
-  arquivos: 1,
-}
 
 const STEPS = [
   { id: 1, label: 'Produto' },
@@ -24,23 +12,62 @@ const STEPS = [
   { id: 3, label: 'Detalhes do pedido' },
 ]
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-// ── Componente ────────────────────────────────────────────────────────────────
-
 export default function DetalhesPedido() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const locState = (location.state ?? {}) as { fichaId?: number; fichaData?: any }
 
-  // Quantidades por tamanho
+  const fichaData = locState.fichaData ?? {
+    identificacao: '',
+    tipo: '',
+    tecido: '',
+    gramatura: '',
+    cor: '',
+    tamanhos: [],
+    posicao: '',
+    arquivos: 0,
+  }
+
+  const tamanhos: string[] = fichaData.tamanhos ?? []
+
   const [qtds, setQtds] = useState<Record<string, number>>(
-    Object.fromEntries(RESUMO.tamanhos.map(t => [t, 6]))
+    Object.fromEntries(tamanhos.map(t => [t, 0]))
   )
   const [obs, setObs] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [erro, setErro] = useState('')
 
   const total = Object.values(qtds).reduce((s, v) => s + (v || 0), 0)
 
   function setQtd(tam: string, val: number) {
     setQtds(prev => ({ ...prev, [tam]: Math.max(0, val) }))
+  }
+
+  async function handleConfirmar() {
+    if (!locState.fichaId) {
+      setErro('Ficha técnica não encontrada. Volte e preencha novamente.')
+      return
+    }
+    const tamanhosZerados = tamanhos.filter(t => !qtds[t] || qtds[t] < 1)
+    if (tamanhosZerados.length > 0) {
+      setErro(`Informe pelo menos 1 peça para cada tamanho selecionado: ${tamanhosZerados.join(', ')}.`)
+      return
+    }
+    setLoading(true)
+    setErro('')
+    try {
+      const quantidadesStr = tamanhos.map(t => `${t}:${qtds[t] ?? 0}`).join(',')
+      const pedido = await apiRequest<{ id: number; fichaTecnica?: { codigoDisplay?: string } }>('/pedido', {
+        method: 'POST',
+        body: JSON.stringify({ fichaId: locState.fichaId, quantidades: quantidadesStr, observacoes: obs }),
+      })
+      const codigoDisplay = pedido.fichaTecnica?.codigoDisplay ?? ''
+      navigate(ROUTES.CONFIRMACAO, { state: { total, codigoDisplay, fichaData } })
+    } catch (e: any) {
+      setErro(e.message ?? 'Erro ao salvar pedido. Tente novamente.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -119,17 +146,17 @@ export default function DetalhesPedido() {
             <div className="dpd-card-body">
               <table className="dpd-res-table">
                 <tbody>
-                  <tr><td>Identificação</td><td>{RESUMO.identificacao}</td></tr>
+                  <tr><td>Identificação</td><td>{fichaData.identificacao || '—'}</td></tr>
                   <tr>
                     <td>Tipo de peça</td>
-                    <td><span className="dpd-res-tag">{RESUMO.tipo}</span></td>
+                    <td><span className="dpd-res-tag">{fichaData.tipo || '—'}</span></td>
                   </tr>
-                  <tr><td>Tecido</td><td>{RESUMO.tecido}</td></tr>
-                  <tr><td>Gramatura</td><td>{RESUMO.gramatura}</td></tr>
-                  <tr><td>Cor da peça</td><td>{RESUMO.cor}</td></tr>
-                  <tr><td>Tamanhos</td><td>{RESUMO.tamanhos.join(', ')}</td></tr>
-                  <tr><td>Posição da estampa</td><td>{RESUMO.posicao}</td></tr>
-                  <tr><td>Arquivos enviados</td><td>{RESUMO.arquivos} arquivo</td></tr>
+                  <tr><td>Tecido</td><td>{fichaData.tecido || '—'}</td></tr>
+                  <tr><td>Gramatura</td><td>{fichaData.gramatura || '—'}</td></tr>
+                  <tr><td>Cor da peça</td><td>{fichaData.cor || '—'}</td></tr>
+                  <tr><td>Tamanhos</td><td>{tamanhos.join(', ') || '—'}</td></tr>
+                  <tr><td>Posição da estampa</td><td>{fichaData.posicao || '—'}</td></tr>
+                  <tr><td>Arquivos enviados</td><td>{fichaData.arquivos ?? 0} arquivo</td></tr>
                 </tbody>
               </table>
             </div>
@@ -153,14 +180,15 @@ export default function DetalhesPedido() {
             </div>
             <div className="dpd-card-body">
               <div className="dpd-qtd-grid">
-                {RESUMO.tamanhos.map(tam => (
+                {tamanhos.map(tam => (
                   <div key={tam} className="dpd-qtd-card">
                     <div className="dpd-qtd-size">{tam}</div>
                     <input
                       type="number"
                       className="dpd-qtd-inp"
                       min={0}
-                      value={qtds[tam] ?? 0}
+                      placeholder="0"
+                      value={qtds[tam] || ''}
                       onChange={e => setQtd(tam, parseInt(e.target.value) || 0)}
                     />
                   </div>
@@ -200,15 +228,18 @@ export default function DetalhesPedido() {
           </div>
 
           {/* Botões footer */}
+          {erro && <p style={{ color: '#e05252', fontSize: 13, marginBottom: 12 }}>{erro}</p>}
           <div className="dpd-footer-btns">
             <button className="dpd-btn-back" onClick={() => navigate(ROUTES.DETALHES_PRODUTO)}>
               ← Voltar e editar
             </button>
-            <button className="dpd-btn-send" onClick={() => navigate(ROUTES.CONFIRMACAO)}>
-              Confirmar e enviar ficha
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
-              </svg>
+            <button className="dpd-btn-send" disabled={loading || tamanhos.some(t => !qtds[t] || qtds[t] < 1)} onClick={handleConfirmar}>
+              {loading ? 'Enviando...' : 'Confirmar e enviar ficha'}
+              {!loading && (
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
+                </svg>
+              )}
             </button>
           </div>
         </div>
@@ -238,7 +269,7 @@ export default function DetalhesPedido() {
                 </div>
                 <div>
                   <div className="dpd-pname done">Produto</div>
-                  <div className="dpd-pdet">Camiseta · Preto · M, G</div>
+                  <div className="dpd-pdet">{fichaData.tipo} · {fichaData.cor} · {tamanhos.join(', ')}</div>
                 </div>
               </div>
               <div className="dpd-pi">
@@ -249,7 +280,7 @@ export default function DetalhesPedido() {
                 </div>
                 <div>
                   <div className="dpd-pname done">Detalhes do produto</div>
-                  <div className="dpd-pdet">Frente central · 1 arquivo</div>
+                  <div className="dpd-pdet">{fichaData.posicao} · {fichaData.arquivos ?? 0} arquivo</div>
                 </div>
               </div>
               <div className="dpd-pi">
