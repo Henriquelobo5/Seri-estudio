@@ -3,6 +3,7 @@ import { ROUTES } from './routePaths'
 import PublicLayout from '../layouts/PublicLayout'
 import ProtectedRoute from './ProtectedRoute'
 import PublicOnlyRoute from './PublicOnlyRoute'
+import RequireAuthRoute from './RequireAuthRoute'
 
 import Home from '../pages/public/Home'
 import Login from '../pages/auth/Login'
@@ -32,13 +33,18 @@ export default function RoutesApp() {
       {/* Rotas protegidas */}
       <Route element={<ProtectedRoute />}>
         <Route element={<PublicLayout />}>
-          <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
           <Route path={ROUTES.CRIAR_FICHA} element={<ConstrutorFichaTecnica />} />
           <Route path={ROUTES.DETALHES_PRODUTO} element={<DetalhesProduto />} />
           <Route path={ROUTES.DETALHES_PEDIDO} element={<DetalhesPedido />} />
           <Route path={ROUTES.CONFIRMACAO} element={<Confirmacao />} />
-          <Route path={ROUTES.MEUS_PEDIDOS} element={<MeusPedidos />} />
           <Route path={ROUTES.CATALOGO} element={<Catalogo />} />
+        </Route>
+      </Route>
+
+      <Route element={<RequireAuthRoute />}>
+        <Route element={<PublicLayout />}>
+          <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
+          <Route path={ROUTES.MEUS_PEDIDOS} element={<MeusPedidos />} />
         </Route>
       </Route>
 

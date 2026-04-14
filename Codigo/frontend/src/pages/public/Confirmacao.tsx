@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import AuthNavCta from '../../components/ui/AuthNavCta'
+import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
 import './Confirmacao.css'
 
@@ -89,7 +90,7 @@ export default function Confirmacao() {
           <Link to={ROUTES.CATALOGO}>Portfólio</Link>
           <a href={`${ROUTES.HOME}#como-funciona`}>Como funciona</a>
           <a href={`${ROUTES.HOME}#contato`}>Contato</a>
-          <Link to={ROUTES.MEUS_PEDIDOS}>Meus pedidos</Link>
+          <MyOrdersLink>Meus pedidos</MyOrdersLink>
         </div>
 
         <div className="conf-nav-right">
@@ -261,12 +262,12 @@ export default function Confirmacao() {
           </svg>
           Criar nova ficha
         </Link>
-        <Link to={ROUTES.MEUS_PEDIDOS} className="conf-a-prim">
+        <MyOrdersLink className="conf-a-prim">
           Ver meus pedidos
           <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
             <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
           </svg>
-        </Link>
+        </MyOrdersLink>
       </div>
 
     </div>

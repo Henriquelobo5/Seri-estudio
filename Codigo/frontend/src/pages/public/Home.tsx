@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import PageTransition from '../../components/PageTransition'
 import AuthNavCta from '../../components/ui/AuthNavCta'
+import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
 import seri1 from '../../assets/images/produtos/seri1.jpg'
 import seri2 from '../../assets/images/produtos/seri2.jpg'
@@ -330,7 +331,7 @@ export default function Home() {
             <Link to={ROUTES.CATALOGO}>{'Portf\u00F3lio'}</Link>
             <a href="#como-funciona">Como funciona</a>
             <a href="#contato">Contato</a>
-            <Link to={ROUTES.MEUS_PEDIDOS}>Meus pedidos</Link>
+            <MyOrdersLink>Meus pedidos</MyOrdersLink>
             <AuthNavCta className="nav-cta" />
           </div>
         </nav>

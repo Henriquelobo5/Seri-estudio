@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import AuthNavCta from '../../components/ui/AuthNavCta'
+import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
 import { apiRequest } from '../../services/api'
 import './DetalhesPedido.css'
@@ -88,7 +89,7 @@ export default function DetalhesPedido() {
           <Link to={ROUTES.CATALOGO}>Portfólio</Link>
           <a href={`${ROUTES.HOME}#como-funciona`}>Como funciona</a>
           <a href={`${ROUTES.HOME}#contato`}>Contato</a>
-          <Link to={ROUTES.MEUS_PEDIDOS}>Meus pedidos</Link>
+          <MyOrdersLink>Meus pedidos</MyOrdersLink>
         </div>
 
         <div className="dpd-nav-right">

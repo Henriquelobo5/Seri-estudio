@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import PageTransition from '../../components/PageTransition'
 import AuthNavCta from '../../components/ui/AuthNavCta'
+import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import { ROUTES } from '../../routes/routePaths'
 import logo from '../../assets/images/logo.png'
 import seri1 from '../../assets/images/produtos/seri1.jpg'
@@ -450,7 +451,7 @@ export default function Catalogo() {
             </Link>
             <a href={`${ROUTES.HOME}#como-funciona`}>Como funciona</a>
             <a href={`${ROUTES.HOME}#contato`}>Contato</a>
-            <Link to={ROUTES.MEUS_PEDIDOS}>Meus pedidos</Link>
+            <MyOrdersLink>Meus pedidos</MyOrdersLink>
             <AuthNavCta className="nav-cta" />
           </div>
         </nav>
