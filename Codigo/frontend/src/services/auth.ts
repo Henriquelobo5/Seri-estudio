@@ -2,11 +2,21 @@ import { apiRequest } from './api'
 
 export const AUTH_TOKEN_KEY = 'auth_token'
 
+export type UserType = 'CLIENTE' | 'ADMIN'
+
+export type AuthTokenPayload = {
+  email?: string
+  nome?: string
+  name?: string
+  tipoUsuario?: UserType
+  exp?: number
+}
+
 export type RegisterPayload = {
   nome: string
   email: string
   senha: string
-  tipoUsuario: 'CLIENTE' | 'ADMIN'
+  tipoUsuario: UserType
   cpfCnpj?: string
   whatsapp?: string
   endereco?: string
@@ -17,7 +27,7 @@ export type RegisterPayload = {
 export type ProfileResponse = {
   nome: string
   email: string
-  tipoUsuario: string
+  tipoUsuario: UserType
   cpfCnpj?: string | null
   whatsapp?: string | null
   endereco?: string | null
@@ -30,6 +40,21 @@ export type UpdateProfilePayload = {
   cpfCnpj?: string
   whatsapp?: string
   endereco?: string
+}
+
+export function parseAuthToken(token: string): AuthTokenPayload {
+  const [, payloadBase64] = token.split('.')
+  if (!payloadBase64) {
+    return {}
+  }
+
+  try {
+    const normalized = payloadBase64.replace(/-/g, '+').replace(/_/g, '/')
+    const payloadJson = atob(normalized)
+    return JSON.parse(payloadJson) as AuthTokenPayload
+  } catch {
+    return {}
+  }
 }
 
 export async function loginRequest(email: string, senha: string): Promise<string> {

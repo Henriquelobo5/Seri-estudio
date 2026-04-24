@@ -9,7 +9,7 @@ import './MeusPedidos.css'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type StatusKey = 'p' | 'o' | 'e' | 'c'
+type StatusKey = 'p' | 'a' | 'o' | 'r' | 'e' | 'c'
 
 interface Pedido {
   pedidoId: number
@@ -35,12 +35,13 @@ const EMOJI_MAP: Record<string, string> = {
 }
 
 function statusFromApi(s: string): StatusKey {
-  if (s === 'AGUARDANDO_ORCAMENTO') return 'o'
+  if (s === 'AGUARDANDO_ANALISE' || s === 'AGUARDANDO_ORCAMENTO') return 'a'
   if (s === 'EM_PRODUCAO') return 'p'
   if (s === 'ORCAMENTO_ENVIADO') return 'o'
+  if (s === 'PRONTO_PARA_RETIRADA') return 'r'
   if (s === 'ENTREGUE') return 'e'
   if (s === 'CANCELADO') return 'c'
-  return 'o'
+  return 'a'
 }
 
 function parseDateShort(iso: string): string {
@@ -70,7 +71,7 @@ function getFirstName(name?: string): string {
   return name.trim().split(' ')[0]
 }
 
-const STATUS_LABEL: Record<StatusKey, string> = {
+const STATUS_LABEL: Partial<Record<StatusKey, string>> = {
   p: 'Em produção',
   o: 'Aguardando orçamento',
   e: 'Entregue',
@@ -79,6 +80,17 @@ const STATUS_LABEL: Record<StatusKey, string> = {
 
 // ── Sub-componente: card de pedido ────────────────────────────────────────────
 
+const STATUS_LABEL_MAP: Record<StatusKey, string> = {
+  p: 'Em producao',
+  a: 'Aguardando analise',
+  o: 'Orcamento enviado',
+  r: 'Pronto p/ retirada',
+  e: 'Entregue',
+  c: 'Cancelado',
+}
+
+void STATUS_LABEL
+
 function PedidoCard({ pedido, isOpen, onToggle, onCancelar, onRefazer }: {
   pedido: Pedido
   isOpen: boolean
@@ -86,7 +98,14 @@ function PedidoCard({ pedido, isOpen, onToggle, onCancelar, onRefazer }: {
   onCancelar: (id: number) => void
   onRefazer: () => void
 }) {
-  const badgeClass = { p: 'mp-badge-p', o: 'mp-badge-o', e: 'mp-badge-e', c: 'mp-badge-c' }[pedido.status]
+  const badgeClass = {
+    p: 'mp-badge-p',
+    a: 'mp-badge-a',
+    o: 'mp-badge-o',
+    r: 'mp-badge-r',
+    e: 'mp-badge-e',
+    c: 'mp-badge-c',
+  }[pedido.status]
   const isEntregue = pedido.status === 'e'
   const isCancelado = pedido.status === 'c'
   const { tipo, tecido, gramatura, cor, tamanhos, posicao } = pedido.detalhes
@@ -101,7 +120,7 @@ function PedidoCard({ pedido, isOpen, onToggle, onCancelar, onRefazer }: {
           <div className="mp-pmeta">{pedido.meta}</div>
         </div>
         <div className="mp-pright">
-          <span className={`mp-badge ${badgeClass}`}>{STATUS_LABEL[pedido.status]}</span>
+          <span className={`mp-badge ${badgeClass}`}>{STATUS_LABEL_MAP[pedido.status]}</span>
           <svg
             className="mp-chev"
             width="14" height="14" fill="none" viewBox="0 0 24 24"

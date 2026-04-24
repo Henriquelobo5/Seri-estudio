@@ -1,16 +1,12 @@
 import { createContext, useContext, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { AUTH_TOKEN_KEY } from '../services/auth'
+import { AUTH_TOKEN_KEY, parseAuthToken, type UserType } from '../services/auth'
 
 function isTokenValid(token: string | null): boolean {
   if (!token) return false
 
   try {
-    const [, payloadBase64] = token.split('.')
-    if (!payloadBase64) return false
-
-    const payloadJson = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'))
-    const payload = JSON.parse(payloadJson) as { exp?: number }
+    const payload = parseAuthToken(token)
 
     if (!payload.exp) return false
 
@@ -24,12 +20,14 @@ function isTokenValid(token: string | null): boolean {
 type AuthUser = {
   email: string
   name?: string
+  tipoUsuario?: UserType
 }
 
 type AuthContextType = {
   token: string | null
   user: AuthUser | null
   isAuthenticated: boolean
+  isAdmin: boolean
   setAuth: (token: string, user: AuthUser) => void
   logout: () => void
 }
@@ -42,26 +40,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!isTokenValid(storedToken)) {
       localStorage.removeItem(AUTH_TOKEN_KEY)
       localStorage.removeItem('auth_user_email')
+      localStorage.removeItem('auth_user_name')
+      localStorage.removeItem('auth_user_tipo')
       return null
     }
     return storedToken
   })
+
   const [user, setUser] = useState<AuthUser | null>(() => {
-    const email = localStorage.getItem('auth_user_email')
-    const name = localStorage.getItem('auth_user_name')
-    return email ? { email, name: name || undefined } : null
+    const storedToken = localStorage.getItem(AUTH_TOKEN_KEY)
+    const payload = storedToken ? parseAuthToken(storedToken) : {}
+
+    const email = localStorage.getItem('auth_user_email') ?? payload.email
+    const name = localStorage.getItem('auth_user_name') ?? payload.nome ?? payload.name
+    const tipoUsuario = (localStorage.getItem('auth_user_tipo') ?? payload.tipoUsuario) as UserType | null
+
+    return email
+      ? {
+          email,
+          name: name || undefined,
+          tipoUsuario: tipoUsuario || undefined,
+        }
+      : null
   })
 
   const setAuth = (nextToken: string, nextUser: AuthUser) => {
     if (!isTokenValid(nextToken)) {
-      throw new Error('Token inválido ou expirado.')
+      throw new Error('Token invalido ou expirado.')
     }
 
     localStorage.setItem(AUTH_TOKEN_KEY, nextToken)
     localStorage.setItem('auth_user_email', nextUser.email)
+
     if (nextUser.name) {
       localStorage.setItem('auth_user_name', nextUser.name)
+    } else {
+      localStorage.removeItem('auth_user_name')
     }
+
+    if (nextUser.tipoUsuario) {
+      localStorage.setItem('auth_user_tipo', nextUser.tipoUsuario)
+    } else {
+      localStorage.removeItem('auth_user_tipo')
+    }
+
     setToken(nextToken)
     setUser(nextUser)
   }
@@ -70,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(AUTH_TOKEN_KEY)
     localStorage.removeItem('auth_user_email')
     localStorage.removeItem('auth_user_name')
+    localStorage.removeItem('auth_user_tipo')
     setToken(null)
     setUser(null)
   }
@@ -79,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       token,
       user,
       isAuthenticated: isTokenValid(token),
+      isAdmin: user?.tipoUsuario === 'ADMIN',
       setAuth,
       logout,
     }),

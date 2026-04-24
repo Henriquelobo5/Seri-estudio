@@ -81,9 +81,12 @@ public class PedidoController {
         return new PedidoResponse(
                 p.getIdPed(),
                 p.getStatusAtual(),
+                pedidoService.garantirEtapaProducao(p).getEtapaProducao(),
                 p.getDataAbertura(),
                 p.getQuantidades(),
                 p.getObservacoes(),
+                p.getCliente() != null ? p.getCliente().getNome() : null,
+                p.getCliente() != null ? p.getCliente().getEmail() : null,
                 fichaResp
         );
     }

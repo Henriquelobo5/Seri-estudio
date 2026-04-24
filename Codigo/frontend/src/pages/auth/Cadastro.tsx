@@ -86,7 +86,7 @@ export default function Cadastro() {
       })
 
       const token = await loginRequest(email, senha)
-      setAuth(token, { email, name: nome })
+      setAuth(token, { email, name: nome, tipoUsuario: 'CLIENTE' })
       navigate(ROUTES.CATALOGO, { replace: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Falha ao cadastrar usuário.')

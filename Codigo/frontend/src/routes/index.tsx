@@ -4,11 +4,14 @@ import PublicLayout from '../layouts/PublicLayout'
 import ProtectedRoute from './ProtectedRoute'
 import PublicOnlyRoute from './PublicOnlyRoute'
 import RequireAuthRoute from './RequireAuthRoute'
+import RequireAdminRoute from './RequireAdminRoute'
 
 import Home from '../pages/public/Home'
 import Login from '../pages/auth/Login'
 import Cadastro from '../pages/auth/Cadastro'
 import Dashboard from '../pages/cliente/Dashboard'
+import AdminKanban from '../pages/admin/AdminKanban'
+import AdminFichas from '../pages/admin/AdminFichas'
 import MeuPerfil from '../pages/cliente/MeuPerfil'
 import ConstrutorFichaTecnica from '../pages/public/ConstrutorFichaTecnica'
 import DetalhesProduto from '../pages/public/DetalhesProduto'
@@ -48,6 +51,11 @@ export default function RoutesApp() {
           <Route path={ROUTES.MEUS_PEDIDOS} element={<MeusPedidos />} />
           <Route path={ROUTES.MEU_PERFIL} element={<MeuPerfil />} />
         </Route>
+      </Route>
+
+      <Route element={<RequireAdminRoute />}>
+        <Route path={ROUTES.ADMIN_FICHAS} element={<AdminFichas />} />
+        <Route path={ROUTES.ADMIN_KANBAN} element={<AdminKanban />} />
       </Route>
 
       <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />

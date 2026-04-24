@@ -196,6 +196,7 @@ export default function MeuPerfil() {
         setAuth(updated.token, {
           email: updated.email,
           name: updated.nome,
+          tipoUsuario: updated.tipoUsuario,
         })
       }
 

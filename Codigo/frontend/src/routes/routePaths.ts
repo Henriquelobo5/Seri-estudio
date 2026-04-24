@@ -9,5 +9,7 @@ export const ROUTES = {
   CONFIRMACAO: '/ficha/confirmacao',
   MEUS_PEDIDOS: '/pedidos',
   MEU_PERFIL: '/perfil',
+  ADMIN_KANBAN: '/admin/kanban',
+  ADMIN_FICHAS: '/admin/fichas',
   DASHBOARD: '/cliente',
 }

@@ -1,0 +1,598 @@
+import { useEffect, useState } from 'react'
+import type { CSSProperties } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
+import logo from '../../assets/images/logo.png'
+import { ROUTES } from '../../routes/routePaths'
+import { apiRequest } from '../../services/api'
+import './AdminKanban.css'
+
+type EtapaProducao = 'CORTE' | 'ESTAMPARIA' | 'COSTURA' | 'REVISAO' | 'EXPEDICAO'
+
+type AdminPedido = {
+  id: number
+  statusAtual: string
+  etapaProducao?: string | null
+  dataAbertura?: string
+  quantidades?: string
+  observacoes?: string | null
+  clienteNome?: string | null
+  clienteEmail?: string | null
+  fichaTecnica?: {
+    codigoDisplay?: string | null
+    identificacao?: string | null
+    produtoTipo?: string | null
+    especificacoes?: string | null
+    dataAbertura?: string
+  } | null
+}
+
+type StageConfig = {
+  key: EtapaProducao
+  label: string
+  borderColor: string
+  badgeColor: string
+  accentColor: string
+}
+
+type SidebarItem = {
+  label: string
+  section?: string
+  badge?: string
+  active?: boolean
+  route?: string
+}
+
+const STAGES: StageConfig[] = [
+  { key: 'CORTE', label: 'Corte', borderColor: '#2A5E40', badgeColor: 'rgba(42,94,64,.18)', accentColor: '#2A5E40' },
+  { key: 'ESTAMPARIA', label: 'Estamparia', borderColor: '#3d8c5e', badgeColor: 'rgba(61,140,94,.18)', accentColor: '#3d8c5e' },
+  { key: 'COSTURA', label: 'Costura', borderColor: '#7EC89A', badgeColor: 'rgba(126,200,154,.18)', accentColor: '#7EC89A' },
+  { key: 'REVISAO', label: 'Revisao', borderColor: '#B7CBBE', badgeColor: 'rgba(183,203,190,.18)', accentColor: '#B7CBBE' },
+  { key: 'EXPEDICAO', label: 'Expedicao', borderColor: '#F0EBE3', badgeColor: 'rgba(240,235,227,.16)', accentColor: '#F0EBE3' },
+]
+
+const SIDEBAR_ITEMS: SidebarItem[] = [
+  { label: 'PRINCIPAL', section: 'title' },
+  { label: 'Dashboard' },
+  { label: 'Fichas tecnicas', badge: '3', route: ROUTES.ADMIN_FICHAS },
+  { label: 'Pedidos' },
+  { label: 'Clientes' },
+  { label: 'PRODUCAO', section: 'title' },
+  { label: 'Kanban', active: true, route: ROUTES.ADMIN_KANBAN },
+  { label: 'Estoque', badge: '2' },
+  { label: 'RELATORIOS', section: 'title' },
+  { label: 'Custos e lucro' },
+  { label: 'Dashboard financeiro' },
+]
+
+function normalizeEtapa(etapa?: string | null): EtapaProducao {
+  if (etapa === 'ESTAMPARIA' || etapa === 'COSTURA' || etapa === 'REVISAO' || etapa === 'EXPEDICAO') {
+    return etapa
+  }
+  return 'CORTE'
+}
+
+function getStageConfig(etapa: EtapaProducao): StageConfig {
+  return STAGES.find((stage) => stage.key === etapa) ?? STAGES[0]
+}
+
+function parseEspecificacoes(value?: string | null) {
+  const parts = (value ?? '').split(',').map((item) => item.trim()).filter(Boolean)
+  return {
+    tecido: parts[0] ?? 'Sem tecido',
+    gramatura: parts[1] ?? 'Sem gramatura',
+    cor: parts[2] ?? 'Natural',
+  }
+}
+
+function getTotalPecas(quantidades?: string) {
+  if (!quantidades) return 0
+
+  return quantidades
+    .split(',')
+    .map((item) => item.trim())
+    .reduce((sum, item) => {
+      const [, quantidade] = item.split(':')
+      const value = Number.parseInt(quantidade ?? '0', 10)
+      return sum + (Number.isNaN(value) ? 0 : value)
+    }, 0)
+}
+
+function getInitials(name?: string | null) {
+  if (!name) return 'ST'
+
+  const parts = name.trim().split(' ').filter(Boolean)
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+  }
+
+  return parts[0].slice(0, 2).toUpperCase()
+}
+
+function getPriority(pedido: AdminPedido) {
+  const totalPecas = getTotalPecas(pedido.quantidades)
+  const createdAt = pedido.dataAbertura ? new Date(pedido.dataAbertura) : null
+  const daysOpen = createdAt ? Math.floor((Date.now() - createdAt.getTime()) / 86400000) : 0
+  const urgent =
+    daysOpen >= 7 ||
+    totalPecas >= 30 ||
+    pedido.statusAtual === 'AGUARDANDO_ORCAMENTO' ||
+    pedido.statusAtual === 'AGUARDANDO_ANALISE'
+
+  return urgent
+    ? { label: 'Urgente', className: 'ak-priority-urgent' }
+    : { label: 'No prazo', className: 'ak-priority-ok' }
+}
+
+function getProductTone(produto?: string | null) {
+  const normalized = (produto ?? '').toLowerCase()
+
+  if (normalized.includes('moletom')) return 'ak-chip-violet'
+  if (normalized.includes('ecobag')) return 'ak-chip-emerald'
+  if (normalized.includes('polo')) return 'ak-chip-red'
+  if (normalized.includes('regata')) return 'ak-chip-orange'
+  return 'ak-chip-blue'
+}
+
+function getColorTone(cor?: string | null) {
+  const normalized = (cor ?? '').toLowerCase()
+
+  if (normalized.includes('preto')) return 'ak-chip-dark'
+  if (normalized.includes('branco')) return 'ak-chip-light'
+  if (normalized.includes('verde')) return 'ak-chip-green'
+  if (normalized.includes('vermelho')) return 'ak-chip-red'
+  if (normalized.includes('azul')) return 'ak-chip-blue'
+  if (normalized.includes('cinza')) return 'ak-chip-gray'
+  return 'ak-chip-neutral'
+}
+
+function formatDate(date?: string) {
+  if (!date) return '--/--'
+
+  const parsed = new Date(date)
+  return `${String(parsed.getDate()).padStart(2, '0')}/${String(parsed.getMonth() + 1).padStart(2, '0')}`
+}
+
+function renderSidebarIcon(label: string) {
+  if (label === 'Dashboard') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="4" y="4" width="6" height="6" rx="1.5" />
+        <rect x="14" y="4" width="6" height="6" rx="1.5" />
+        <rect x="4" y="14" width="6" height="6" rx="1.5" />
+        <rect x="14" y="14" width="6" height="6" rx="1.5" />
+      </svg>
+    )
+  }
+
+  if (label === 'Fichas tecnicas') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 4h7l5 5v11H8z" fill="none" />
+        <path d="M15 4v5h5" fill="none" />
+        <path d="M11 14h6M11 18h6M11 10h2" fill="none" />
+      </svg>
+    )
+  }
+
+  if (label === 'Pedidos') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 6h15l-1.5 9h-11z" fill="none" />
+        <circle cx="9" cy="19" r="1.5" />
+        <circle cx="17" cy="19" r="1.5" />
+      </svg>
+    )
+  }
+
+  if (label === 'Clientes') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="8" r="3" />
+        <path d="M5 19a7 7 0 0 1 14 0" fill="none" />
+      </svg>
+    )
+  }
+
+  if (label === 'Kanban') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="4" y="5" width="16" height="14" rx="2" fill="none" />
+        <path d="M9 9v6M15 9v3" fill="none" />
+      </svg>
+    )
+  }
+
+  if (label === 'Estoque') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 4l8 4-8 4-8-4 8-4z" fill="none" />
+        <path d="M4 12l8 4 8-4" fill="none" />
+      </svg>
+    )
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 4v16M6 12h12" fill="none" />
+    </svg>
+  )
+}
+
+function renderStageIcon(stage: EtapaProducao) {
+  if (stage === 'CORTE') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="7" cy="8" r="2.5" />
+        <circle cx="7" cy="16" r="2.5" />
+        <path d="M9 9l10 10M9 15l10-10" fill="none" />
+      </svg>
+    )
+  }
+
+  if (stage === 'ESTAMPARIA') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="5" y="5" width="6" height="6" rx="1.5" />
+        <rect x="13" y="5" width="6" height="6" rx="1.5" />
+        <rect x="9" y="13" width="6" height="6" rx="1.5" />
+      </svg>
+    )
+  }
+
+  if (stage === 'COSTURA') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 18l10-12 2 2-10 12H7z" fill="none" />
+        <path d="M14 6l4 4" fill="none" />
+      </svg>
+    )
+  }
+
+  if (stage === 'REVISAO') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="10" cy="10" r="5" fill="none" />
+        <path d="M14 14l5 5" fill="none" />
+      </svg>
+    )
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 4l7 4v8l-7 4-7-4V8z" fill="none" />
+      <path d="M9 12l2 2 4-4" fill="none" />
+    </svg>
+  )
+}
+
+export default function AdminKanban() {
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
+
+  const [pedidos, setPedidos] = useState<AdminPedido[]>([])
+  const [selectedPedidoId, setSelectedPedidoId] = useState<number | null>(null)
+  const [draggedPedidoId, setDraggedPedidoId] = useState<number | null>(null)
+  const [dropStage, setDropStage] = useState<EtapaProducao | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [movingPedidoId, setMovingPedidoId] = useState<number | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+
+    apiRequest<AdminPedido[]>('/admin/pedidos')
+      .then((data) => {
+        if (!isMounted) return
+        setPedidos(data)
+      })
+      .catch((err: unknown) => {
+        if (!isMounted) return
+        setError(err instanceof Error ? err.message : 'Nao foi possivel carregar o Kanban.')
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const selectedPedido = pedidos.find((pedido) => pedido.id === selectedPedidoId) ?? null
+  const pedidosAtivos = pedidos.filter((pedido) => pedido.statusAtual !== 'CANCELADO')
+  const urgentes = pedidosAtivos.filter((pedido) => getPriority(pedido).label === 'Urgente').length
+
+  function handleLogout() {
+    logout()
+    navigate(ROUTES.LOGIN, { replace: true })
+  }
+
+  async function movePedidoToStage(pedidoId: number, nextStage: EtapaProducao) {
+    const currentPedido = pedidos.find((pedido) => pedido.id === pedidoId)
+    const currentStage = normalizeEtapa(currentPedido?.etapaProducao)
+
+    if (!currentPedido || currentStage === nextStage) {
+      return
+    }
+
+    setError('')
+    setMovingPedidoId(pedidoId)
+    setPedidos((prev) =>
+      prev.map((pedido) =>
+        pedido.id === pedidoId ? { ...pedido, etapaProducao: nextStage } : pedido,
+      ),
+    )
+
+    try {
+      const updated = await apiRequest<AdminPedido>(`/admin/pedidos/${pedidoId}/etapa`, {
+        method: 'PATCH',
+        body: JSON.stringify({ etapaProducao: nextStage }),
+      })
+
+      setPedidos((prev) =>
+        prev.map((pedido) => (pedido.id === pedidoId ? updated : pedido)),
+      )
+    } catch (err: unknown) {
+      setPedidos((prev) =>
+        prev.map((pedido) =>
+          pedido.id === pedidoId ? { ...pedido, etapaProducao: currentStage } : pedido,
+        ),
+      )
+      setError(err instanceof Error ? err.message : 'Nao foi possivel mover o pedido.')
+    } finally {
+      setMovingPedidoId(null)
+    }
+  }
+
+  function renderCard(pedido: AdminPedido) {
+    const etapa = normalizeEtapa(pedido.etapaProducao)
+    const specs = parseEspecificacoes(pedido.fichaTecnica?.especificacoes)
+    const prioridade = getPriority(pedido)
+    const totalPecas = getTotalPecas(pedido.quantidades)
+    const initials = getInitials(pedido.clienteNome)
+    const stageIndex = STAGES.findIndex((stage) => stage.key === etapa)
+    const cardCode = pedido.fichaTecnica?.codigoDisplay || `SERI-${pedido.id}`
+    const title = pedido.fichaTecnica?.identificacao || 'Pedido em producao'
+    const subtitle = pedido.clienteNome || 'Cliente Seri.'
+
+    return (
+      <button
+        key={pedido.id}
+        type="button"
+        className={`ak-card ${selectedPedidoId === pedido.id ? 'is-selected' : ''} ${movingPedidoId === pedido.id ? 'is-moving' : ''}`}
+        draggable
+        onClick={() => setSelectedPedidoId(pedido.id)}
+        onDragStart={(event) => {
+          event.dataTransfer.effectAllowed = 'move'
+          event.dataTransfer.setData('text/plain', String(pedido.id))
+          setDraggedPedidoId(pedido.id)
+        }}
+        onDragEnd={() => {
+          setDraggedPedidoId(null)
+          setDropStage(null)
+        }}
+      >
+        <div className="ak-card-top">
+          <span className="ak-card-code">{cardCode}</span>
+          <span className={`ak-priority ${prioridade.className}`}>{prioridade.label}</span>
+        </div>
+
+        <h3 className="ak-card-title">{title}</h3>
+        <p className="ak-card-subtitle">{subtitle}</p>
+
+        <div className="ak-chip-row">
+          <span className={`ak-chip ${getProductTone(pedido.fichaTecnica?.produtoTipo)}`}>
+            {pedido.fichaTecnica?.produtoTipo || 'Produto'}
+          </span>
+          <span className={`ak-chip ${getColorTone(specs.cor)}`}>{specs.cor}</span>
+        </div>
+
+        <div className="ak-card-footer">
+          <span className="ak-card-meta">{totalPecas} pecas</span>
+          <div className="ak-progress" aria-hidden="true">
+            {STAGES.slice(0, 4).map((stage, index) => (
+              <span
+                key={stage.key}
+                className={`ak-progress-bar ${index <= stageIndex ? 'is-active' : ''}`}
+                style={{ '--progress-color': getStageConfig(etapa).accentColor } as CSSProperties}
+              />
+            ))}
+          </div>
+          <span className="ak-avatar">{initials}</span>
+        </div>
+      </button>
+    )
+  }
+
+  return (
+    <div className="ak-page">
+      <aside className="ak-sidebar">
+        <div className="ak-sidebar-top">
+          <Link to={ROUTES.HOME} className="ak-brand">
+            <div className="ak-brand-logo">
+              <img src={logo} alt="Seri." />
+            </div>
+            <div>
+              <div className="ak-brand-name">Seri.</div>
+              <div className="ak-brand-sub">Painel do estudio</div>
+            </div>
+          </Link>
+
+          <nav className="ak-menu">
+            {SIDEBAR_ITEMS.map((item) => {
+              if (item.section === 'title') {
+                return (
+                  <div key={item.label} className="ak-menu-section">
+                    {item.label}
+                  </div>
+                )
+              }
+
+              const className = `ak-menu-item ${item.active ? 'is-active' : ''}`
+              if (item.route) {
+                return (
+                  <Link key={item.label} to={item.route} className={className}>
+                    <span className="ak-menu-icon">{renderSidebarIcon(item.label)}</span>
+                    <span className="ak-menu-label">{item.label}</span>
+                    {item.badge ? <span className="ak-menu-badge">{item.badge}</span> : null}
+                  </Link>
+                )
+              }
+
+              return (
+                <button key={item.label} type="button" className={className}>
+                  <span className="ak-menu-icon">{renderSidebarIcon(item.label)}</span>
+                  <span className="ak-menu-label">{item.label}</span>
+                  {item.badge ? <span className="ak-menu-badge">{item.badge}</span> : null}
+                </button>
+              )
+            })}
+          </nav>
+        </div>
+
+        <div className="ak-sidebar-bottom">
+          <div className="ak-user-badge">{getInitials(user?.name)}</div>
+          <div className="ak-user-meta">
+            <strong>{user?.name || 'Gestor Seri.'}</strong>
+            <span>Administrador</span>
+          </div>
+          <button type="button" className="ak-logout" onClick={handleLogout}>
+            Sair
+          </button>
+        </div>
+      </aside>
+
+      <main className="ak-main">
+        <header className="ak-header">
+          <div>
+            <h1>Fluxo de producao</h1>
+            <p>Arraste os pedidos entre as etapas ou clique para ver detalhes.</p>
+          </div>
+
+          <div className="ak-header-badges">
+            <span className="ak-header-pill ak-pill-blue">{pedidosAtivos.length} pedidos ativos</span>
+            <span className="ak-header-pill ak-pill-yellow">{urgentes} urgentes</span>
+          </div>
+        </header>
+
+        {error ? <div className="ak-alert">{error}</div> : null}
+
+        <div className="ak-board-shell">
+          <div className="ak-board">
+            {STAGES.map((stage) => {
+              const columnPedidos = pedidos.filter((pedido) => normalizeEtapa(pedido.etapaProducao) === stage.key)
+
+              return (
+                <section
+                  key={stage.key}
+                  className={`ak-column ${dropStage === stage.key ? 'is-drop-target' : ''}`}
+                  style={{ '--column-color': stage.borderColor, '--column-badge': stage.badgeColor } as CSSProperties}
+                  onDragOver={(event) => {
+                    event.preventDefault()
+                    if (draggedPedidoId !== null) {
+                      setDropStage(stage.key)
+                    }
+                  }}
+                  onDragLeave={() => setDropStage((current) => (current === stage.key ? null : current))}
+                  onDrop={(event) => {
+                    event.preventDefault()
+                    const pedidoId = Number.parseInt(event.dataTransfer.getData('text/plain'), 10)
+                    setDropStage(null)
+                    setDraggedPedidoId(null)
+
+                    if (!Number.isNaN(pedidoId)) {
+                      void movePedidoToStage(pedidoId, stage.key)
+                    }
+                  }}
+                >
+                  <div className="ak-column-head">
+                    <div className="ak-column-title-wrap">
+                      <span className="ak-column-icon">{renderStageIcon(stage.key)}</span>
+                      <span className="ak-column-title">{stage.label}</span>
+                    </div>
+                    <span className="ak-column-count">{columnPedidos.length}</span>
+                  </div>
+
+                  <div className="ak-column-body">
+                    {loading ? (
+                      <div className="ak-empty-state">Carregando pedidos...</div>
+                    ) : columnPedidos.length === 0 ? (
+                      <div className="ak-empty-state">Nenhum pedido nesta etapa.</div>
+                    ) : (
+                      columnPedidos.map(renderCard)
+                    )}
+                  </div>
+                </section>
+              )
+            })}
+          </div>
+        </div>
+      </main>
+
+      {selectedPedido ? (
+        <div className="ak-drawer-backdrop" onClick={() => setSelectedPedidoId(null)}>
+          <aside className="ak-drawer" onClick={(event) => event.stopPropagation()}>
+            <div className="ak-drawer-head">
+              <div>
+                <span className="ak-drawer-code">{selectedPedido.fichaTecnica?.codigoDisplay || `SERI-${selectedPedido.id}`}</span>
+                <h2>{selectedPedido.fichaTecnica?.identificacao || 'Pedido em producao'}</h2>
+              </div>
+              <button type="button" className="ak-drawer-close" onClick={() => setSelectedPedidoId(null)}>
+                Fechar
+              </button>
+            </div>
+
+            <div className="ak-drawer-section">
+              <h3>Cliente</h3>
+              <p>{selectedPedido.clienteNome || 'Cliente nao informado'}</p>
+              <span>{selectedPedido.clienteEmail || 'Sem e-mail cadastrado'}</span>
+            </div>
+
+            <div className="ak-drawer-grid">
+              <div className="ak-drawer-section">
+                <h3>Produto</h3>
+                <p>{selectedPedido.fichaTecnica?.produtoTipo || 'Produto'}</p>
+              </div>
+              <div className="ak-drawer-section">
+                <h3>Pecas</h3>
+                <p>{getTotalPecas(selectedPedido.quantidades)}</p>
+              </div>
+              <div className="ak-drawer-section">
+                <h3>Cor</h3>
+                <p>{parseEspecificacoes(selectedPedido.fichaTecnica?.especificacoes).cor}</p>
+              </div>
+              <div className="ak-drawer-section">
+                <h3>Abertura</h3>
+                <p>{formatDate(selectedPedido.dataAbertura)}</p>
+              </div>
+            </div>
+
+            <div className="ak-drawer-section">
+              <h3>Mover para</h3>
+              <div className="ak-drawer-stages">
+                {STAGES.map((stage) => (
+                  <button
+                    key={stage.key}
+                    type="button"
+                    className={`ak-stage-chip ${normalizeEtapa(selectedPedido.etapaProducao) === stage.key ? 'is-active' : ''}`}
+                    onClick={() => void movePedidoToStage(selectedPedido.id, stage.key)}
+                  >
+                    {stage.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="ak-drawer-section">
+              <h3>Observacoes</h3>
+              <p>{selectedPedido.observacoes || 'Sem observacoes.'}</p>
+            </div>
+          </aside>
+        </div>
+      ) : null}
+    </div>
+  )
+}

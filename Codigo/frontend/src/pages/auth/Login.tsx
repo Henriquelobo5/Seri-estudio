@@ -1,7 +1,7 @@
 import { ChangeEvent, FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
-import { loginRequest } from '../../services/auth'
+import { loginRequest, parseAuthToken } from '../../services/auth'
 import { useAuth } from '../../context/AuthContext'
 import logo from '../../assets/images/logo.png'
 import './Auth.css'
@@ -33,15 +33,13 @@ export default function Login() {
     try {
       setLoading(true)
       const token = await loginRequest(email, senha)
+      const payload = parseAuthToken(token)
+      const userEmail = payload.email || email
+      const userName = payload.nome || payload.name || userEmail.split('@')[0]
+      const tipoUsuario = payload.tipoUsuario || 'CLIENTE'
 
-      const [, payloadBase64] = token.split('.')
-      const payloadJson = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'))
-      const payload = JSON.parse(payloadJson) as { email?: string; nome?: string; name?: string }
-
-      const userName = payload.nome || payload.name || email.split('@')[0]
-
-      setAuth(token, { email, name: userName })
-      navigate(ROUTES.CATALOGO, { replace: true })
+      setAuth(token, { email: userEmail, name: userName, tipoUsuario })
+      navigate(tipoUsuario === 'ADMIN' ? ROUTES.ADMIN_KANBAN : ROUTES.CATALOGO, { replace: true })
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Falha no login. Verifique suas credenciais.')
     } finally {

@@ -276,14 +276,22 @@
   background: rgba(99,102,241,.14); border: 1px solid rgba(99,102,241,.24); color: #a5b4fc;
 }
 .mp-badge-p::before { background: #a5b4fc; }
-.mp-badge-o {
+.mp-badge-a {
   background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.22); color: #fcd34d;
 }
-.mp-badge-o::before { background: #fcd34d; }
-.mp-badge-e {
+.mp-badge-a::before { background: #fcd34d; }
+.mp-badge-o {
+  background: rgba(96, 107, 214, .14); border: 1px solid rgba(119,130,255,.22); color: #c7cfff;
+}
+.mp-badge-o::before { background: #c7cfff; }
+.mp-badge-r {
   background: rgba(126,200,154,.1); border: 1px solid rgba(126,200,154,.24); color: var(--mp-lime);
 }
-.mp-badge-e::before { background: var(--mp-lime); }
+.mp-badge-r::before { background: var(--mp-lime); }
+.mp-badge-e {
+  background: rgba(240,235,227,.1); border: 1px solid rgba(240,235,227,.18); color: #f5efe5;
+}
+.mp-badge-e::before { background: #f5efe5; }
 .mp-badge-c {
   background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.24); color: #f87171;
 }
