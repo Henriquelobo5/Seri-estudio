@@ -241,6 +241,36 @@
   font-size: 11.5px; color: var(--conf-muted2);
 }
 
+.conf-wa-cta-wrap {
+  padding: 16px 22px 18px;
+  border-top: 1px solid var(--conf-border2);
+}
+
+.conf-wa-cta {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: rgba(37,211,102,.14);
+  border: 1px solid rgba(37,211,102,.35);
+  color: rgba(37,211,102,.95);
+  padding: 12px 18px;
+  border-radius: var(--conf-r-sm);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all var(--conf-t);
+}
+
+.conf-wa-cta:hover {
+  background: rgba(37,211,102,.2);
+  border-color: rgba(37,211,102,.55);
+  color: #b7ffce;
+  transform: translateY(-1px);
+}
+
 /* ── GRID ───────────────────────────────────────────────────────────────────── */
 .conf-grid {
   width: 100%; max-width: 980px;

@@ -49,9 +49,8 @@ export default function DetalhesPedido() {
       setErro('Ficha técnica não encontrada. Volte e preencha novamente.')
       return
     }
-    const tamanhosZerados = tamanhos.filter(t => !qtds[t] || qtds[t] < 1)
-    if (tamanhosZerados.length > 0) {
-      setErro(`Informe pelo menos 1 peça para cada tamanho selecionado: ${tamanhosZerados.join(', ')}.`)
+    if (total < 1) {
+      setErro('Informe pelo menos 1 peça em pelo menos um tamanho.')
       return
     }
     setLoading(true)
@@ -234,7 +233,7 @@ export default function DetalhesPedido() {
             <button className="dpd-btn-back" onClick={() => navigate(ROUTES.DETALHES_PRODUTO)}>
               ← Voltar e editar
             </button>
-            <button className="dpd-btn-send" disabled={loading || tamanhos.some(t => !qtds[t] || qtds[t] < 1)} onClick={handleConfirmar}>
+            <button className="dpd-btn-send" disabled={loading || total < 1} onClick={handleConfirmar}>
               {loading ? 'Enviando...' : 'Confirmar e enviar ficha'}
               {!loading && (
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
