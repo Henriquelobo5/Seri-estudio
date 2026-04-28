@@ -70,7 +70,7 @@
 }
 .auth-logo-box img { width: 100%; height: 100%; object-fit: contain; }
 .auth-logo-name {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 18px; color: var(--a-white); letter-spacing: -.3px;
   transition: color var(--a-t);
 }
@@ -107,7 +107,7 @@
   content: ''; width: 18px; height: 1px; background: var(--a-lime); opacity: .7;
 }
 .auth-big-title {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: clamp(44px, 5vw, 64px);
   line-height: 1.06; letter-spacing: -.03em;
   color: var(--a-white); margin-bottom: 18px;
@@ -166,7 +166,7 @@
 }
 
 .auth-form-title {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 24px; letter-spacing: -.02em;
   color: var(--a-white); margin-bottom: 4px;
 }

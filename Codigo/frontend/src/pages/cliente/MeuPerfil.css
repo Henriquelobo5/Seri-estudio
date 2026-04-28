@@ -36,7 +36,7 @@
 }
 
 .pf-hero-badge strong {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 22px;
   font-weight: 400;
   color: var(--mp-white);
@@ -82,7 +82,7 @@
 }
 
 .pf-card-title {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 28px;
   line-height: 1.1;
   margin-bottom: 8px;
@@ -317,7 +317,7 @@
 }
 
 .pf-side-title {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 22px;
   margin-bottom: 16px;
 }

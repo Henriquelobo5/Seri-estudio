@@ -52,7 +52,7 @@
 }
 .dpd-nav-logo img { width: 100%; height: 100%; object-fit: contain; }
 .dpd-nav-name {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 20px; color: var(--dpd-white); letter-spacing: -.3px;
   transition: color var(--dpd-t);
 }

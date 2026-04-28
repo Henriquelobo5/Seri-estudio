@@ -1,13 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import PageTransition from '../../components/PageTransition'
 import AuthNavCta from '../../components/ui/AuthNavCta'
 import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
-import seri1 from '../../assets/images/produtos/seri1.jpg'
-import seri2 from '../../assets/images/produtos/seri2.jpg'
-import seri3 from '../../assets/images/produtos/seri3.jpg'
+import hoodieseri from '../../assets/images/produtos/hoodieseri.jpg'
 import './Home.css'
 
 // Declare spline-viewer web component for TypeScript
@@ -79,9 +77,7 @@ const STEPS = [
 ]
 
 const PORTFOLIO = [
-  { tag: 'Silk colorido', title: 'Camiseta estampada — Turma 2025', img: seri1 },
-  { tag: 'Serigrafia',    title: 'Moletom universitário',            img: seri2 },
-  { tag: 'Ecobag',        title: 'Sacola personalizada',             img: seri3 },
+  { tag: 'Serigrafia', title: 'Moletom universitário', img: hoodieseri },
 ]
 
 const CTA_FEATURES = [
@@ -98,7 +94,10 @@ export default function Home() {
   const eyebrowRef  = useRef<HTMLSpanElement>(null)
   const stepsRef    = useRef<HTMLDivElement>(null)
   const statsRef    = useRef<HTMLDivElement>(null)
-  const splineRef   = useRef<HTMLElement>(null)
+  const splineRef      = useRef<HTMLElement>(null)
+  const [carouselIdx, setCarouselIdx] = useState(0)
+  const prevSlide = () => setCarouselIdx(i => (i - 1 + PORTFOLIO.length) % PORTFOLIO.length)
+  const nextSlide = () => setCarouselIdx(i => (i + 1) % PORTFOLIO.length)
 
   useEffect(() => {
     const hash = location.hash.replace('#', '')
@@ -414,20 +413,47 @@ export default function Home() {
               <p className="section-label">Portfólio</p>
               <h2 className="section-h2" style={{ marginBottom: 0 }}>Nossos Trabalhos.</h2>
             </div>
-            <a href="#portfolio" className="btn-secondary" style={{ fontSize: 13, padding: '10px 22px' }}>
+            <Link to={ROUTES.CATALOGO} className="btn-secondary" style={{ fontSize: 13, padding: '10px 22px' }}>
               Ver todos →
-            </a>
+            </Link>
           </div>
-          <div className="portfolio-grid reveal">
-            {PORTFOLIO.map(({ tag, title, img }) => (
-              <div key={title} className="port-card">
-                <img src={img} alt={title} className="port-img" />
-                <div className="port-overlay">
-                  <span className="port-tag">{tag}</span>
-                  <div className="port-title">{title}</div>
+          <div className="port-carousel reveal">
+            <div
+              className="port-carousel-track"
+              style={{ transform: `translateX(-${carouselIdx * 100}%)` }}
+            >
+              {PORTFOLIO.map(({ tag, title, img }) => (
+                <div key={title} className="port-carousel-slide">
+                  <div className="port-card">
+                    <img src={img} alt={title} className="port-img" />
+                    <div className="port-overlay">
+                      <span className="port-tag">{tag}</span>
+                      <div className="port-title">{title}</div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <button className="port-arrow port-arrow-prev" onClick={prevSlide} aria-label="Anterior">
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path d="M15 18l-6-6 6-6"/>
+              </svg>
+            </button>
+            <button className="port-arrow port-arrow-next" onClick={nextSlide} aria-label="Próximo">
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </button>
+            <div className="port-dots">
+              {PORTFOLIO.map((_, i) => (
+                <button
+                  key={i}
+                  className={`port-dot${i === carouselIdx ? ' is-active' : ''}`}
+                  onClick={() => setCarouselIdx(i)}
+                  aria-label={`Slide ${i + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </section>
 

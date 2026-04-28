@@ -67,7 +67,7 @@
 }
 .conf-nav-logo img { width: 100%; height: 100%; object-fit: contain; }
 .conf-nav-name {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 20px; color: var(--conf-white); letter-spacing: -.3px;
   transition: color var(--conf-t);
 }
@@ -168,7 +168,7 @@
   z-index: 1; animation: conf-fade-up .7s .2s ease both;
 }
 .conf-h1 {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: clamp(38px, 4.5vw, 58px);
   letter-spacing: -.025em; line-height: 1.08;
   text-align: center; color: var(--conf-white);

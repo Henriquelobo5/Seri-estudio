@@ -26,6 +26,7 @@ export default function RoutesApp() {
       {/* Rotas públicas */}
       <Route element={<PublicLayout />}>
         <Route path={ROUTES.HOME} element={<Home />} />
+        <Route path={ROUTES.CATALOGO} element={<Catalogo />} />
       </Route>
 
       {/* Rotas apenas para usuários não autenticados */}
@@ -41,7 +42,6 @@ export default function RoutesApp() {
           <Route path={ROUTES.DETALHES_PRODUTO} element={<DetalhesProduto />} />
           <Route path={ROUTES.DETALHES_PEDIDO} element={<DetalhesPedido />} />
           <Route path={ROUTES.CONFIRMACAO} element={<Confirmacao />} />
-          <Route path={ROUTES.CATALOGO} element={<Catalogo />} />
         </Route>
       </Route>
 

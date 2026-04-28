@@ -85,7 +85,7 @@
 
 .catalog-title {
   margin: 0;
-  font-family: 'DM Serif Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: clamp(2.8rem, 6vw, 5rem);
   line-height: 0.98;
   letter-spacing: -0.04em;
@@ -223,7 +223,7 @@
 }
 
 .catalog-filter-popover-head strong {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 2rem;
   line-height: 1.02;
   color: #fafaf8;
@@ -438,7 +438,7 @@
 
 .catalog-empty-state h3 {
   margin: 0 0 10px;
-  font-family: 'DM Serif Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 2rem;
   color: #fafaf8;
 }
@@ -478,7 +478,7 @@
 
 .catalog-cta-title {
   margin: 0;
-  font-family: 'DM Serif Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: clamp(2.2rem, 4vw, 3.8rem);
   line-height: 1.06;
   letter-spacing: -0.03em;
