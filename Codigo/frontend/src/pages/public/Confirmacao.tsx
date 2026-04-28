@@ -9,7 +9,7 @@ import './Confirmacao.css'
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
-const WHATSAPP_NUMBER = (import.meta.env.VITE_WHATSAPP_NUMBER ?? '5531983168417').replace(/\D/g, '')
+const WHATSAPP_NUMBER = (import.meta.env.VITE_WHATSAPP_NUMBER ?? '5531999159678').replace(/\D/g, '')
 
 // ── Confetti ──────────────────────────────────────────────────────────────────
 
