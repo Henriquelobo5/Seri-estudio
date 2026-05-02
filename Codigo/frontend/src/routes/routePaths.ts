@@ -11,5 +11,6 @@ export const ROUTES = {
   MEU_PERFIL: '/perfil',
   ADMIN_KANBAN: '/admin/kanban',
   ADMIN_FICHAS: '/admin/fichas',
+  ADMIN_CUSTOS: '/admin/custos',
   DASHBOARD: '/cliente',
 }

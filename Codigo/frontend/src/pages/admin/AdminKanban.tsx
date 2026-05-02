@@ -61,7 +61,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: 'Kanban', active: true, route: ROUTES.ADMIN_KANBAN },
   { label: 'Estoque', badge: '2' },
   { label: 'RELATORIOS', section: 'title' },
-  { label: 'Custos e lucro' },
+  { label: 'Custos e lucro', route: ROUTES.ADMIN_CUSTOS },
   { label: 'Dashboard financeiro' },
 ]
 
@@ -208,6 +208,24 @@ function renderSidebarIcon(label: string) {
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 4l8 4-8 4-8-4 8-4z" fill="none" />
         <path d="M4 12l8 4 8-4" fill="none" />
+      </svg>
+    )
+  }
+
+  if (label === 'Custos e lucro') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" fill="none" />
+      </svg>
+    )
+  }
+
+  if (label === 'Dashboard financeiro') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <line x1="18" y1="20" x2="18" y2="10" />
+        <line x1="12" y1="20" x2="12" y2="4" />
+        <line x1="6" y1="20" x2="6" y2="14" />
       </svg>
     )
   }

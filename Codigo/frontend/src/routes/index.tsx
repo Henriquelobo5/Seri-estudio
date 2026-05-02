@@ -12,6 +12,7 @@ import Cadastro from '../pages/auth/Cadastro'
 import Dashboard from '../pages/cliente/Dashboard'
 import AdminKanban from '../pages/admin/AdminKanban'
 import AdminFichas from '../pages/admin/AdminFichas'
+import AdminCustos from '../pages/admin/AdminCustos'
 import MeuPerfil from '../pages/cliente/MeuPerfil'
 import ConstrutorFichaTecnica from '../pages/public/ConstrutorFichaTecnica'
 import DetalhesProduto from '../pages/public/DetalhesProduto'
@@ -56,6 +57,7 @@ export default function RoutesApp() {
       <Route element={<RequireAdminRoute />}>
         <Route path={ROUTES.ADMIN_FICHAS} element={<AdminFichas />} />
         <Route path={ROUTES.ADMIN_KANBAN} element={<AdminKanban />} />
+        <Route path={ROUTES.ADMIN_CUSTOS} element={<AdminCustos />} />
       </Route>
 
       <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
