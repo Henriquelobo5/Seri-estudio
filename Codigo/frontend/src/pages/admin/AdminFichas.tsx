@@ -49,9 +49,9 @@ type StatusOption = {
 }
 
 const STATUS_OPTIONS: StatusOption[] = [
-  { value: 'AGUARDANDO_ANALISE', label: 'Aguardando analise' },
-  { value: 'ORCAMENTO_ENVIADO', label: 'Orcamento enviado' },
-  { value: 'EM_PRODUCAO', label: 'Em producao' },
+  { value: 'AGUARDANDO_ANALISE', label: 'Aguardando análise' },
+  { value: 'ORCAMENTO_ENVIADO', label: 'Orçamento enviado' },
+  { value: 'EM_PRODUCAO', label: 'Em produção' },
   { value: 'PRONTO_PARA_RETIRADA', label: 'Pronto p/ retirada' },
   { value: 'ENTREGUE', label: 'Entregue' },
   { value: 'CANCELADO', label: 'Cancelado' },
@@ -60,21 +60,21 @@ const STATUS_OPTIONS: StatusOption[] = [
 const FILTER_OPTIONS: Array<{ value: FiltroStatus; label: string }> = [
   { value: 'TODOS', label: 'Todos' },
   { value: 'AGUARDANDO_ANALISE', label: 'Aguardando' },
-  { value: 'ORCAMENTO_ENVIADO', label: 'Orcamento' },
-  { value: 'EM_PRODUCAO', label: 'Em producao' },
+  { value: 'ORCAMENTO_ENVIADO', label: 'Orçamento' },
+  { value: 'EM_PRODUCAO', label: 'Em produção' },
   { value: 'PRONTO_PARA_RETIRADA', label: 'Prontos' },
 ]
 
 const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: 'PRINCIPAL', section: 'title' },
   { label: 'Dashboard' },
-  { label: 'Fichas tecnicas', badge: '3', active: true, route: ROUTES.ADMIN_FICHAS },
+  { label: 'Fichas técnicas', badge: '3', active: true, route: ROUTES.ADMIN_FICHAS },
   { label: 'Pedidos' },
   { label: 'Clientes' },
-  { label: 'PRODUCAO', section: 'title' },
+  { label: 'PRODUÇÃO', section: 'title' },
   { label: 'Kanban', route: ROUTES.ADMIN_KANBAN },
   { label: 'Estoque', badge: '2' },
-  { label: 'RELATORIOS', section: 'title' },
+  { label: 'RELATÓRIOS', section: 'title' },
   { label: 'Custos e lucro', route: ROUTES.ADMIN_CUSTOS },
   { label: 'Dashboard financeiro' },
 ]
@@ -94,7 +94,7 @@ function normalizeStatus(status?: string | null): AdminStatus {
 
 function getStatusLabel(status: string | null | undefined) {
   const normalized = normalizeStatus(status)
-  return STATUS_OPTIONS.find((option) => option.value === normalized)?.label ?? 'Aguardando analise'
+  return STATUS_OPTIONS.find((option) => option.value === normalized)?.label ?? 'Aguardando análise'
 }
 
 function getStatusClass(status: string | null | undefined) {
@@ -194,7 +194,7 @@ function renderSidebarIcon(label: string) {
     )
   }
 
-  if (label === 'Fichas tecnicas') {
+  if (label === 'Fichas técnicas') {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M8 4h7l5 5v11H8z" fill="none" />
@@ -291,7 +291,7 @@ export default function AdminFichas() {
       })
       .catch((err: unknown) => {
         if (!isMounted) return
-        setError(err instanceof Error ? err.message : 'Nao foi possivel carregar as fichas tecnicas.')
+        setError(err instanceof Error ? err.message : 'Não foi possível carregar as fichas técnicas.')
       })
       .finally(() => {
         if (isMounted) {
@@ -372,7 +372,7 @@ export default function AdminFichas() {
       )
       setDraftStatus(normalizeStatus(updated.statusAtual))
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Nao foi possivel salvar o status do pedido.')
+      setError(err instanceof Error ? err.message : 'Não foi possível salvar o status do pedido.')
     } finally {
       setSavingStatusId(null)
     }
@@ -383,13 +383,13 @@ export default function AdminFichas() {
       <aside className="ak-sidebar">
         <div className="ak-sidebar-top">
           <Link to={ROUTES.HOME} className="ak-brand">
-            <div className="ak-brand-logo">
-              <img src={logo} alt="Seri." />
-            </div>
-            <div>
+            <div className="ak-brand-main">
+              <div className="ak-brand-logo">
+                <img src={logo} alt="Seri." />
+              </div>
               <div className="ak-brand-name">Seri.</div>
-              <div className="ak-brand-sub">Painel do estudio</div>
             </div>
+            <div className="ak-brand-sub">Painel de Administração</div>
           </Link>
 
           <nav className="ak-menu">
@@ -439,12 +439,12 @@ export default function AdminFichas() {
       <main className="ak-main af-main">
         <header className="af-header">
           <div>
-            <h1>Fichas tecnicas</h1>
-            <p>Listagem, busca e gestao das fichas dos clientes</p>
+            <h1>Fichas técnicas</h1>
+            <p>Listagem, busca e gestão das fichas dos clientes</p>
           </div>
 
           <div className="ak-header-badges">
-            <span className="ak-header-pill ak-pill-yellow">{aguardandoAnalise} aguardando analise</span>
+            <span className="ak-header-pill ak-pill-yellow">{aguardandoAnalise} aguardando análise</span>
           </div>
         </header>
 
@@ -456,21 +456,21 @@ export default function AdminFichas() {
           </article>
 
           <article className="af-metric-card">
-            <span>Aguardando analise</span>
+            <span>Aguardando análise</span>
             <strong>{aguardandoAnalise}</strong>
             <small>urgente</small>
           </article>
 
           <article className="af-metric-card">
-            <span>Em producao</span>
+            <span>Em produção</span>
             <strong>{emProducao}</strong>
             <small>em dia</small>
           </article>
 
           <article className="af-metric-card">
-            <span>Concluidas</span>
+            <span>Concluídas</span>
             <strong>{concluidas}</strong>
-            <small>este mes</small>
+            <small>este mês</small>
           </article>
         </section>
 
@@ -484,7 +484,7 @@ export default function AdminFichas() {
             </svg>
             <input
               type="text"
-              placeholder="Buscar por codigo, cliente ou peca..."
+              placeholder="Buscar por código, cliente ou peça..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
@@ -508,9 +508,9 @@ export default function AdminFichas() {
           <table className="af-table">
             <thead>
               <tr>
-                <th>Codigo</th>
+                <th>Código</th>
                 <th>Cliente</th>
-                <th>Peca / ficha</th>
+                <th>Peça / ficha</th>
                 <th>Qtd.</th>
                 <th>Prazo</th>
                 <th>Status</th>
@@ -522,7 +522,7 @@ export default function AdminFichas() {
               {loading ? (
                 <tr>
                   <td colSpan={8} className="af-empty">
-                    Carregando fichas tecnicas...
+                    Carregando fichas técnicas...
                   </td>
                 </tr>
               ) : pedidosFiltrados.length === 0 ? (
@@ -557,7 +557,7 @@ export default function AdminFichas() {
                           <span>{detailsLabel}</span>
                         </div>
                       </td>
-                      <td>{totalPecas} pecas</td>
+                      <td>{totalPecas} peças</td>
                       <td>
                         <span className={prazo.className}>{prazo.label}</span>
                       </td>
@@ -622,7 +622,7 @@ export default function AdminFichas() {
 
                 <div className="af-info-card">
                   <span>Quantidade</span>
-                  <strong>{getTotalPecas(selectedPedido.quantidades)} pecas</strong>
+                  <strong>{getTotalPecas(selectedPedido.quantidades)} peças</strong>
                 </div>
 
                 <div className="af-info-card">
@@ -647,7 +647,7 @@ export default function AdminFichas() {
               <div className="af-drawer-grid">
                 <div className="af-info-card">
                   <span>Cliente</span>
-                  <strong>{selectedPedido.clienteNome || 'Cliente nao informado'}</strong>
+                  <strong>{selectedPedido.clienteNome || 'Cliente não informado'}</strong>
                 </div>
 
                 <div className="af-info-card">
@@ -658,8 +658,8 @@ export default function AdminFichas() {
             </div>
 
             <div className="af-drawer-section">
-              <h3>Observacoes</h3>
-              <p className="af-observacoes">{selectedPedido.observacoes || 'Sem observacoes cadastradas.'}</p>
+              <h3>Observações</h3>
+              <p className="af-observacoes">{selectedPedido.observacoes || 'Sem observações cadastradas.'}</p>
             </div>
 
             <button

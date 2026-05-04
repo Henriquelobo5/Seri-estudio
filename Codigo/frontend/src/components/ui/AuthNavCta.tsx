@@ -8,13 +8,14 @@ type AuthNavCtaProps = {
 
 export default function AuthNavCta({ className }: AuthNavCtaProps) {
   const { isAuthenticated, isAdmin } = useAuth()
+  const label = isAuthenticated ? (isAdmin ? 'Administração' : 'Minha conta') : 'Entrar'
 
   return (
     <Link
       to={isAuthenticated ? (isAdmin ? ROUTES.ADMIN_KANBAN : ROUTES.MEU_PERFIL) : ROUTES.LOGIN}
       className={className}
     >
-      {isAuthenticated ? 'Minha conta' : 'Entrar'}
+      {label}
     </Link>
   )
 }

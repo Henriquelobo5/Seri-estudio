@@ -233,7 +233,7 @@
   max-width: 560px; margin-bottom: 80px;
   cursor: default;
 }
-.section-h2 em { font-style: italic; color: rgba(250,250,248,.45); }
+.section-h2 em { font-style: italic; color: #7EC89A; }
 
 .steps-grid {
   display: grid; grid-template-columns: repeat(4,1fr);

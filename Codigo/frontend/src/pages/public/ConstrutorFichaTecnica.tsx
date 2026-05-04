@@ -141,7 +141,7 @@ export default function ConstrutorFichaTecnica() {
           <Link to={ROUTES.CATALOGO}>{'Portf\u00F3lio'}</Link>
           <a href={`${ROUTES.HOME}#como-funciona`}>Como funciona</a>
           <a href={`${ROUTES.HOME}#contato`}>Contato</a>
-          <MyOrdersLink>Meus pedidos</MyOrdersLink>
+          <MyOrdersLink hideForAdmin>Meus pedidos</MyOrdersLink>
         </div>
 
         <div className="cf-nav-right">

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import { useAuth } from '../../context/AuthContext'
 import AuthNavCta from '../../components/ui/AuthNavCta'
+import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
 import { apiRequest } from '../../services/api'
 import './MeusPedidos.css'
@@ -81,9 +82,9 @@ const STATUS_LABEL: Partial<Record<StatusKey, string>> = {
 // ── Sub-componente: card de pedido ────────────────────────────────────────────
 
 const STATUS_LABEL_MAP: Record<StatusKey, string> = {
-  p: 'Em producao',
-  a: 'Aguardando analise',
-  o: 'Orcamento enviado',
+  p: 'Em produção',
+  a: 'Aguardando análise',
+  o: 'Orçamento enviado',
   r: 'Pronto p/ retirada',
   e: 'Entregue',
   c: 'Cancelado',
@@ -287,9 +288,9 @@ export default function MeusPedidos() {
           <Link to={ROUTES.CATALOGO} className="mp-nl">Portfólio</Link>
           <a href={`${ROUTES.HOME}#como-funciona`} className="mp-nl">Como funciona</a>
           <a href={`${ROUTES.HOME}#contato`} className="mp-nl">Contato</a>
-          <Link to={ROUTES.MEUS_PEDIDOS} className="mp-nl mp-nl-active">
+          <MyOrdersLink hideForAdmin className="mp-nl mp-nl-active">
             Meus pedidos
-          </Link>
+          </MyOrdersLink>
         </div>
 
         <div className="mp-nav-right">

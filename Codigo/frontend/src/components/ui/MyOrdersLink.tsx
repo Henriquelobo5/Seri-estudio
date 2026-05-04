@@ -5,10 +5,13 @@ import { ROUTES } from '../../routes/routePaths'
 
 type MyOrdersLinkProps = Omit<LinkProps, 'to'> & {
   children: ReactNode
+  hideForAdmin?: boolean
 }
 
-export default function MyOrdersLink({ children, ...props }: MyOrdersLinkProps) {
+export default function MyOrdersLink({ children, hideForAdmin = false, ...props }: MyOrdersLinkProps) {
   const { isAuthenticated, isAdmin } = useAuth()
+
+  if (isAdmin && hideForAdmin) return null
 
   return (
     <Link to={isAuthenticated ? (isAdmin ? ROUTES.ADMIN_KANBAN : ROUTES.MEUS_PEDIDOS) : ROUTES.LOGIN} {...props}>

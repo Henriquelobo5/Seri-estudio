@@ -451,7 +451,7 @@ export default function Catalogo() {
             </Link>
             <a href={`${ROUTES.HOME}#como-funciona`}>Como funciona</a>
             <a href={`${ROUTES.HOME}#contato`}>Contato</a>
-            <MyOrdersLink>Meus pedidos</MyOrdersLink>
+            <MyOrdersLink hideForAdmin>Meus pedidos</MyOrdersLink>
             <AuthNavCta className="nav-cta" />
           </div>
         </nav>
@@ -470,7 +470,7 @@ export default function Catalogo() {
 
             <div className="catalog-toolbar reveal">
               <div className="catalog-heading reveal">
-                <p className="section-label catalog-kicker">Portfolio</p>
+                <p className="section-label catalog-kicker">Portfólio</p>
                 <h1 className="catalog-title">
                   {buildAnimatedText('Nossos', 'catalog-title')}
                   <span>&nbsp;</span>
@@ -532,7 +532,7 @@ export default function Catalogo() {
                       <div className="catalog-filter-popover-head">
                         <div>
                           <p>Filtros</p>
-                          <strong>Refine o catalogo</strong>
+                          <strong>Refine o catálogo</strong>
                         </div>
 
                         {filtrosAtivos.length > 0 && (
@@ -624,7 +624,7 @@ export default function Catalogo() {
             {produtosFiltrados.length === 0 ? (
               <div className="catalog-empty-state">
                 <h3>Nenhum produto encontrado</h3>
-                <p>Remova alguns filtros para voltar a ver as pecas disponiveis.</p>
+                <p>Remova alguns filtros para voltar a ver as peças disponíveis.</p>
               </div>
             ) : (
               <div className="catalog-grid">
@@ -654,7 +654,7 @@ export default function Catalogo() {
                         {formatarNomeProduto(produto.nome)}
                       </h3>
                       <span className="catalog-product-action">
-                        -&gt; Montar ficha tecnica &lt;-
+                        -&gt; Montar ficha técnica &lt;-
                       </span>
                     </div>
                   </Link>
@@ -667,17 +667,17 @@ export default function Catalogo() {
         <section className="catalog-cta">
           <div className="catalog-cta-card reveal">
             <div className="catalog-cta-copy">
-              <p className="section-label">Proximo passo</p>
+              <p className="section-label">Próximo passo</p>
               <h2 className="catalog-cta-title">
                 {buildAnimatedText('Vamos montar sua', 'catalog-cta')}
                 <br />
-                <em>{buildAnimatedText('ficha tecnica?', 'catalog-cta-em')}</em>
+                <em>{buildAnimatedText('ficha técnica?', 'catalog-cta-em')}</em>
               </h2>
             </div>
 
             <div className="catalog-cta-actions">
               <Link to={ROUTES.CRIAR_FICHA} className="btn-primary">
-                Criar ficha tecnica
+                Criar ficha técnica
               </Link>
             </div>
           </div>

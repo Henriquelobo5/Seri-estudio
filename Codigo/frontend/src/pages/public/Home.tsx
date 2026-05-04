@@ -330,7 +330,7 @@ export default function Home() {
             <Link to={ROUTES.CATALOGO}>{'Portf\u00F3lio'}</Link>
             <a href="#como-funciona">Como funciona</a>
             <a href="#contato">Contato</a>
-            <MyOrdersLink>Meus pedidos</MyOrdersLink>
+            <MyOrdersLink hideForAdmin>Meus pedidos</MyOrdersLink>
             <AuthNavCta className="nav-cta" />
           </div>
         </nav>
@@ -411,7 +411,7 @@ export default function Home() {
           <div className="portfolio-header reveal">
             <div>
               <p className="section-label">Portfólio</p>
-              <h2 className="section-h2" style={{ marginBottom: 0 }}>Nossos Trabalhos.</h2>
+              <h2 className="section-h2" style={{ marginBottom: 0 }}>Nossos <em>Trabalhos.</em></h2>
             </div>
             <Link to={ROUTES.CATALOGO} className="btn-secondary" style={{ fontSize: 13, padding: '10px 22px' }}>
               Ver todos →

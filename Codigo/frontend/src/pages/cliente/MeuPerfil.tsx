@@ -1,6 +1,7 @@
 import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthNavCta from '../../components/ui/AuthNavCta'
+import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import { useAuth } from '../../context/AuthContext'
 import logo from '../../assets/images/logo.png'
 import { ROUTES } from '../../routes/routePaths'
@@ -115,7 +116,7 @@ export default function MeuPerfil() {
       })
       .catch((err: unknown) => {
         if (!isMounted) return
-        setError(err instanceof Error ? err.message : 'Nao foi possivel carregar seus dados.')
+        setError(err instanceof Error ? err.message : 'Não foi possível carregar seus dados.')
       })
       .finally(() => {
         if (isMounted) {
@@ -170,12 +171,12 @@ export default function MeuPerfil() {
     setSuccess('')
 
     if (form.nome.trim().length < 3) {
-      setError('Informe um nome valido com pelo menos 3 caracteres.')
+      setError('Informe um nome válido com pelo menos 3 caracteres.')
       return
     }
 
     if (!/\S+@\S+\.\S+/.test(form.email)) {
-      setError('Informe um e-mail valido.')
+      setError('Informe um e-mail válido.')
       return
     }
 
@@ -202,7 +203,7 @@ export default function MeuPerfil() {
 
       setSuccess('Perfil atualizado com sucesso.')
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Nao foi possivel atualizar seu perfil.')
+      setError(err instanceof Error ? err.message : 'Não foi possível atualizar seu perfil.')
     } finally {
       setSaving(false)
     }
@@ -227,10 +228,10 @@ export default function MeuPerfil() {
 
         <div className="mp-nav-center">
           <Link to={ROUTES.HOME} className="mp-nl">Home</Link>
-          <Link to={ROUTES.CATALOGO} className="mp-nl">Portfolio</Link>
+          <Link to={ROUTES.CATALOGO} className="mp-nl">Portfólio</Link>
           <a href={`${ROUTES.HOME}#como-funciona`} className="mp-nl">Como funciona</a>
           <a href={`${ROUTES.HOME}#contato`} className="mp-nl">Contato</a>
-          <Link to={ROUTES.MEUS_PEDIDOS} className="mp-nl">Meus pedidos</Link>
+          <MyOrdersLink hideForAdmin className="mp-nl">Meus pedidos</MyOrdersLink>
         </div>
 
         <div className="mp-nav-right">
@@ -264,7 +265,7 @@ export default function MeuPerfil() {
               <strong>Cliente</strong>
             </div>
             <div className="pf-hero-badge">
-              <span className="pf-hero-badge-label">Sessao</span>
+              <span className="pf-hero-badge-label">Sessão</span>
               <strong>Ativa</strong>
             </div>
           </div>
@@ -277,7 +278,7 @@ export default function MeuPerfil() {
             <div className="pf-card-head">
               <div>
                 <h2 className="pf-card-title">Dados da conta</h2>
-                <p className="pf-card-subtitle">Essas informacoes aparecem no seu atendimento e no fluxo dos pedidos.</p>
+                <p className="pf-card-subtitle">Essas informações aparecem no seu atendimento e no fluxo dos pedidos.</p>
               </div>
               <Link to={ROUTES.MEUS_PEDIDOS} className="pf-head-link">
                 Ver meus pedidos
@@ -345,13 +346,13 @@ export default function MeuPerfil() {
                 </div>
 
                 <div className="pf-field">
-                  <label htmlFor="endereco">Endereco</label>
+                  <label htmlFor="endereco">Endereço</label>
                   <textarea
                     id="endereco"
                     rows={4}
                     value={form.endereco}
                     onChange={handleFieldChange('endereco')}
-                    placeholder="Rua, numero, bairro, cidade"
+                    placeholder="Rua, número, bairro, cidade"
                     disabled={saving}
                     autoComplete="street-address"
                   />
@@ -371,7 +372,7 @@ export default function MeuPerfil() {
                   </button>
 
                   <button type="submit" className="pf-btn pf-btn-primary" disabled={saving}>
-                    {saving ? 'Salvando...' : 'Salvar alteracoes'}
+                    {saving ? 'Salvando...' : 'Salvar alterações'}
                   </button>
                 </div>
               </form>
@@ -388,11 +389,11 @@ export default function MeuPerfil() {
             <div className="pf-profile-meta">
               <div>
                 <span className="pf-meta-label">WhatsApp</span>
-                <strong>{form.whatsapp || 'Nao informado'}</strong>
+                <strong>{form.whatsapp || 'Não informado'}</strong>
               </div>
               <div>
                 <span className="pf-meta-label">Documento</span>
-                <strong>{form.cpfCnpj || 'Nao informado'}</strong>
+                <strong>{form.cpfCnpj || 'Não informado'}</strong>
               </div>
             </div>
           </div>
@@ -430,9 +431,9 @@ export default function MeuPerfil() {
           <div className="pf-card">
             <h3 className="pf-side-title">Importante</h3>
             <ul className="pf-tips">
-              <li>Se voce alterar o e-mail, o proximo login passa a usar o novo endereco.</li>
-              <li>Os campos de contato ajudam o estudio a confirmar orcamentos e entregas.</li>
-              <li>CPF ou CNPJ e opcional, mas facilita a identificacao da sua conta.</li>
+              <li>Se você alterar o e-mail, o próximo login passa a usar o novo endereço.</li>
+              <li>Os campos de contato ajudam o estúdio a confirmar orçamentos e entregas.</li>
+              <li>CPF ou CNPJ é opcional, mas facilita a identificação da sua conta.</li>
             </ul>
           </div>
         </aside>

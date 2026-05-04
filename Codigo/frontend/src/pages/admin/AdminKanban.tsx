@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
@@ -30,10 +30,13 @@ type AdminPedido = {
 type StageConfig = {
   key: EtapaProducao
   label: string
+  description: string
   borderColor: string
   badgeColor: string
   accentColor: string
 }
+
+type PriorityFilter = 'TODOS' | 'URGENTES' | 'NO_PRAZO'
 
 type SidebarItem = {
   label: string
@@ -44,23 +47,23 @@ type SidebarItem = {
 }
 
 const STAGES: StageConfig[] = [
-  { key: 'CORTE', label: 'Corte', borderColor: '#2A5E40', badgeColor: 'rgba(42,94,64,.18)', accentColor: '#2A5E40' },
-  { key: 'ESTAMPARIA', label: 'Estamparia', borderColor: '#3d8c5e', badgeColor: 'rgba(61,140,94,.18)', accentColor: '#3d8c5e' },
-  { key: 'COSTURA', label: 'Costura', borderColor: '#7EC89A', badgeColor: 'rgba(126,200,154,.18)', accentColor: '#7EC89A' },
-  { key: 'REVISAO', label: 'Revisao', borderColor: '#B7CBBE', badgeColor: 'rgba(183,203,190,.18)', accentColor: '#B7CBBE' },
-  { key: 'EXPEDICAO', label: 'Expedicao', borderColor: '#F0EBE3', badgeColor: 'rgba(240,235,227,.16)', accentColor: '#F0EBE3' },
+  { key: 'CORTE', label: 'Corte', description: 'Preparação da base', borderColor: '#2A5E40', badgeColor: 'rgba(42,94,64,.18)', accentColor: '#2A5E40' },
+  { key: 'ESTAMPARIA', label: 'Estamparia', description: 'Arte em produção', borderColor: '#3d8c5e', badgeColor: 'rgba(61,140,94,.18)', accentColor: '#3d8c5e' },
+  { key: 'COSTURA', label: 'Costura', description: 'Montagem das peças', borderColor: '#7EC89A', badgeColor: 'rgba(126,200,154,.18)', accentColor: '#7EC89A' },
+  { key: 'REVISAO', label: 'Revisão', description: 'Conferência final', borderColor: '#B7CBBE', badgeColor: 'rgba(183,203,190,.18)', accentColor: '#B7CBBE' },
+  { key: 'EXPEDICAO', label: 'Expedição', description: 'Pronto para envio', borderColor: '#F0EBE3', badgeColor: 'rgba(240,235,227,.16)', accentColor: '#F0EBE3' },
 ]
 
 const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: 'PRINCIPAL', section: 'title' },
   { label: 'Dashboard' },
-  { label: 'Fichas tecnicas', badge: '3', route: ROUTES.ADMIN_FICHAS },
+  { label: 'Fichas técnicas', badge: '3', route: ROUTES.ADMIN_FICHAS },
   { label: 'Pedidos' },
   { label: 'Clientes' },
-  { label: 'PRODUCAO', section: 'title' },
+  { label: 'PRODUÇÃO', section: 'title' },
   { label: 'Kanban', active: true, route: ROUTES.ADMIN_KANBAN },
   { label: 'Estoque', badge: '2' },
-  { label: 'RELATORIOS', section: 'title' },
+  { label: 'RELATÓRIOS', section: 'title' },
   { label: 'Custos e lucro', route: ROUTES.ADMIN_CUSTOS },
   { label: 'Dashboard financeiro' },
 ]
@@ -153,6 +156,34 @@ function formatDate(date?: string) {
   return `${String(parsed.getDate()).padStart(2, '0')}/${String(parsed.getMonth() + 1).padStart(2, '0')}`
 }
 
+function formatNumber(value: number) {
+  return new Intl.NumberFormat('pt-BR').format(value)
+}
+
+function formatPedidosLabel(value: number) {
+  return `${formatNumber(value)} ${value === 1 ? 'pedido' : 'pedidos'}`
+}
+
+function getSearchText(pedido: AdminPedido) {
+  const specs = parseEspecificacoes(pedido.fichaTecnica?.especificacoes)
+
+  return [
+    pedido.id,
+    pedido.statusAtual,
+    pedido.clienteNome,
+    pedido.clienteEmail,
+    pedido.fichaTecnica?.codigoDisplay,
+    pedido.fichaTecnica?.identificacao,
+    pedido.fichaTecnica?.produtoTipo,
+    specs.tecido,
+    specs.gramatura,
+    specs.cor,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+}
+
 function renderSidebarIcon(label: string) {
   if (label === 'Dashboard') {
     return (
@@ -165,7 +196,7 @@ function renderSidebarIcon(label: string) {
     )
   }
 
-  if (label === 'Fichas tecnicas') {
+  if (label === 'Fichas técnicas') {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M8 4h7l5 5v11H8z" fill="none" />
@@ -295,6 +326,8 @@ export default function AdminKanban() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [movingPedidoId, setMovingPedidoId] = useState<number | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('TODOS')
 
   useEffect(() => {
     let isMounted = true
@@ -306,7 +339,7 @@ export default function AdminKanban() {
       })
       .catch((err: unknown) => {
         if (!isMounted) return
-        setError(err instanceof Error ? err.message : 'Nao foi possivel carregar o Kanban.')
+        setError(err instanceof Error ? err.message : 'Não foi possível carregar o Kanban.')
       })
       .finally(() => {
         if (isMounted) {
@@ -320,8 +353,48 @@ export default function AdminKanban() {
   }, [])
 
   const selectedPedido = pedidos.find((pedido) => pedido.id === selectedPedidoId) ?? null
-  const pedidosAtivos = pedidos.filter((pedido) => pedido.statusAtual !== 'CANCELADO')
+  const pedidosAtivos = useMemo(
+    () => pedidos.filter((pedido) => pedido.statusAtual !== 'CANCELADO'),
+    [pedidos],
+  )
   const urgentes = pedidosAtivos.filter((pedido) => getPriority(pedido).label === 'Urgente').length
+  const totalPecasAtivas = pedidosAtivos.reduce((sum, pedido) => sum + getTotalPecas(pedido.quantidades), 0)
+  const searchQuery = searchTerm.trim().toLowerCase()
+  const hasFilters = searchQuery.length > 0 || priorityFilter !== 'TODOS'
+
+  const pedidosFiltrados = useMemo(() => {
+    return pedidosAtivos.filter((pedido) => {
+      const prioridade = getPriority(pedido).label
+      const matchesPriority =
+        priorityFilter === 'TODOS' ||
+        (priorityFilter === 'URGENTES' && prioridade === 'Urgente') ||
+        (priorityFilter === 'NO_PRAZO' && prioridade === 'No prazo')
+      const matchesSearch = searchQuery.length === 0 || getSearchText(pedido).includes(searchQuery)
+
+      return matchesPriority && matchesSearch
+    })
+  }, [pedidosAtivos, priorityFilter, searchQuery])
+
+  const stageStats = useMemo(
+    () =>
+      STAGES.map((stage) => {
+        const stagePedidos = pedidosAtivos.filter((pedido) => normalizeEtapa(pedido.etapaProducao) === stage.key)
+        const pecas = stagePedidos.reduce((sum, pedido) => sum + getTotalPecas(pedido.quantidades), 0)
+
+        return {
+          stage,
+          count: stagePedidos.length,
+          pecas,
+        }
+      }),
+    [pedidosAtivos],
+  )
+
+  const busiestStage = stageStats.reduce((current, next) => (next.count > current.count ? next : current), stageStats[0])
+  const readyCount = stageStats.find(({ stage }) => stage.key === 'EXPEDICAO')?.count ?? 0
+  const boardSubtitle = hasFilters
+    ? `${pedidosFiltrados.length} pedidos encontrados na visualizacao atual`
+    : 'Arraste os pedidos entre as etapas ou clique para ver detalhes.'
 
   function handleLogout() {
     logout()
@@ -359,7 +432,7 @@ export default function AdminKanban() {
           pedido.id === pedidoId ? { ...pedido, etapaProducao: currentStage } : pedido,
         ),
       )
-      setError(err instanceof Error ? err.message : 'Nao foi possivel mover o pedido.')
+      setError(err instanceof Error ? err.message : 'Não foi possível mover o pedido.')
     } finally {
       setMovingPedidoId(null)
     }
@@ -373,7 +446,7 @@ export default function AdminKanban() {
     const initials = getInitials(pedido.clienteNome)
     const stageIndex = STAGES.findIndex((stage) => stage.key === etapa)
     const cardCode = pedido.fichaTecnica?.codigoDisplay || `SERI-${pedido.id}`
-    const title = pedido.fichaTecnica?.identificacao || 'Pedido em producao'
+    const title = pedido.fichaTecnica?.identificacao || 'Pedido em produção'
     const subtitle = pedido.clienteNome || 'Cliente Seri.'
 
     return (
@@ -401,6 +474,11 @@ export default function AdminKanban() {
         <h3 className="ak-card-title">{title}</h3>
         <p className="ak-card-subtitle">{subtitle}</p>
 
+        <div className="ak-card-info">
+          <span>Aberto em {formatDate(pedido.dataAbertura)}</span>
+          <span>{specs.tecido}</span>
+        </div>
+
         <div className="ak-chip-row">
           <span className={`ak-chip ${getProductTone(pedido.fichaTecnica?.produtoTipo)}`}>
             {pedido.fichaTecnica?.produtoTipo || 'Produto'}
@@ -409,9 +487,9 @@ export default function AdminKanban() {
         </div>
 
         <div className="ak-card-footer">
-          <span className="ak-card-meta">{totalPecas} pecas</span>
+          <span className="ak-card-meta">{formatNumber(totalPecas)} peças</span>
           <div className="ak-progress" aria-hidden="true">
-            {STAGES.slice(0, 4).map((stage, index) => (
+            {STAGES.map((stage, index) => (
               <span
                 key={stage.key}
                 className={`ak-progress-bar ${index <= stageIndex ? 'is-active' : ''}`}
@@ -430,13 +508,13 @@ export default function AdminKanban() {
       <aside className="ak-sidebar">
         <div className="ak-sidebar-top">
           <Link to={ROUTES.HOME} className="ak-brand">
-            <div className="ak-brand-logo">
-              <img src={logo} alt="Seri." />
-            </div>
-            <div>
+            <div className="ak-brand-main">
+              <div className="ak-brand-logo">
+                <img src={logo} alt="Seri." />
+              </div>
               <div className="ak-brand-name">Seri.</div>
-              <div className="ak-brand-sub">Painel do estudio</div>
             </div>
+            <div className="ak-brand-sub">Painel de Administração</div>
           </Link>
 
           <nav className="ak-menu">
@@ -486,22 +564,100 @@ export default function AdminKanban() {
       <main className="ak-main">
         <header className="ak-header">
           <div>
-            <h1>Fluxo de producao</h1>
-            <p>Arraste os pedidos entre as etapas ou clique para ver detalhes.</p>
+            <span className="ak-header-kicker">Produção</span>
+            <h1>Fluxo de <em>produção.</em></h1>
+            <p>{boardSubtitle}</p>
           </div>
 
           <div className="ak-header-badges">
             <span className="ak-header-pill ak-pill-blue">{pedidosAtivos.length} pedidos ativos</span>
-            <span className="ak-header-pill ak-pill-urgent">{urgentes} urgentes</span>
+            <span className="ak-header-pill ak-pill-urgent">{urgentes} pedidos urgentes</span>
           </div>
         </header>
 
         {error ? <div className="ak-alert">{error}</div> : null}
 
+        <section className="ak-overview" aria-label="Resumo da produção">
+          <article className="ak-metric-card ak-metric-card-green">
+            <span>Pedidos ativos</span>
+            <strong>{formatNumber(pedidosAtivos.length)}</strong>
+            <small>em todas as etapas</small>
+          </article>
+          <article className="ak-metric-card ak-metric-card-red">
+            <span>Pedidos urgentes</span>
+            <strong>{formatNumber(urgentes)}</strong>
+            <small>precisam de atenção</small>
+          </article>
+          <article className="ak-metric-card">
+            <span>Peças em produção</span>
+            <strong>{formatNumber(totalPecasAtivas)}</strong>
+            <small>somadas dos pedidos</small>
+          </article>
+          <article className="ak-metric-card">
+            <span>Maior fila</span>
+            <strong>{formatNumber(busiestStage.count)}</strong>
+            <small>{busiestStage.stage.label}</small>
+          </article>
+          <article className="ak-metric-card">
+            <span>Prontos para envio</span>
+            <strong>{formatNumber(readyCount)}</strong>
+            <small>em expedição</small>
+          </article>
+        </section>
+
+        <section className="ak-toolbar" aria-label="Controles do Kanban">
+          <label className="ak-search">
+            <span>Buscar</span>
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Cliente, código ou produto"
+            />
+          </label>
+
+          <div className="ak-filter-group" aria-label="Filtro de prioridade">
+            <button
+              type="button"
+              className={priorityFilter === 'TODOS' ? 'is-active' : ''}
+              onClick={() => setPriorityFilter('TODOS')}
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              className={priorityFilter === 'URGENTES' ? 'is-active' : ''}
+              onClick={() => setPriorityFilter('URGENTES')}
+            >
+              Urgentes
+            </button>
+            <button
+              type="button"
+              className={priorityFilter === 'NO_PRAZO' ? 'is-active' : ''}
+              onClick={() => setPriorityFilter('NO_PRAZO')}
+            >
+              No prazo
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className="ak-clear-filters"
+            disabled={!hasFilters}
+            onClick={() => {
+              setSearchTerm('')
+              setPriorityFilter('TODOS')
+            }}
+          >
+            Limpar
+          </button>
+        </section>
+
         <div className="ak-board-shell">
           <div className="ak-board">
             {STAGES.map((stage) => {
-              const columnPedidos = pedidos.filter((pedido) => normalizeEtapa(pedido.etapaProducao) === stage.key)
+              const columnPedidos = pedidosFiltrados.filter((pedido) => normalizeEtapa(pedido.etapaProducao) === stage.key)
+              const columnPecas = columnPedidos.reduce((sum, pedido) => sum + getTotalPecas(pedido.quantidades), 0)
 
               return (
                 <section
@@ -529,16 +685,26 @@ export default function AdminKanban() {
                   <div className="ak-column-head">
                     <div className="ak-column-title-wrap">
                       <span className="ak-column-icon">{renderStageIcon(stage.key)}</span>
-                      <span className="ak-column-title">{stage.label}</span>
+                      <div>
+                        <span className="ak-column-title">{stage.label}</span>
+                        <span className="ak-column-subtitle">{stage.description}</span>
+                      </div>
                     </div>
-                    <span className="ak-column-count">{columnPedidos.length}</span>
+                    <div className="ak-column-numbers">
+                      <span className="ak-column-count">{formatPedidosLabel(columnPedidos.length)}</span>
+                      <small>{formatNumber(columnPecas)} peças</small>
+                    </div>
                   </div>
 
                   <div className="ak-column-body">
                     {loading ? (
                       <div className="ak-empty-state">Carregando pedidos...</div>
                     ) : columnPedidos.length === 0 ? (
-                      <div className="ak-empty-state">Nenhum pedido nesta etapa.</div>
+                      <div className="ak-empty-state">
+                        <span className="ak-empty-icon">{renderStageIcon(stage.key)}</span>
+                        <strong>{hasFilters ? 'Sem resultado nesta etapa' : `Sem pedidos em ${stage.label}`}</strong>
+                        <span>{hasFilters ? 'Ajuste a busca ou os filtros.' : 'A fila esta livre por enquanto.'}</span>
+                      </div>
                     ) : (
                       columnPedidos.map(renderCard)
                     )}
@@ -556,7 +722,7 @@ export default function AdminKanban() {
             <div className="ak-drawer-head">
               <div>
                 <span className="ak-drawer-code">{selectedPedido.fichaTecnica?.codigoDisplay || `SERI-${selectedPedido.id}`}</span>
-                <h2>{selectedPedido.fichaTecnica?.identificacao || 'Pedido em producao'}</h2>
+                <h2>{selectedPedido.fichaTecnica?.identificacao || 'Pedido em produção'}</h2>
               </div>
               <button type="button" className="ak-drawer-close" onClick={() => setSelectedPedidoId(null)}>
                 Fechar
@@ -565,7 +731,7 @@ export default function AdminKanban() {
 
             <div className="ak-drawer-section">
               <h3>Cliente</h3>
-              <p>{selectedPedido.clienteNome || 'Cliente nao informado'}</p>
+              <p>{selectedPedido.clienteNome || 'Cliente não informado'}</p>
               <span>{selectedPedido.clienteEmail || 'Sem e-mail cadastrado'}</span>
             </div>
 
@@ -575,7 +741,7 @@ export default function AdminKanban() {
                 <p>{selectedPedido.fichaTecnica?.produtoTipo || 'Produto'}</p>
               </div>
               <div className="ak-drawer-section">
-                <h3>Pecas</h3>
+                <h3>Peças</h3>
                 <p>{getTotalPecas(selectedPedido.quantidades)}</p>
               </div>
               <div className="ak-drawer-section">
@@ -605,8 +771,8 @@ export default function AdminKanban() {
             </div>
 
             <div className="ak-drawer-section">
-              <h3>Observacoes</h3>
-              <p>{selectedPedido.observacoes || 'Sem observacoes.'}</p>
+              <h3>Observações</h3>
+              <p>{selectedPedido.observacoes || 'Sem observações.'}</p>
             </div>
           </aside>
         </div>

@@ -88,7 +88,7 @@ export default function DetalhesPedido() {
           <Link to={ROUTES.CATALOGO}>Portfólio</Link>
           <a href={`${ROUTES.HOME}#como-funciona`}>Como funciona</a>
           <a href={`${ROUTES.HOME}#contato`}>Contato</a>
-          <MyOrdersLink>Meus pedidos</MyOrdersLink>
+          <MyOrdersLink hideForAdmin>Meus pedidos</MyOrdersLink>
         </div>
 
         <div className="dpd-nav-right">
