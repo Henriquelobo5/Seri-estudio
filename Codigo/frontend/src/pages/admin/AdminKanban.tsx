@@ -492,7 +492,7 @@ export default function AdminKanban() {
 
           <div className="ak-header-badges">
             <span className="ak-header-pill ak-pill-blue">{pedidosAtivos.length} pedidos ativos</span>
-            <span className="ak-header-pill ak-pill-yellow">{urgentes} urgentes</span>
+            <span className="ak-header-pill ak-pill-urgent">{urgentes} urgentes</span>
           </div>
         </header>
 

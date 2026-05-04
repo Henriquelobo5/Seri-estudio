@@ -260,6 +260,12 @@
   color: var(--ak-brand-cream);
 }
 
+.ak-pill-urgent {
+  background: rgba(176, 42, 42, 0.24);
+  border-color: rgba(255, 112, 112, 0.34);
+  color: #ff8b8b;
+}
+
 .ak-alert {
   margin-bottom: 14px;
   padding: 12px 14px;
