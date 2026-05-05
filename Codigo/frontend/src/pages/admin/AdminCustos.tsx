@@ -52,7 +52,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: 'Clientes' },
   { label: 'PRODUCAO', section: 'title' },
   { label: 'Kanban', route: ROUTES.ADMIN_KANBAN },
-  { label: 'Estoque', badge: '2' },
+  { label: 'Estoque', route: ROUTES.ADMIN_ESTOQUE },
   { label: 'RELATORIOS', section: 'title' },
   { label: 'Custos e lucro', active: true, route: ROUTES.ADMIN_CUSTOS },
   { label: 'Dashboard financeiro' },

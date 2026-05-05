@@ -7,6 +7,8 @@ services:
       POSTGRES_DB: seriestudio
       POSTGRES_USER: seriestudio
       POSTGRES_PASSWORD: seriestudio
+      TZ: America/Sao_Paulo
+      PGTZ: America/Sao_Paulo
     ports:
       - "5432:5432"
     volumes:
@@ -19,6 +21,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/seriestudio
       SPRING_DATASOURCE_USERNAME: seriestudio
       SPRING_DATASOURCE_PASSWORD: seriestudio
+      TZ: America/Sao_Paulo
     ports:
       - "8080:8080"
     depends_on:
