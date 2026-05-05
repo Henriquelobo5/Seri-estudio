@@ -14,15 +14,6 @@ const STEPS = [
   { id: 3, label: 'Detalhes do pedido' },
 ]
 
-const POSICOES = [
-  { key: 'fc', label: 'Frente central' },
-  { key: 'fe', label: 'Frente esq.' },
-  { key: 'fd', label: 'Frente dir.' },
-  { key: 'cc', label: 'Costas' },
-  { key: 'me', label: 'Manga esq.' },
-  { key: 'md', label: 'Manga dir.' },
-]
-
 type PosKey = 'fc' | 'fe' | 'fd' | 'cc' | 'me' | 'md'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -58,13 +49,6 @@ function makePlaceholderDataUrl(ext: string): string {
   return oc.toDataURL()
 }
 
-// ── Configuração por posição ───────────────────────────────────────────────────
-// topPct   → posição vertical no viewer (% da altura)
-// localX   → offset horizontal normalizado: 0 = centro, ±1 = borda da camisa
-// widthPct → largura do overlay (% da largura do viewer)
-// hPct     → altura do overlay (% da largura do viewer, quadrado proporcional)
-// front    → true = frente, false = costas
-
 type PosCfg = {
   topPct:   number
   localX:   number
@@ -73,7 +57,13 @@ type PosCfg = {
   front:    boolean
 }
 
-const POS_CFG: Record<PosKey, PosCfg> = {
+type Product3DConfig = {
+  splineUrl: string
+  posicoes:  { key: PosKey; label: string }[]
+  posCfg:    Record<string, PosCfg>
+}
+
+const BASE_POS_CFG: Record<string, PosCfg> = {
   fc: { topPct: 42, localX:  0,    widthPct: 30, hPct: 28, front: true  },
   fe: { topPct: 40, localX: -0.28, widthPct: 16, hPct: 18, front: true  },
   fd: { topPct: 40, localX:  0.28, widthPct: 16, hPct: 18, front: true  },
@@ -82,23 +72,72 @@ const POS_CFG: Record<PosKey, PosCfg> = {
   md: { topPct: 44, localX:  0.60, widthPct: 13, hPct: 13, front: true  },
 }
 
+const TODAS_POSICOES: { key: PosKey; label: string }[] = [
+  { key: 'fc', label: 'Frente central' },
+  { key: 'fe', label: 'Frente esq.' },
+  { key: 'fd', label: 'Frente dir.' },
+  { key: 'cc', label: 'Costas' },
+  { key: 'me', label: 'Manga esq.' },
+  { key: 'md', label: 'Manga dir.' },
+]
+
+const PRODUCT_3D_CONFIG: Record<string, Product3DConfig> = {
+  Camiseta: {
+    splineUrl: 'https://prod.spline.design/rfUuD0pkFEL3StiT/scene.splinecode',
+    posicoes:  TODAS_POSICOES,
+    posCfg:    BASE_POS_CFG,
+  },
+  Moletom: {
+    splineUrl: 'https://prod.spline.design/MOLETOM_PLACEHOLDER/scene.splinecode',
+    posicoes:  TODAS_POSICOES,
+    posCfg:    BASE_POS_CFG,
+  },
+  Regata: {
+    splineUrl: 'https://prod.spline.design/REGATA_PLACEHOLDER/scene.splinecode',
+    posicoes:  [
+      { key: 'fc', label: 'Frente central' },
+      { key: 'fe', label: 'Frente esq.' },
+      { key: 'fd', label: 'Frente dir.' },
+      { key: 'cc', label: 'Costas' },
+    ],
+    posCfg: BASE_POS_CFG,
+  },
+  Polo: {
+    splineUrl: 'https://prod.spline.design/POLO_PLACEHOLDER/scene.splinecode',
+    posicoes:  TODAS_POSICOES,
+    posCfg:    BASE_POS_CFG,
+  },
+  Ecobag: {
+    splineUrl: 'https://prod.spline.design/ECOBAG_PLACEHOLDER/scene.splinecode',
+    posicoes:  [
+      { key: 'fc', label: 'Frente' },
+      { key: 'cc', label: 'Costas' },
+    ],
+    posCfg: {
+      fc: { topPct: 45, localX: 0, widthPct: 40, hPct: 35, front: true  },
+      cc: { topPct: 45, localX: 0, widthPct: 40, hPct: 35, front: false },
+    },
+  },
+}
+
 // ── Componente ────────────────────────────────────────────────────────────────
 
 export default function DetalhesProduto() {
   const navigate  = useNavigate()
   const location  = useLocation()
   const locState  = (location.state ?? {}) as { fichaId?: number; fichaData?: any }
+  const tipo      = locState.fichaData?.tipo ?? 'Camiseta'
+  const config    = PRODUCT_3D_CONFIG[tipo] ?? PRODUCT_3D_CONFIG['Camiseta']
 
-  // Spline
   const splineRef      = useRef<HTMLElement>(null)
   const [splineLoaded, setSplineLoaded] = useState(false)
 
-  // Rastreamento de câmera (refs → sem re-render)
   const artOverlayRef  = useRef<HTMLDivElement>(null)
   const cameraRef      = useRef<any>(null)
   const initialDistRef = useRef<number>(0)
   const rafRef         = useRef<number>(0)
   const posRef         = useRef<PosKey>('fc')
+  const posCfgRef      = useRef(config.posCfg)
   const artUrlRef      = useRef<string | null>(null)
   const artObjUrlRef   = useRef<string | null>(null) // object URL para revogar
 
@@ -136,7 +175,8 @@ export default function DetalhesProduto() {
         // Elevação (ângulo vertical da câmera)
         const ev = Math.atan2(-cy, Math.sqrt(cx*cx + cz*cz))
 
-        const cfg = POS_CFG[posRef.current]
+        const cfg = posCfgRef.current[posRef.current]
+        if (!cfg) { rafRef.current = requestAnimationFrame(loop); return }
 
         // Visibilidade: fade suave ao girar para o lado oposto da arte
         let vis: number
@@ -341,7 +381,7 @@ export default function DetalhesProduto() {
     )
   }
 
-  const posLabel = POSICOES.find(p => p.key === pos)?.label ?? ''
+  const posLabel = config.posicoes.find(p => p.key === pos)?.label ?? ''
 
   return (
     <div className="dp-page">
@@ -425,7 +465,7 @@ export default function DetalhesProduto() {
               <div className="dp-bh">Posição da estampa</div>
               <div className="dp-bb">
                 <div className="dp-pgrid">
-                  {POSICOES.map(({ key, label }) => (
+                  {config.posicoes.map(({ key, label }) => (
                     <button
                       key={key}
                       className={`dp-pbtn ${pos === key ? 'sel' : ''}`}
@@ -483,13 +523,14 @@ export default function DetalhesProduto() {
           {!splineLoaded && (
             <div className="dp-v-loading">
               <div className="dp-spinner" />
-              <p>Carregando camiseta 3D...</p>
+              <p>Carregando {tipo.toLowerCase()} 3D...</p>
             </div>
           )}
 
           <spline-viewer
+            key={tipo}
             ref={splineRef as React.RefObject<HTMLElement>}
-            url="https://prod.spline.design/rfUuD0pkFEL3StiT/scene.splinecode"
+            url={config.splineUrl}
             loading-anim-type="none"
           />
 
@@ -511,7 +552,7 @@ export default function DetalhesProduto() {
                   <line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
               </div>
-              <p>Envie uma arte para<br />visualizar na camiseta</p>
+              <p>Envie uma arte para<br />visualizar no {tipo.toLowerCase()}</p>
             </div>
           )}
 
@@ -590,7 +631,7 @@ export default function DetalhesProduto() {
               onClick={() => btnNextOn && navigate(ROUTES.DETALHES_PEDIDO, {
                 state: {
                   fichaId: locState.fichaId,
-                  fichaData: { ...locState.fichaData, posicao: POSICOES.find(p => p.key === pos)?.label ?? '', arquivos: file ? 1 : 0 },
+                  fichaData: { ...locState.fichaData, posicao: config.posicoes.find(p => p.key === pos)?.label ?? '', arquivos: file ? 1 : 0 },
                 },
               })}
             >
