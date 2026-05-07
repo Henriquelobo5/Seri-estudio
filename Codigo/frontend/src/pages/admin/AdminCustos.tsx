@@ -47,13 +47,13 @@ type SidebarItem = {
 const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: 'PRINCIPAL', section: 'title' },
   { label: 'Dashboard' },
-  { label: 'Fichas tecnicas', badge: '3', route: ROUTES.ADMIN_FICHAS },
+  { label: 'Fichas técnicas', badge: '3', route: ROUTES.ADMIN_FICHAS },
   { label: 'Pedidos' },
   { label: 'Clientes' },
-  { label: 'PRODUCAO', section: 'title' },
+  { label: 'PRODUÇÃO', section: 'title' },
   { label: 'Kanban', route: ROUTES.ADMIN_KANBAN },
   { label: 'Estoque', route: ROUTES.ADMIN_ESTOQUE },
-  { label: 'RELATORIOS', section: 'title' },
+  { label: 'RELATÓRIOS', section: 'title' },
   { label: 'Custos e lucro', active: true, route: ROUTES.ADMIN_CUSTOS },
   { label: 'Dashboard financeiro' },
 ]
@@ -81,6 +81,10 @@ function getTotalPecas(quantidades?: string | null) {
 
 function formatBRL(value: number) {
   return `R$ ${value.toFixed(2).replace('.', ',')}`
+}
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat('pt-BR').format(value)
 }
 
 function getMargemClass(margem: number) {
@@ -121,7 +125,7 @@ function renderSidebarIcon(label: string) {
       </svg>
     )
   }
-  if (label === 'Fichas tecnicas') {
+  if (label === 'Fichas técnicas') {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M8 4h7l5 5v11H8z" fill="none" />
@@ -212,7 +216,7 @@ export default function AdminCustos() {
       })
       .catch((err: unknown) => {
         if (!isMounted) return
-        setError(err instanceof Error ? err.message : 'Nao foi possivel carregar os pedidos.')
+        setError(err instanceof Error ? err.message : 'Não foi possível carregar os pedidos.')
       })
       .finally(() => {
         if (isMounted) setLoading(false)
@@ -248,7 +252,7 @@ export default function AdminCustos() {
       )
       setSavedId(selectedPedido.id)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Nao foi possivel salvar os custos.')
+      setError(err instanceof Error ? err.message : 'Não foi possível salvar os custos.')
     } finally {
       setSaving(false)
     }
@@ -268,6 +272,7 @@ export default function AdminCustos() {
   }, 0)
   const lucroTotal = faturamento - custoTotal
   const pedidosComVenda = pedidos.filter((p) => (p.financeiro?.valorVenda ?? 0) > 0)
+  const pedidosRegistrados = pedidos.filter((p) => p.financeiro != null).length
   const margemMedia = pedidosComVenda.length > 0
     ? pedidosComVenda.reduce((s, p) => {
         const f = p.financeiro!
@@ -281,18 +286,22 @@ export default function AdminCustos() {
   const currentLucro = draft.valorVenda - currentCusto
   const currentMargem = calcMargem(draft)
 
+  const headerSubtitle = pedidos.length === 0
+    ? 'Nenhum pedido carregado ainda.'
+    : `Registre custos por pedido e acompanhe a margem automaticamente. ${pedidosRegistrados} de ${pedidos.length} já com financeiro.`
+
   return (
     <div className="ak-page">
       <aside className="ak-sidebar">
         <div className="ak-sidebar-top">
           <Link to={ROUTES.HOME} className="ak-brand">
-            <div className="ak-brand-logo">
-              <img src={logo} alt="Seri." />
-            </div>
-            <div>
+            <div className="ak-brand-main">
+              <div className="ak-brand-logo">
+                <img src={logo} alt="Seri." />
+              </div>
               <div className="ak-brand-name">Seri.</div>
-              <div className="ak-brand-sub">Painel do estudio</div>
             </div>
+            <div className="ak-brand-sub">Painel de Administração</div>
           </Link>
 
           <nav className="ak-menu">
@@ -337,55 +346,56 @@ export default function AdminCustos() {
         </div>
       </aside>
 
-      <div className="ac-main">
-        <header className="ac-header">
+      <main className="ak-main">
+        <header className="ak-header">
           <div>
-            <h1>Custos e lucro</h1>
-            <p>Registre custos por pedido e acompanhe a margem automaticamente</p>
+            <span className="ak-header-kicker">Relatórios</span>
+            <h1>Custos e <em>lucro.</em></h1>
+            <p>{headerSubtitle}</p>
           </div>
+
           <div className="ak-header-badges">
-            <span className="ak-header-pill ak-pill-blue">{pedidos.length} pedidos</span>
+            <span className="ak-header-pill ak-pill-blue">{formatNumber(pedidos.length)} pedidos</span>
+            <span className="ak-header-pill ak-pill-yellow">{formatNumber(pedidosRegistrados)} registrados</span>
           </div>
         </header>
 
-        <div className="ac-split">
-          {/* LEFT PANE */}
-          <div className="ac-left">
-            {error ? <div className="ak-alert">{error}</div> : null}
+        {error ? <div className="ak-alert">{error}</div> : null}
 
-            {/* KPIs */}
-            <div className="ac-kpis">
-              <div className="ac-kpi">
-                <span className="ac-kpi-label">Faturamento do mes</span>
-                <span className="ac-kpi-value g">{formatBRL(faturamento)}</span>
-                <span className="ac-kpi-sub">Soma dos precos de venda</span>
-              </div>
-              <div className="ac-kpi">
-                <span className="ac-kpi-label">Custo total</span>
-                <span className="ac-kpi-value r">{formatBRL(custoTotal)}</span>
-                <span className="ac-kpi-sub">Soma de todos os custos</span>
-              </div>
-              <div className="ac-kpi">
-                <span className="ac-kpi-label">Lucro liquido</span>
-                <span className="ac-kpi-value">{formatBRL(lucroTotal)}</span>
-                <span className="ac-kpi-sub">Faturamento - Custos</span>
-              </div>
-              <div className="ac-kpi">
-                <span className="ac-kpi-label">Margem media</span>
-                <span className="ac-kpi-value o">
-                  {margemMedia.toFixed(1).replace('.', ',')}%
-                </span>
-                <span className="ac-kpi-sub">Media dos pedidos</span>
-              </div>
-            </div>
+        <section className="ak-overview" aria-label="Resumo financeiro">
+          <article className="ak-metric-card ak-metric-card-green">
+            <span>Faturamento do mês</span>
+            <strong>{formatBRL(faturamento)}</strong>
+            <small>soma dos preços de venda</small>
+          </article>
+          <article className="ak-metric-card ak-metric-card-red">
+            <span>Custo total</span>
+            <strong>{formatBRL(custoTotal)}</strong>
+            <small>soma de todos os custos</small>
+          </article>
+          <article className="ak-metric-card">
+            <span>Lucro líquido</span>
+            <strong>{formatBRL(lucroTotal)}</strong>
+            <small>faturamento − custos</small>
+          </article>
+          <article className="ak-metric-card ak-metric-card-yellow">
+            <span>Margem média</span>
+            <strong>{margemMedia.toFixed(1).replace('.', ',')}%</strong>
+            <small>média dos pedidos</small>
+          </article>
+          <article className="ak-metric-card">
+            <span>Pedidos registrados</span>
+            <strong>{formatNumber(pedidosRegistrados)}</strong>
+            <small>de {formatNumber(pedidos.length)} ativos</small>
+          </article>
+        </section>
 
-            {/* TABLE */}
-            <div>
-              <div className="ac-table-head">
-                <div>
-                  <div className="ac-table-head-title">Pedidos ativos</div>
-                  <div className="ac-table-head-sub">Clique em um pedido para registrar os custos</div>
-                </div>
+        <div className="ac-grid">
+          <div className="ac-table-side">
+            <div className="ac-table-head">
+              <div>
+                <div className="ac-table-head-title">Pedidos ativos</div>
+                <div className="ac-table-head-sub">Clique em um pedido para registrar os custos</div>
               </div>
             </div>
 
@@ -393,9 +403,9 @@ export default function AdminCustos() {
               <table className="ac-table">
                 <thead>
                   <tr>
-                    <th>Codigo</th>
+                    <th>Código</th>
                     <th>Pedido</th>
-                    <th>Pecas</th>
+                    <th>Peças</th>
                     <th>Custo total</th>
                     <th>Venda</th>
                     <th>Margem</th>
@@ -439,7 +449,7 @@ export default function AdminCustos() {
                               <span>{pedido.clienteNome || 'Cliente Seri.'}</span>
                             </div>
                           </td>
-                          <td>{totalPecas > 0 ? `${totalPecas} pecas` : '--'}</td>
+                          <td>{totalPecas > 0 ? `${totalPecas} peças` : '--'}</td>
                           <td>
                             {custo !== null ? (
                               <span className="ac-mono">{formatBRL(custo)}</span>
@@ -472,12 +482,11 @@ export default function AdminCustos() {
             </div>
           </div>
 
-          {/* RIGHT PANEL */}
-          <div className="ac-right">
+          <aside className="ac-form-side">
             <div className="ac-rp-head">
               <div className="ac-rp-head-title">Registrar custos</div>
               <div className="ac-rp-head-sub">
-                {selectedPedido ? 'Edite os custos e salve' : 'Selecione um pedido a esquerda'}
+                {selectedPedido ? 'Edite os custos e salve' : 'Selecione um pedido à esquerda'}
               </div>
             </div>
 
@@ -495,7 +504,7 @@ export default function AdminCustos() {
                       {[
                         selectedPedido.clienteNome,
                         selectedPedido.quantidades
-                          ? `${getTotalPecas(selectedPedido.quantidades)} pecas`
+                          ? `${getTotalPecas(selectedPedido.quantidades)} peças`
                           : null,
                         selectedPedido.produtoTipo,
                       ]
@@ -506,7 +515,7 @@ export default function AdminCustos() {
 
                   <div className="ac-sec-lbl">Custos</div>
 
-                  {/* Custo: Peca / Tecido */}
+                  {/* Custo: Peça / Tecido */}
                   <div className="ac-cost-row">
                     <div className="ac-cost-label">
                       <div className="ac-cost-icon">
@@ -515,7 +524,7 @@ export default function AdminCustos() {
                         </svg>
                       </div>
                       <div>
-                        <div className="ac-cost-name">Peca / Tecido</div>
+                        <div className="ac-cost-name">Peça / Tecido</div>
                         <div className="ac-cost-sub">Material bruto</div>
                       </div>
                     </div>
@@ -560,7 +569,7 @@ export default function AdminCustos() {
                     </div>
                   </div>
 
-                  {/* Custo: Mao de obra */}
+                  {/* Custo: Mão de obra */}
                   <div className="ac-cost-row">
                     <div className="ac-cost-label">
                       <div className="ac-cost-icon">
@@ -570,7 +579,7 @@ export default function AdminCustos() {
                         </svg>
                       </div>
                       <div>
-                        <div className="ac-cost-name">Mao de obra</div>
+                        <div className="ac-cost-name">Mão de obra</div>
                         <div className="ac-cost-sub">Corte, costura, acabamento</div>
                       </div>
                     </div>
@@ -614,9 +623,9 @@ export default function AdminCustos() {
                     </div>
                   </div>
 
-                  {/* Preco de venda */}
+                  {/* Preço de venda */}
                   <div className="ac-pv-wrap">
-                    <div className="ac-pv-label">Preco de venda combinado</div>
+                    <div className="ac-pv-label">Preço de venda combinado</div>
                     <input
                       className="ac-pv-input"
                       type="number"
@@ -650,7 +659,7 @@ export default function AdminCustos() {
                       />
                     </div>
                     <div className="ac-sum-pv-row">
-                      <span className="ac-sum-pv-key">Preco de venda</span>
+                      <span className="ac-sum-pv-key">Preço de venda</span>
                       <span className="ac-sum-pv-val">{formatBRL(draft.valorVenda)}</span>
                     </div>
                   </div>
@@ -658,9 +667,7 @@ export default function AdminCustos() {
 
                 <div className="ac-rp-foot">
                   {savedId === selectedPedido.id && !saving ? (
-                    <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--ak-brand-lime)', marginBottom: 8 }}>
-                      Custos salvos com sucesso!
-                    </p>
+                    <p className="ac-saved-msg">Custos salvos com sucesso!</p>
                   ) : null}
                   <button
                     type="button"
@@ -680,9 +687,9 @@ export default function AdminCustos() {
                 <p>Selecione um pedido na tabela para registrar os custos</p>
               </div>
             )}
-          </div>
+          </aside>
         </div>
-      </div>
+      </main>
     </div>
   )
 }

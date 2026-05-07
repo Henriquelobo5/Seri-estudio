@@ -314,11 +314,18 @@ export default function AdminFichas() {
 
   const totalFichas = pedidos.length
   const aguardandoAnalise = pedidos.filter((pedido) => normalizeStatus(pedido.statusAtual) === 'AGUARDANDO_ANALISE').length
+  const orcamentoEnviado = pedidos.filter((pedido) => normalizeStatus(pedido.statusAtual) === 'ORCAMENTO_ENVIADO').length
   const emProducao = pedidos.filter((pedido) => normalizeStatus(pedido.statusAtual) === 'EM_PRODUCAO').length
   const concluidas = pedidos.filter((pedido) => {
     const status = normalizeStatus(pedido.statusAtual)
     return status === 'PRONTO_PARA_RETIRADA' || status === 'ENTREGUE'
   }).length
+
+  const hasFilters = search.trim().length > 0 || filter !== 'TODOS'
+
+  const headerSubtitle = hasFilters
+    ? `Mostrando fichas filtradas. Limpe os filtros para ver todas as ${totalFichas}.`
+    : 'Listagem, busca e gestão das fichas técnicas dos clientes.'
 
   const normalizedSearch = deferredSearch.trim().toUpperCase()
   const pedidosFiltrados = pedidos.filter((pedido) => {
@@ -436,72 +443,91 @@ export default function AdminFichas() {
         </div>
       </aside>
 
-      <main className="ak-main af-main">
-        <header className="af-header">
+      <main className="ak-main">
+        <header className="ak-header">
           <div>
-            <h1>Fichas técnicas</h1>
-            <p>Listagem, busca e gestão das fichas dos clientes</p>
+            <span className="ak-header-kicker">Catálogo</span>
+            <h1>Fichas <em>técnicas.</em></h1>
+            <p>{headerSubtitle}</p>
           </div>
 
           <div className="ak-header-badges">
-            <span className="ak-header-pill ak-pill-yellow">{aguardandoAnalise} aguardando análise</span>
+            <span className="ak-header-pill ak-pill-blue">{totalFichas} fichas</span>
+            {aguardandoAnalise > 0 ? (
+              <span className="ak-header-pill ak-pill-yellow">{aguardandoAnalise} aguardando análise</span>
+            ) : null}
           </div>
         </header>
 
-        <section className="af-metrics">
-          <article className="af-metric-card">
+        {error ? <div className="ak-alert">{error}</div> : null}
+
+        <section className="ak-overview" aria-label="Resumo das fichas técnicas">
+          <article className="ak-metric-card">
             <span>Total de fichas</span>
             <strong>{totalFichas}</strong>
-            <small>{totalFichas > 0 ? '+2 hoje' : 'Sem novas fichas'}</small>
+            <small>fichas registradas</small>
           </article>
 
-          <article className="af-metric-card">
+          <article className="ak-metric-card ak-metric-card-yellow">
             <span>Aguardando análise</span>
             <strong>{aguardandoAnalise}</strong>
-            <small>urgente</small>
+            <small>precisam de revisão</small>
           </article>
 
-          <article className="af-metric-card">
+          <article className="ak-metric-card">
+            <span>Em orçamento</span>
+            <strong>{orcamentoEnviado}</strong>
+            <small>aguardando aprovação</small>
+          </article>
+
+          <article className="ak-metric-card ak-metric-card-green">
             <span>Em produção</span>
             <strong>{emProducao}</strong>
-            <small>em dia</small>
+            <small>em andamento</small>
           </article>
 
-          <article className="af-metric-card">
+          <article className="ak-metric-card">
             <span>Concluídas</span>
             <strong>{concluidas}</strong>
-            <small>este mês</small>
+            <small>prontas ou entregues</small>
           </article>
         </section>
 
-        {error ? <div className="ak-alert">{error}</div> : null}
-
-        <section className="af-toolbar">
-          <div className="af-search">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <path d="M20 20l-4.4-4.4" />
-            </svg>
+        <section className="ak-toolbar" aria-label="Filtros das fichas técnicas">
+          <label className="ak-search">
+            <span>Buscar</span>
             <input
-              type="text"
-              placeholder="Buscar por código, cliente ou peça..."
+              type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
+              placeholder="Código, cliente ou peça"
             />
-          </div>
+          </label>
 
-          <div className="af-filters">
+          <div className="ak-filter-group" aria-label="Filtro por status">
             {FILTER_OPTIONS.map((option) => (
               <button
                 key={option.value}
                 type="button"
-                className={`af-filter ${filter === option.value ? 'is-active' : ''}`}
+                className={filter === option.value ? 'is-active' : ''}
                 onClick={() => setFilter(option.value)}
               >
                 {option.label}
               </button>
             ))}
           </div>
+
+          <button
+            type="button"
+            className="ak-clear-filters"
+            disabled={!hasFilters}
+            onClick={() => {
+              setSearch('')
+              setFilter('TODOS')
+            }}
+          >
+            Limpar
+          </button>
         </section>
 
         <section className="af-table-shell">
@@ -589,8 +615,8 @@ export default function AdminFichas() {
                 <p>{selectedPedido.clienteNome || 'Cliente Seri.'}</p>
               </div>
 
-              <button type="button" className="af-drawer-close" onClick={() => setSelectedPedidoId(null)}>
-                x
+              <button type="button" className="af-drawer-close" onClick={() => setSelectedPedidoId(null)} aria-label="Fechar">
+                ✕
               </button>
             </div>
 
@@ -668,7 +694,7 @@ export default function AdminFichas() {
               onClick={() => void saveStatus()}
               disabled={savingStatusId === selectedPedido.id || draftStatus === normalizeStatus(selectedPedido.statusAtual)}
             >
-              {savingStatusId === selectedPedido.id ? 'Salvando...' : 'Salvar alteracao de status'}
+              {savingStatusId === selectedPedido.id ? 'Salvando...' : 'Salvar alteração de status'}
             </button>
           </aside>
         </div>
