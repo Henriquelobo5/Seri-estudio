@@ -1,39 +1,24 @@
-/* AdminEstoque uses ak-* variables from AdminKanban.css */
-
-.ae-main {
-  min-width: 0;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  overflow: hidden;
+/* AdminEstoque uses ak-* shell from AdminKanban.css. */
+/* Page-specific spacing inside ak-main */
+.ak-main > .ak-overview,
+.ak-main > .ak-toolbar,
+.ak-main > .ae-banner,
+.ak-main > .ae-grid {
+  margin-bottom: 14px;
 }
 
-/* HEADER */
-.ae-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 18px 20px 14px;
-  border-bottom: 1px solid rgba(133, 151, 120, 0.1);
+.ak-main > .ae-grid:last-child {
+  margin-bottom: 0;
 }
 
-.ae-header h1 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+/* Metric card – yellow variant (Atenção) */
+.ak-metric-card-yellow {
+  border-color: rgba(240, 179, 94, 0.3);
+  background: linear-gradient(180deg, rgba(120, 84, 32, 0.24), rgba(16, 22, 16, 0.72));
 }
 
-.ae-header p {
-  margin: 4px 0 0;
-  color: var(--ak-text-soft);
-  font-size: 0.78rem;
-}
-
-.ae-header-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.ak-metric-card-yellow strong {
+  color: #f0b35e;
 }
 
 /* BUTTONS */
@@ -114,31 +99,13 @@
   font-size: 0.74rem;
 }
 
-/* CONTENT */
-.ae-content {
-  overflow-y: auto;
-  padding: 18px 20px 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.ae-content::-webkit-scrollbar {
-  width: 4px;
-}
-
-.ae-content::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 99px;
-}
-
 /* BANNER */
 .ae-banner {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: 14px;
   background: rgba(212, 166, 74, 0.12);
   border: 1px solid rgba(212, 166, 74, 0.28);
   border-left: 4px solid #d4a64a;
@@ -169,130 +136,17 @@
   background: rgba(212, 166, 74, 0.18);
 }
 
-/* KPIs */
-.ae-kpis {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.ae-kpi {
-  padding: 14px 16px;
-  border: 1px solid var(--ak-border);
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(19, 24, 18, 0.96), rgba(11, 15, 11, 0.94));
-}
-
-.ae-kpi-label {
-  display: block;
-  color: var(--ak-text-soft);
-  font-size: 0.72rem;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.ae-kpi-value {
-  display: block;
-  font-size: 1.8rem;
-  font-weight: 400;
-  letter-spacing: -0.04em;
-  color: var(--ak-brand-cream);
-  line-height: 1;
-  margin-bottom: 4px;
-}
-
-.ae-kpi-value.g { color: var(--ak-brand-lime); }
-.ae-kpi-value.o { color: #f0b35e; }
-.ae-kpi-value.r { color: #e36a6a; }
-
-.ae-kpi-sub {
-  display: block;
-  color: var(--ak-text-dim);
-  font-size: 0.7rem;
-}
-
-/* TOOLBAR */
-.ae-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  justify-content: space-between;
-}
-
-.ae-chips {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.ae-chip {
-  padding: 7px 13px;
-  border-radius: 99px;
-  border: 1px solid var(--ak-border);
-  background: rgba(20, 26, 20, 0.6);
-  color: var(--ak-text-soft);
-  font-size: 0.74rem;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-
-.ae-chip:hover {
-  border-color: var(--ak-border-strong);
-}
-
-.ae-chip.is-active {
-  background: rgba(126, 200, 154, 0.14);
-  border-color: rgba(126, 200, 154, 0.4);
-  color: var(--ak-brand-lime);
-}
-
-.ae-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--ak-border);
-  background: rgba(15, 19, 15, 0.7);
-  min-width: 240px;
-}
-
-.ae-search svg {
-  width: 14px;
-  height: 14px;
-  stroke: var(--ak-text-soft);
-  stroke-width: 1.6;
-  fill: none;
-}
-
-.ae-search input {
-  background: none;
-  border: none;
-  color: var(--ak-text);
-  font-family: inherit;
-  font-size: 0.78rem;
-  outline: none;
-  width: 100%;
-}
-
-.ae-search input::placeholder {
-  color: var(--ak-text-dim);
-}
-
 /* GRID */
 .ae-grid {
   display: grid;
   grid-template-columns: 1fr 320px;
-  gap: 24px;
+  gap: 16px;
   align-items: start;
 }
 
 .ae-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 14px;
 }
 
@@ -302,23 +156,35 @@
   text-align: center;
   color: var(--ak-text-dim);
   font-size: 0.82rem;
+  border: 1px dashed rgba(131, 148, 121, 0.16);
+  border-radius: 14px;
+  background: rgba(17, 22, 17, 0.42);
 }
 
 .ae-empty-soft {
   padding: 16px;
   font-size: 0.76rem;
+  border: none;
+  background: none;
 }
 
 /* CARD */
 .ae-card {
   position: relative;
-  padding: 16px 16px 14px;
-  border: 1px solid var(--ak-border);
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(22, 27, 22, 0.95), rgba(14, 18, 14, 0.96));
+  padding: 14px 14px 12px;
+  border: 1px solid var(--ak-border-strong);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(32, 38, 31, 0.92), rgba(22, 27, 22, 0.95));
   display: flex;
   flex-direction: column;
   gap: 10px;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ae-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(167, 188, 157, 0.28);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18);
 }
 
 .ae-card-critico,
@@ -474,9 +340,9 @@
 /* CARD CONTENT */
 .ae-card-name {
   font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--ak-brand-cream);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #f7f7f3;
 }
 
 .ae-card-cat {
@@ -551,13 +417,13 @@
 /* MOVIMENTAÇÕES SIDEBAR */
 .ae-mov-side {
   position: sticky;
-  top: 0;
+  top: 16px;
   border: 1px solid var(--ak-border);
   border-radius: 16px;
   background: linear-gradient(180deg, rgba(19, 24, 18, 0.96), rgba(11, 15, 11, 0.94));
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 100px);
+  max-height: calc(100vh - 40px);
   overflow: hidden;
 }
 
@@ -851,9 +717,6 @@
 }
 
 @media (max-width: 720px) {
-  .ae-kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
   .ae-cards {
     grid-template-columns: 1fr;
   }

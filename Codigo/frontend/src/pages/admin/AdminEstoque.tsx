@@ -57,13 +57,13 @@ type SidebarItem = {
 const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: 'PRINCIPAL', section: 'title' },
   { label: 'Dashboard' },
-  { label: 'Fichas tecnicas', badge: '3', route: ROUTES.ADMIN_FICHAS },
+  { label: 'Fichas técnicas', badge: '3', route: ROUTES.ADMIN_FICHAS },
   { label: 'Pedidos' },
   { label: 'Clientes' },
-  { label: 'PRODUCAO', section: 'title' },
+  { label: 'PRODUÇÃO', section: 'title' },
   { label: 'Kanban', route: ROUTES.ADMIN_KANBAN },
   { label: 'Estoque', active: true, route: ROUTES.ADMIN_ESTOQUE },
-  { label: 'RELATORIOS', section: 'title' },
+  { label: 'RELATÓRIOS', section: 'title' },
   { label: 'Custos e lucro', route: ROUTES.ADMIN_CUSTOS },
   { label: 'Dashboard financeiro' },
 ]
@@ -124,6 +124,10 @@ function truncate(text: string, n = 38) {
   return text.length > n ? text.slice(0, n) + '…' : text
 }
 
+function formatNumber(value: number) {
+  return new Intl.NumberFormat('pt-BR').format(value)
+}
+
 function renderSidebarIcon(label: string) {
   if (label === 'Dashboard') {
     return (
@@ -135,7 +139,7 @@ function renderSidebarIcon(label: string) {
       </svg>
     )
   }
-  if (label === 'Fichas tecnicas') {
+  if (label === 'Fichas técnicas') {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M8 4h7l5 5v11H8z" fill="none" />
@@ -334,6 +338,12 @@ export default function AdminEstoque() {
   const insumosCriticos = insumos.filter(
     (i) => i.status === 'CRITICO' || i.status === 'SEM_ESTOQUE',
   )
+
+  const hasFilters = busca.trim().length > 0 || categoriaFiltro !== 'TODAS'
+
+  const headerSubtitle = hasFilters
+    ? `${insumosFiltrados.length} ${insumosFiltrados.length === 1 ? 'insumo encontrado' : 'insumos encontrados'} na visualização atual.`
+    : 'Gerencie insumos, monitore alertas e registre movimentações de entrada e saída.'
 
   function abrirCadastrar() {
     setDraftInsumo(initialDraft)
@@ -570,13 +580,13 @@ export default function AdminEstoque() {
       <aside className="ak-sidebar">
         <div className="ak-sidebar-top">
           <Link to={ROUTES.HOME} className="ak-brand">
-            <div className="ak-brand-logo">
-              <img src={logo} alt="Seri." />
-            </div>
-            <div>
+            <div className="ak-brand-main">
+              <div className="ak-brand-logo">
+                <img src={logo} alt="Seri." />
+              </div>
               <div className="ak-brand-name">Seri.</div>
-              <div className="ak-brand-sub">Painel do estudio</div>
             </div>
+            <div className="ak-brand-sub">Painel de Administração</div>
           </Link>
 
           <nav className="ak-menu">
@@ -621,13 +631,15 @@ export default function AdminEstoque() {
         </div>
       </aside>
 
-      <div className="ae-main">
-        <header className="ae-header">
+      <main className="ak-main">
+        <header className="ak-header">
           <div>
-            <h1>Controle de estoque</h1>
-            <p>Gerencie insumos, monitore alertas e registre movimentações</p>
+            <span className="ak-header-kicker">Produção</span>
+            <h1>Controle de <em>estoque.</em></h1>
+            <p>{headerSubtitle}</p>
           </div>
-          <div className="ae-header-actions">
+
+          <div className="ak-header-badges">
             <button type="button" className="ae-btn ae-btn-secondary" onClick={abrirCadastrar}>
               + Cadastrar insumo
             </button>
@@ -637,238 +649,251 @@ export default function AdminEstoque() {
           </div>
         </header>
 
-        <div className="ae-content">
-          {error ? <div className="ak-alert">{error}</div> : null}
+        {error ? <div className="ak-alert">{error}</div> : null}
 
-          {!bannerDismissed && insumosCriticos.length > 0 ? (
-            <div className="ae-banner">
-              <span className="ae-banner-icon">⚠</span>
-              <span className="ae-banner-text">
-                <strong>{insumosCriticos.length}</strong>{' '}
-                {insumosCriticos.length === 1 ? 'insumo em' : 'insumos em'} nível crítico —{' '}
-                {insumosCriticos.map((i) => i.nomeItem).join(', ')}{' '}
-                {insumosCriticos.length === 1 ? 'precisa' : 'precisam'} de reposição urgente.
-              </span>
+        {!bannerDismissed && insumosCriticos.length > 0 ? (
+          <div className="ae-banner">
+            <span className="ae-banner-icon">⚠</span>
+            <span className="ae-banner-text">
+              <strong>{insumosCriticos.length}</strong>{' '}
+              {insumosCriticos.length === 1 ? 'insumo em' : 'insumos em'} nível crítico —{' '}
+              {insumosCriticos.map((i) => i.nomeItem).join(', ')}{' '}
+              {insumosCriticos.length === 1 ? 'precisa' : 'precisam'} de reposição urgente.
+            </span>
+            <button
+              type="button"
+              className="ae-banner-close"
+              onClick={() => setBannerDismissed(true)}
+              aria-label="Fechar alerta"
+            >
+              ✕
+            </button>
+          </div>
+        ) : null}
+
+        <section className="ak-overview" aria-label="Resumo do estoque">
+          <article className="ak-metric-card">
+            <span>Itens cadastrados</span>
+            <strong>{formatNumber(kpiItens)}</strong>
+            <small>tipos de insumo</small>
+          </article>
+          <article className="ak-metric-card ak-metric-card-green">
+            <span>Nível adequado</span>
+            <strong>{formatNumber(kpiOk)}</strong>
+            <small>insumos com saldo OK</small>
+          </article>
+          <article className="ak-metric-card ak-metric-card-yellow">
+            <span>Atenção</span>
+            <strong>{formatNumber(kpiBaixo)}</strong>
+            <small>nível baixo</small>
+          </article>
+          <article className="ak-metric-card ak-metric-card-red">
+            <span>Urgente</span>
+            <strong>{formatNumber(kpiCritico)}</strong>
+            <small>crítico ou sem estoque</small>
+          </article>
+          <article className="ak-metric-card">
+            <span>Movimentações</span>
+            <strong>{formatNumber(movimentacoes.length)}</strong>
+            <small>registradas no período</small>
+          </article>
+        </section>
+
+        <section className="ak-toolbar" aria-label="Filtros do estoque">
+          <label className="ak-search">
+            <span>Buscar</span>
+            <input
+              type="search"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Nome do insumo"
+            />
+          </label>
+
+          <div className="ak-filter-group" aria-label="Filtro por categoria">
+            <button
+              type="button"
+              className={categoriaFiltro === 'TODAS' ? 'is-active' : ''}
+              onClick={() => setCategoriaFiltro('TODAS')}
+            >
+              Todas
+            </button>
+            {CATEGORIAS.map((c) => (
               <button
+                key={c.value}
                 type="button"
-                className="ae-banner-close"
-                onClick={() => setBannerDismissed(true)}
-                aria-label="Fechar alerta"
+                className={categoriaFiltro === c.value ? 'is-active' : ''}
+                onClick={() => setCategoriaFiltro(c.value)}
               >
-                ✕
+                {c.label}
               </button>
-            </div>
-          ) : null}
-
-          <div className="ae-kpis">
-            <div className="ae-kpi">
-              <span className="ae-kpi-label">Itens</span>
-              <span className="ae-kpi-value">{kpiItens}</span>
-              <span className="ae-kpi-sub">Tipos de insumo</span>
-            </div>
-            <div className="ae-kpi">
-              <span className="ae-kpi-label">OK</span>
-              <span className="ae-kpi-value g">{kpiOk}</span>
-              <span className="ae-kpi-sub">Nível adequado</span>
-            </div>
-            <div className="ae-kpi">
-              <span className="ae-kpi-label">Atenção</span>
-              <span className="ae-kpi-value o">{kpiBaixo}</span>
-              <span className="ae-kpi-sub">Nível baixo</span>
-            </div>
-            <div className="ae-kpi">
-              <span className="ae-kpi-label">Urgente</span>
-              <span className="ae-kpi-value r">{kpiCritico}</span>
-              <span className="ae-kpi-sub">Nível crítico</span>
-            </div>
+            ))}
           </div>
 
-          <div className="ae-toolbar">
-            <div className="ae-chips">
-              <button
-                type="button"
-                className={`ae-chip ${categoriaFiltro === 'TODAS' ? 'is-active' : ''}`}
-                onClick={() => setCategoriaFiltro('TODAS')}
-              >
-                Todas
-              </button>
-              {CATEGORIAS.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  className={`ae-chip ${categoriaFiltro === c.value ? 'is-active' : ''}`}
-                  onClick={() => setCategoriaFiltro(c.value)}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
-            <div className="ae-search">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="11" cy="11" r="6" fill="none" />
-                <path d="M20 20l-3.5-3.5" fill="none" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Buscar insumo..."
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-              />
-            </div>
+          <button
+            type="button"
+            className="ak-clear-filters"
+            disabled={!hasFilters}
+            onClick={() => {
+              setBusca('')
+              setCategoriaFiltro('TODAS')
+            }}
+          >
+            Limpar
+          </button>
+        </section>
+
+        <div className="ae-grid">
+          <div className="ae-cards">
+            {loading ? (
+              <div className="ae-empty">Carregando insumos...</div>
+            ) : insumosFiltrados.length === 0 ? (
+              <div className="ae-empty">Nenhum insumo encontrado.</div>
+            ) : (
+              insumosFiltrados.map((ins) => {
+                const progressoMax = Math.max(ins.qtdMinima * 5, 1)
+                const pct = Math.min(100, (ins.qtdEstoque / progressoMax) * 100)
+                const semConsumo = ins.consumoPorPeca == null
+
+                return (
+                  <div key={ins.idInsumo} className={`ae-card ae-card-${ins.status.toLowerCase()}`}>
+                    <div className="ae-card-head">
+                      <div className={`ae-card-icon cat-${ins.categoria.toLowerCase()}`}>
+                        {renderCategoriaIcon(ins.categoria)}
+                      </div>
+                      <div className="ae-card-head-actions">
+                        <div className="ae-card-menu-wrap">
+                          <button
+                            type="button"
+                            className="ae-card-menu-btn"
+                            onClick={() =>
+                              setMenuAberto(menuAberto === ins.idInsumo ? null : ins.idInsumo)
+                            }
+                            aria-label="Menu"
+                          >
+                            ⋯
+                          </button>
+                          {menuAberto === ins.idInsumo ? (
+                            <div className="ae-card-menu">
+                              <button type="button" onClick={() => abrirEditar(ins)}>
+                                Editar
+                              </button>
+                              <button type="button" onClick={() => abrirAjuste(ins)}>
+                                Ajuste de inventário
+                              </button>
+                              <button type="button" onClick={() => abrirSaidaManual(ins)}>
+                                Dar saída manual
+                              </button>
+                              <button
+                                type="button"
+                                className="ae-menu-danger"
+                                onClick={() => abrirExcluir(ins)}
+                              >
+                                Excluir
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
+                        <span className={`ae-status ae-status-${ins.status.toLowerCase()}`}>
+                          <span className="ae-status-icon">{statusIcon(ins.status)}</span>
+                          {statusLabel(ins.status)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="ae-card-name">{ins.nomeItem}</div>
+                    <div className="ae-card-cat">{categoriaLabel(ins.categoria)}</div>
+
+                    <div className="ae-card-qty">
+                      <span className="ae-card-qty-num">{ins.qtdEstoque}</span>
+                      <span className="ae-card-qty-un">{ins.unidadeMedida}</span>
+                    </div>
+
+                    <div className="ae-progress">
+                      <div
+                        className={`ae-progress-fill st-${ins.status.toLowerCase()}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+
+                    <div className="ae-card-meta">
+                      <div>
+                        <div className="ae-meta-label">MÍNIMO</div>
+                        <div className="ae-meta-val">
+                          {ins.qtdMinima} {ins.unidadeMedida}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="ae-meta-label">POR PEÇA</div>
+                        <div className="ae-meta-val">
+                          {ins.consumoPorPeca != null
+                            ? `${ins.consumoPorPeca} ${ins.unidadeMedida}`
+                            : '—'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="ae-card-actions">
+                      <button
+                        type="button"
+                        className="ae-btn ae-btn-card-secondary"
+                        onClick={() => abrirAbastecerCard(ins)}
+                      >
+                        + Abastecer
+                      </button>
+                      <button
+                        type="button"
+                        className="ae-btn ae-btn-card-danger"
+                        disabled={semConsumo}
+                        title={
+                          semConsumo
+                            ? 'Configure o consumo por peça antes de simular'
+                            : undefined
+                        }
+                        onClick={() => abrirSimular(ins)}
+                      >
+                        - Registrar saída
+                      </button>
+                    </div>
+                  </div>
+                )
+              })
+            )}
           </div>
 
-          <div className="ae-grid">
-            <div className="ae-cards">
-              {loading ? (
-                <div className="ae-empty">Carregando insumos...</div>
-              ) : insumosFiltrados.length === 0 ? (
-                <div className="ae-empty">Nenhum insumo encontrado.</div>
+          <aside className="ae-mov-side">
+            <div className="ae-mov-head">
+              <strong>Movimentações</strong>
+              <span>Entradas, saídas e ajustes</span>
+            </div>
+            <div className="ae-mov-list">
+              {movimentacoes.length === 0 ? (
+                <div className="ae-empty-soft">Nenhuma movimentação ainda.</div>
               ) : (
-                insumosFiltrados.map((ins) => {
-                  const progressoMax = Math.max(ins.qtdMinima * 5, 1)
-                  const pct = Math.min(100, (ins.qtdEstoque / progressoMax) * 100)
-                  const semConsumo = ins.consumoPorPeca == null
-
+                movimentacoes.map((mov) => {
+                  const sinal =
+                    mov.tipo === 'ENTRADA' ? '+' : mov.tipo === 'SAIDA' ? '-' : '≈'
+                  const valorClass = mov.tipo === 'ENTRADA' ? 'pos' : mov.tipo === 'SAIDA' ? 'neg' : 'aju'
                   return (
-                    <div key={ins.idInsumo} className={`ae-card ae-card-${ins.status.toLowerCase()}`}>
-                      <div className="ae-card-head">
-                        <div className={`ae-card-icon cat-${ins.categoria.toLowerCase()}`}>
-                          {renderCategoriaIcon(ins.categoria)}
-                        </div>
-                        <div className="ae-card-head-actions">
-                          <div className="ae-card-menu-wrap">
-                            <button
-                              type="button"
-                              className="ae-card-menu-btn"
-                              onClick={() =>
-                                setMenuAberto(menuAberto === ins.idInsumo ? null : ins.idInsumo)
-                              }
-                              aria-label="Menu"
-                            >
-                              ⋯
-                            </button>
-                            {menuAberto === ins.idInsumo ? (
-                              <div className="ae-card-menu">
-                                <button type="button" onClick={() => abrirEditar(ins)}>
-                                  Editar
-                                </button>
-                                <button type="button" onClick={() => abrirAjuste(ins)}>
-                                  Ajuste de inventário
-                                </button>
-                                <button type="button" onClick={() => abrirSaidaManual(ins)}>
-                                  Dar saída manual
-                                </button>
-                                <button
-                                  type="button"
-                                  className="ae-menu-danger"
-                                  onClick={() => abrirExcluir(ins)}
-                                >
-                                  Excluir
-                                </button>
-                              </div>
-                            ) : null}
-                          </div>
-                          <span className={`ae-status ae-status-${ins.status.toLowerCase()}`}>
-                            <span className="ae-status-icon">{statusIcon(ins.status)}</span>
-                            {statusLabel(ins.status)}
-                          </span>
+                    <div key={mov.idMovimentacao} className="ae-mov-item">
+                      <span className={`ae-mov-dot dot-${mov.tipo.toLowerCase()}`} />
+                      <div className="ae-mov-body">
+                        <div className="ae-mov-motivo">{truncate(mov.motivo)}</div>
+                        <div className="ae-mov-sub">
+                          {mov.insumoNome} · {formatDataHora(mov.dataHora)}
                         </div>
                       </div>
-                      <div className="ae-card-name">{ins.nomeItem}</div>
-                      <div className="ae-card-cat">{categoriaLabel(ins.categoria)}</div>
-
-                      <div className="ae-card-qty">
-                        <span className="ae-card-qty-num">{ins.qtdEstoque}</span>
-                        <span className="ae-card-qty-un">{ins.unidadeMedida}</span>
-                      </div>
-
-                      <div className="ae-progress">
-                        <div
-                          className={`ae-progress-fill st-${ins.status.toLowerCase()}`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-
-                      <div className="ae-card-meta">
-                        <div>
-                          <div className="ae-meta-label">MÍNIMO</div>
-                          <div className="ae-meta-val">
-                            {ins.qtdMinima} {ins.unidadeMedida}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="ae-meta-label">POR PEÇA</div>
-                          <div className="ae-meta-val">
-                            {ins.consumoPorPeca != null
-                              ? `${ins.consumoPorPeca} ${ins.unidadeMedida}`
-                              : '—'}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="ae-card-actions">
-                        <button
-                          type="button"
-                          className="ae-btn ae-btn-card-secondary"
-                          onClick={() => abrirAbastecerCard(ins)}
-                        >
-                          + Abastecer
-                        </button>
-                        <button
-                          type="button"
-                          className="ae-btn ae-btn-card-danger"
-                          disabled={semConsumo}
-                          title={
-                            semConsumo
-                              ? 'Configure o consumo por peça antes de simular'
-                              : undefined
-                          }
-                          onClick={() => abrirSimular(ins)}
-                        >
-                          - Simular abate
-                        </button>
+                      <div className={`ae-mov-val ${valorClass}`}>
+                        {sinal}
+                        {mov.quantidade}
                       </div>
                     </div>
                   )
                 })
               )}
             </div>
-
-            <aside className="ae-mov-side">
-              <div className="ae-mov-head">
-                <strong>Movimentações</strong>
-                <span>Entradas, saídas e ajustes</span>
-              </div>
-              <div className="ae-mov-list">
-                {movimentacoes.length === 0 ? (
-                  <div className="ae-empty-soft">Nenhuma movimentação ainda.</div>
-                ) : (
-                  movimentacoes.map((mov) => {
-                    const sinal =
-                      mov.tipo === 'ENTRADA' ? '+' : mov.tipo === 'SAIDA' ? '-' : '≈'
-                    const valorClass = mov.tipo === 'ENTRADA' ? 'pos' : mov.tipo === 'SAIDA' ? 'neg' : 'aju'
-                    return (
-                      <div key={mov.idMovimentacao} className="ae-mov-item">
-                        <span className={`ae-mov-dot dot-${mov.tipo.toLowerCase()}`} />
-                        <div className="ae-mov-body">
-                          <div className="ae-mov-motivo">{truncate(mov.motivo)}</div>
-                          <div className="ae-mov-sub">
-                            {mov.insumoNome} · {formatDataHora(mov.dataHora)}
-                          </div>
-                        </div>
-                        <div className={`ae-mov-val ${valorClass}`}>
-                          {sinal}
-                          {mov.quantidade}
-                        </div>
-                      </div>
-                    )
-                  })
-                )}
-              </div>
-            </aside>
-          </div>
+          </aside>
         </div>
-      </div>
+      </main>
 
       {/* MODAIS */}
       {(modalAberto === 'cadastrar' || modalAberto === 'editar') && (
