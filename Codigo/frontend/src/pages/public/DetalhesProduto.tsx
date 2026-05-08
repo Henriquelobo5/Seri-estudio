@@ -54,7 +54,8 @@ type ProductConfig = {
   modelUrl:           string | null
   posicoes:           { key: PosKey; label: string }[]
   hideMeshMaterials?: string[]
-  hidePosSelector?:   boolean
+  hidePosSelector?:    boolean
+  posRayOriginOffset?: Partial<Record<PosKey, [number, number, number]>>
 }
 
 const TODAS_POSICOES: { key: PosKey; label: string }[] = [
@@ -84,9 +85,12 @@ const PRODUCT_CONFIG: Record<string, ProductConfig> = {
     posicoes:          TODAS_POSICOES,
   },
   Ecobag: {
-    modelUrl:        '/models/ecobag.glb',
-    hidePosSelector: true,
-    posicoes:        [{ key: 'fc', label: 'Frente' }],
+    modelUrl:           '/models/ecobag.glb',
+    hidePosSelector:    true,
+    posicoes:           [{ key: 'fc', label: 'Frente' }],
+    // The bounding box includes the handles at the top, shifting the centroid up.
+    // Lower the ray origin so it hits the center of the bag body, not the handle area.
+    posRayOriginOffset: { fc: [0, -0.45, 0] },
   },
 }
 
@@ -419,6 +423,7 @@ export default function DetalhesProduto() {
                 flipH={flipH}
                 flipV={flipV}
                 hideMeshMaterials={config.hideMeshMaterials}
+                posRayOriginOffset={config.posRayOriginOffset}
                 onLoad={handleModelLoad}
               />
             </>

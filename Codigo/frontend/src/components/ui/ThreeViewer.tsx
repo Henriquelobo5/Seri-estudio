@@ -55,7 +55,10 @@ function applyColorToScene(scene: THREE.Scene, color: string | undefined) {
         mat.metalnessMap  = null
         mat.aoMap         = null
         mat.emissiveMap   = null
-        mat.side          = THREE.DoubleSide  // prevents dark faces from inverted normals
+        // metalness=1 + no envMap = black. Force matte fabric look for all garments.
+        mat.metalness     = 0
+        mat.roughness     = 0.8
+        mat.side          = THREE.DoubleSide
         mat.needsUpdate   = true
       }
     }
@@ -87,13 +90,15 @@ interface Props {
   flipH:              boolean
   flipV:              boolean
   onLoad?:            () => void
-  hideMeshMaterials?: string[]
+  hideMeshMaterials?:   string[]
+  posRayOriginOffset?:  Partial<Record<PosKey, [number, number, number]>>
 }
 
 export default function ThreeViewer({
   modelUrl, artUrl, pos, moveMode, color,
   artRotation, artScale, flipH, flipV, onLoad,
   hideMeshMaterials = [],
+  posRayOriginOffset = {},
 }: Props) {
   const mountRef      = useRef<HTMLDivElement>(null)
   const rendererRef   = useRef<THREE.WebGLRenderer | null>(null)
@@ -116,16 +121,18 @@ export default function ThreeViewer({
   const scaleRef            = useRef(artScale)
   const flipHRef            = useRef(flipH)
   const flipVRef            = useRef(flipV)
-  const hideMeshMaterialsRef = useRef(hideMeshMaterials)
-  const isDraggingRef       = useRef(false)
+  const hideMeshMaterialsRef  = useRef(hideMeshMaterials)
+  const posRayOriginOffsetRef = useRef(posRayOriginOffset)
+  const isDraggingRef         = useRef(false)
 
-  useEffect(() => { onLoadRef.current            = onLoad           }, [onLoad])
-  useEffect(() => { colorRef.current             = color            }, [color])
-  useEffect(() => { rotationRef.current          = artRotation      }, [artRotation])
-  useEffect(() => { scaleRef.current             = artScale         }, [artScale])
-  useEffect(() => { flipHRef.current             = flipH            }, [flipH])
-  useEffect(() => { flipVRef.current             = flipV            }, [flipV])
-  useEffect(() => { hideMeshMaterialsRef.current = hideMeshMaterials }, [hideMeshMaterials])
+  useEffect(() => { onLoadRef.current             = onLoad            }, [onLoad])
+  useEffect(() => { colorRef.current              = color             }, [color])
+  useEffect(() => { rotationRef.current           = artRotation       }, [artRotation])
+  useEffect(() => { scaleRef.current              = artScale          }, [artScale])
+  useEffect(() => { flipHRef.current              = flipH             }, [flipH])
+  useEffect(() => { flipVRef.current              = flipV             }, [flipV])
+  useEffect(() => { hideMeshMaterialsRef.current  = hideMeshMaterials  }, [hideMeshMaterials])
+  useEffect(() => { posRayOriginOffsetRef.current = posRayOriginOffset }, [posRayOriginOffset])
 
   // ── Scene setup ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -143,19 +150,24 @@ export default function ThreeViewer({
     const renderer = new THREE.WebGLRenderer({ antialias: true })
     renderer.setSize(mount.clientWidth, mount.clientHeight)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.outputColorSpace = THREE.SRGBColorSpace
+    renderer.outputColorSpace   = THREE.SRGBColorSpace
+    // ACES tone-mapping compresses bright colors gracefully instead of clipping to
+    // pure white, so we can use high-intensity lights without overexposure.
+    renderer.toneMapping        = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 0.9
     mount.appendChild(renderer.domElement)
     rendererRef.current = renderer
 
-    // Very bright, all-around lighting so no face is dark.
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xffffff, 3.0))
-    const key = new THREE.DirectionalLight(0xffffff, 2.5)
+    // Balanced lighting: hemisphere provides even coverage on all faces;
+    // three mild directionals add subtle depth cues front, back, and side.
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xffffff, 2.5))
+    const key = new THREE.DirectionalLight(0xffffff, 0.8)
     key.position.set(2, 4, 5)
     scene.add(key)
-    const fill = new THREE.DirectionalLight(0xffffff, 2.0)
+    const fill = new THREE.DirectionalLight(0xffffff, 0.6)
     fill.position.set(-3, 1, -5)
     scene.add(fill)
-    const back = new THREE.DirectionalLight(0xffffff, 2.0)
+    const back = new THREE.DirectionalLight(0xffffff, 0.6)
     back.position.set(0, 2, -6)
     scene.add(back)
 
@@ -276,7 +288,8 @@ export default function ThreeViewer({
       depthTest:           true,
       depthWrite:          false,
       polygonOffset:       true,
-      polygonOffsetFactor: -10,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits:  -20,  // units matters on flat surfaces where factor ≈ 0
     })
     const decal = new THREE.Mesh(geom, mat)
     scene.add(decal)
@@ -354,14 +367,22 @@ export default function ThreeViewer({
       if (!model) return
 
       const ray    = POS_RAY[pos]
-      const origin = new THREE.Vector3(...ray.from)
+      const offset = posRayOriginOffsetRef.current[pos] ?? [0, 0, 0]
+      const origin = new THREE.Vector3(
+        ray.from[0] + offset[0],
+        ray.from[1] + offset[1],
+        ray.from[2] + offset[2],
+      )
       const dir    = new THREE.Vector3(...ray.dir).normalize()
       const rc     = new THREE.Raycaster(origin, dir)
       const hits   = rc.intersectObject(model, true)
 
       if (hits[0]?.face) {
         const hitMesh = hits[0].object as THREE.Mesh
-        const normal  = hits[0].face.normal.clone().transformDirection(hitMesh.matrixWorld)
+        // Use the ray direction (negated) as the surface normal instead of the
+        // actual face normal. This locks the decal to a predictable, upright
+        // orientation regardless of local surface curvature or reliefs.
+        const normal  = dir.clone().negate()
         placeDecalAt(hits[0].point, normal, hitMesh)
       }
     })
