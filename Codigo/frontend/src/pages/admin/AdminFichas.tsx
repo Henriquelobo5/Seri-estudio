@@ -16,6 +16,7 @@ type AdminStatus =
   | 'CANCELADO'
 
 type FiltroStatus = 'TODOS' | AdminStatus
+type FichasSummaryKey = 'TOTAL' | 'ANALISE' | 'ORCAMENTO' | 'PRODUCAO' | 'CONCLUIDAS'
 
 type AdminPedido = {
   id: number
@@ -72,7 +73,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: 'Pedidos' },
   { label: 'Clientes' },
   { label: 'PRODUÇÃO', section: 'title' },
-  { label: 'Kanban', route: ROUTES.ADMIN_KANBAN },
+  { label: 'Fluxo de produção', route: ROUTES.ADMIN_KANBAN },
   { label: 'Estoque', route: ROUTES.ADMIN_ESTOQUE },
   { label: 'RELATÓRIOS', section: 'title' },
   { label: 'Custos e lucro', route: ROUTES.ADMIN_CUSTOS },
@@ -223,7 +224,7 @@ function renderSidebarIcon(label: string) {
     )
   }
 
-  if (label === 'Kanban') {
+  if (label === 'Fluxo de produção') {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <rect x="4" y="5" width="16" height="14" rx="2" fill="none" />
@@ -278,6 +279,7 @@ export default function AdminFichas() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [savingStatusId, setSavingStatusId] = useState<number | null>(null)
+  const [activeSummary, setActiveSummary] = useState<FichasSummaryKey | null>(null)
 
   const deferredSearch = useDeferredValue(search)
 
@@ -320,6 +322,52 @@ export default function AdminFichas() {
     const status = normalizeStatus(pedido.statusAtual)
     return status === 'PRONTO_PARA_RETIRADA' || status === 'ENTREGUE'
   }).length
+  const summaryCards = [
+    {
+      key: 'TOTAL' as const,
+      className: '',
+      label: 'Total de fichas',
+      value: totalFichas,
+      helper: 'fichas registradas',
+      pedidos,
+    },
+    {
+      key: 'ANALISE' as const,
+      className: '',
+      label: 'Aguardando análise',
+      value: aguardandoAnalise,
+      helper: 'precisam de revisão',
+      pedidos: pedidos.filter((pedido) => normalizeStatus(pedido.statusAtual) === 'AGUARDANDO_ANALISE'),
+    },
+    {
+      key: 'ORCAMENTO' as const,
+      className: '',
+      label: 'Em orçamento',
+      value: orcamentoEnviado,
+      helper: 'aguardando aprovação',
+      pedidos: pedidos.filter((pedido) => normalizeStatus(pedido.statusAtual) === 'ORCAMENTO_ENVIADO'),
+    },
+    {
+      key: 'PRODUCAO' as const,
+      className: 'ak-metric-card-green',
+      label: 'Em produção',
+      value: emProducao,
+      helper: 'em andamento',
+      pedidos: pedidos.filter((pedido) => normalizeStatus(pedido.statusAtual) === 'EM_PRODUCAO'),
+    },
+    {
+      key: 'CONCLUIDAS' as const,
+      className: '',
+      label: 'Concluídas',
+      value: concluidas,
+      helper: 'prontas ou entregues',
+      pedidos: pedidos.filter((pedido) => {
+        const status = normalizeStatus(pedido.statusAtual)
+        return status === 'PRONTO_PARA_RETIRADA' || status === 'ENTREGUE'
+      }),
+    },
+  ]
+  const activeSummaryCard = summaryCards.find((card) => card.key === activeSummary) ?? null
 
   const hasFilters = search.trim().length > 0 || filter !== 'TODOS'
 
@@ -351,6 +399,7 @@ export default function AdminFichas() {
   }
 
   function openPedido(pedido: AdminPedido) {
+    setActiveSummary(null)
     setSelectedPedidoId(pedido.id)
     setDraftStatus(normalizeStatus(pedido.statusAtual))
   }
@@ -446,51 +495,31 @@ export default function AdminFichas() {
       <main className="ak-main">
         <header className="ak-header">
           <div>
-            <span className="ak-header-kicker">Catálogo</span>
+            <span className="ak-header-kicker">Principal</span>
             <h1>Fichas <em>técnicas.</em></h1>
             <p>{headerSubtitle}</p>
           </div>
 
-          <div className="ak-header-badges">
-            <span className="ak-header-pill ak-pill-blue">{totalFichas} fichas</span>
-            {aguardandoAnalise > 0 ? (
-              <span className="ak-header-pill ak-pill-yellow">{aguardandoAnalise} aguardando análise</span>
-            ) : null}
-          </div>
         </header>
 
         {error ? <div className="ak-alert">{error}</div> : null}
 
         <section className="ak-overview" aria-label="Resumo das fichas técnicas">
-          <article className="ak-metric-card">
-            <span>Total de fichas</span>
-            <strong>{totalFichas}</strong>
-            <small>fichas registradas</small>
-          </article>
-
-          <article className="ak-metric-card ak-metric-card-yellow">
-            <span>Aguardando análise</span>
-            <strong>{aguardandoAnalise}</strong>
-            <small>precisam de revisão</small>
-          </article>
-
-          <article className="ak-metric-card">
-            <span>Em orçamento</span>
-            <strong>{orcamentoEnviado}</strong>
-            <small>aguardando aprovação</small>
-          </article>
-
-          <article className="ak-metric-card ak-metric-card-green">
-            <span>Em produção</span>
-            <strong>{emProducao}</strong>
-            <small>em andamento</small>
-          </article>
-
-          <article className="ak-metric-card">
-            <span>Concluídas</span>
-            <strong>{concluidas}</strong>
-            <small>prontas ou entregues</small>
-          </article>
+          {summaryCards.map((card) => (
+            <button
+              key={card.key}
+              type="button"
+              className={`ak-metric-card ak-metric-button ${card.className} ${activeSummary === card.key ? 'is-active' : ''}`}
+              onClick={() => {
+                setSelectedPedidoId(null)
+                setActiveSummary(activeSummary === card.key ? null : card.key)
+              }}
+            >
+              <span>{card.label}</span>
+              <strong>{card.value}</strong>
+              <small>{card.helper}</small>
+            </button>
+          ))}
         </section>
 
         <section className="ak-toolbar" aria-label="Filtros das fichas técnicas">
@@ -696,6 +725,50 @@ export default function AdminFichas() {
             >
               {savingStatusId === selectedPedido.id ? 'Salvando...' : 'Salvar alteração de status'}
             </button>
+          </aside>
+        </div>
+      ) : null}
+
+      {activeSummaryCard && !selectedPedido ? (
+        <div className="af-drawer-backdrop" onClick={() => setActiveSummary(null)}>
+          <aside className="af-drawer af-summary-drawer" onClick={(event) => event.stopPropagation()}>
+            <div className="af-drawer-top">
+              <div>
+                <span className="af-drawer-code">Resumo das fichas</span>
+                <h2>{activeSummaryCard.label}</h2>
+                <p>{activeSummaryCard.pedidos.length} {activeSummaryCard.pedidos.length === 1 ? 'ficha encontrada' : 'fichas encontradas'}</p>
+              </div>
+
+              <button type="button" className="af-drawer-close" onClick={() => setActiveSummary(null)} aria-label="Fechar">
+                ✕
+              </button>
+            </div>
+
+            <div className="ak-summary-list">
+              {activeSummaryCard.pedidos.length === 0 ? (
+                <div className="ak-summary-empty">Nenhuma ficha nesse grupo.</div>
+              ) : (
+                activeSummaryCard.pedidos.map((pedido) => {
+                  const specs = parseEspecificacoes(pedido.fichaTecnica?.especificacoes)
+                  return (
+                    <button
+                      key={pedido.id}
+                      type="button"
+                      className="ak-summary-item"
+                      onClick={() => openPedido(pedido)}
+                    >
+                      <span className="ak-summary-code">
+                        {pedido.fichaTecnica?.codigoDisplay || `SERI-${pedido.id}`}
+                      </span>
+                      <strong>{pedido.fichaTecnica?.identificacao || 'Pedido sem nome'}</strong>
+                      <small>
+                        {pedido.clienteNome || 'Cliente Seri.'} · {getStatusLabel(pedido.statusAtual)} · {getTotalPecas(pedido.quantidades)} peças · {specs.cor}
+                      </small>
+                    </button>
+                  )
+                })
+              )}
+            </div>
           </aside>
         </div>
       ) : null}

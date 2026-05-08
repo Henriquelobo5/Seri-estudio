@@ -11,16 +11,6 @@
   margin-bottom: 0;
 }
 
-/* Yellow metric card variant (used by ak-overview here too) */
-.ak-metric-card-yellow {
-  border-color: rgba(240, 179, 94, 0.3);
-  background: linear-gradient(180deg, rgba(120, 84, 32, 0.24), rgba(16, 22, 16, 0.72));
-}
-
-.ak-metric-card-yellow strong {
-  color: #f0b35e;
-}
-
 /* TABLE */
 .af-table-shell {
   overflow: hidden;
@@ -198,6 +188,10 @@
   background: linear-gradient(180deg, rgba(13, 18, 13, 0.99), rgba(9, 12, 9, 0.99));
   border-left: 1px solid rgba(132, 148, 124, 0.12);
   box-shadow: -24px 0 60px rgba(0, 0, 0, 0.34);
+}
+
+.af-summary-drawer .ak-summary-list {
+  grid-template-columns: 1fr;
 }
 
 .af-drawer-top {

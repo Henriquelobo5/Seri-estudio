@@ -37,6 +37,7 @@ type StageConfig = {
 }
 
 type PriorityFilter = 'TODOS' | 'URGENTES' | 'NO_PRAZO'
+type SummaryKey = 'ATIVOS' | 'URGENTES' | 'PECAS' | 'MAIOR_FILA' | 'PRONTOS'
 
 type SidebarItem = {
   label: string
@@ -61,7 +62,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: 'Pedidos' },
   { label: 'Clientes' },
   { label: 'PRODUÇÃO', section: 'title' },
-  { label: 'Kanban', active: true, route: ROUTES.ADMIN_KANBAN },
+  { label: 'Fluxo de produção', active: true, route: ROUTES.ADMIN_KANBAN },
   { label: 'Estoque', route: ROUTES.ADMIN_ESTOQUE },
   { label: 'RELATÓRIOS', section: 'title' },
   { label: 'Custos e lucro', route: ROUTES.ADMIN_CUSTOS },
@@ -225,7 +226,7 @@ function renderSidebarIcon(label: string) {
     )
   }
 
-  if (label === 'Kanban') {
+  if (label === 'Fluxo de produção') {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <rect x="4" y="5" width="16" height="14" rx="2" fill="none" />
@@ -328,6 +329,7 @@ export default function AdminKanban() {
   const [movingPedidoId, setMovingPedidoId] = useState<number | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('TODOS')
+  const [activeSummary, setActiveSummary] = useState<SummaryKey | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -339,7 +341,7 @@ export default function AdminKanban() {
       })
       .catch((err: unknown) => {
         if (!isMounted) return
-        setError(err instanceof Error ? err.message : 'Não foi possível carregar o Kanban.')
+        setError(err instanceof Error ? err.message : 'Não foi possível carregar o fluxo de produção.')
       })
       .finally(() => {
         if (isMounted) {
@@ -395,6 +397,61 @@ export default function AdminKanban() {
   const boardSubtitle = hasFilters
     ? `${pedidosFiltrados.length} pedidos encontrados na visualizacao atual`
     : 'Arraste os pedidos entre as etapas ou clique para ver detalhes.'
+
+  const summaryCards = useMemo(() => {
+    const urgentPedidos = pedidosAtivos.filter((pedido) => getPriority(pedido).label === 'Urgente')
+    const maiorFilaPedidos = pedidosAtivos.filter(
+      (pedido) => normalizeEtapa(pedido.etapaProducao) === busiestStage.stage.key,
+    )
+    const prontosPedidos = pedidosAtivos.filter(
+      (pedido) => normalizeEtapa(pedido.etapaProducao) === 'EXPEDICAO',
+    )
+
+    return [
+      {
+        key: 'ATIVOS' as const,
+        className: 'ak-metric-card-green',
+        label: 'Pedidos ativos',
+        value: formatNumber(pedidosAtivos.length),
+        helper: 'em todas as etapas',
+        pedidos: pedidosAtivos,
+      },
+      {
+        key: 'URGENTES' as const,
+        className: 'ak-metric-card-red',
+        label: 'Pedidos urgentes',
+        value: formatNumber(urgentes),
+        helper: 'precisam de atenção',
+        pedidos: urgentPedidos,
+      },
+      {
+        key: 'PECAS' as const,
+        className: '',
+        label: 'Peças em produção',
+        value: formatNumber(totalPecasAtivas),
+        helper: 'somadas dos pedidos',
+        pedidos: pedidosAtivos,
+      },
+      {
+        key: 'MAIOR_FILA' as const,
+        className: '',
+        label: 'Maior fila',
+        value: formatNumber(busiestStage.count),
+        helper: busiestStage.stage.label,
+        pedidos: maiorFilaPedidos,
+      },
+      {
+        key: 'PRONTOS' as const,
+        className: '',
+        label: 'Prontos para envio',
+        value: formatNumber(readyCount),
+        helper: 'em expedição',
+        pedidos: prontosPedidos,
+      },
+    ]
+  }, [busiestStage, pedidosAtivos, readyCount, totalPecasAtivas, urgentes])
+
+  const activeSummaryCard = summaryCards.find((card) => card.key === activeSummary) ?? null
 
   function handleLogout() {
     logout()
@@ -569,43 +626,29 @@ export default function AdminKanban() {
             <p>{boardSubtitle}</p>
           </div>
 
-          <div className="ak-header-badges">
-            <span className="ak-header-pill ak-pill-blue">{pedidosAtivos.length} pedidos ativos</span>
-            <span className="ak-header-pill ak-pill-urgent">{urgentes} pedidos urgentes</span>
-          </div>
         </header>
 
         {error ? <div className="ak-alert">{error}</div> : null}
 
         <section className="ak-overview" aria-label="Resumo da produção">
-          <article className="ak-metric-card ak-metric-card-green">
-            <span>Pedidos ativos</span>
-            <strong>{formatNumber(pedidosAtivos.length)}</strong>
-            <small>em todas as etapas</small>
-          </article>
-          <article className="ak-metric-card ak-metric-card-red">
-            <span>Pedidos urgentes</span>
-            <strong>{formatNumber(urgentes)}</strong>
-            <small>precisam de atenção</small>
-          </article>
-          <article className="ak-metric-card">
-            <span>Peças em produção</span>
-            <strong>{formatNumber(totalPecasAtivas)}</strong>
-            <small>somadas dos pedidos</small>
-          </article>
-          <article className="ak-metric-card">
-            <span>Maior fila</span>
-            <strong>{formatNumber(busiestStage.count)}</strong>
-            <small>{busiestStage.stage.label}</small>
-          </article>
-          <article className="ak-metric-card">
-            <span>Prontos para envio</span>
-            <strong>{formatNumber(readyCount)}</strong>
-            <small>em expedição</small>
-          </article>
+          {summaryCards.map((card) => (
+            <button
+              key={card.key}
+              type="button"
+              className={`ak-metric-card ak-metric-button ${card.className} ${activeSummary === card.key ? 'is-active' : ''}`}
+              onClick={() => {
+                setSelectedPedidoId(null)
+                setActiveSummary(activeSummary === card.key ? null : card.key)
+              }}
+            >
+              <span>{card.label}</span>
+              <strong>{card.value}</strong>
+              <small>{card.helper}</small>
+            </button>
+          ))}
         </section>
 
-        <section className="ak-toolbar" aria-label="Controles do Kanban">
+        <section className="ak-toolbar" aria-label="Controles do fluxo de produção">
           <label className="ak-search">
             <span>Buscar</span>
             <input
@@ -773,6 +816,55 @@ export default function AdminKanban() {
             <div className="ak-drawer-section">
               <h3>Observações</h3>
               <p>{selectedPedido.observacoes || 'Sem observações.'}</p>
+            </div>
+          </aside>
+        </div>
+      ) : null}
+
+      {activeSummaryCard && !selectedPedido ? (
+        <div className="ak-drawer-backdrop" onClick={() => setActiveSummary(null)}>
+          <aside className="ak-drawer ak-summary-drawer" onClick={(event) => event.stopPropagation()}>
+            <div className="ak-drawer-head">
+              <div>
+                <span className="ak-drawer-code">Resumo do fluxo</span>
+                <h2>{activeSummaryCard.label}</h2>
+                <p className="ak-summary-drawer-subtitle">
+                  {formatPedidosLabel(activeSummaryCard.pedidos.length)}
+                </p>
+              </div>
+              <button type="button" className="ak-drawer-close" onClick={() => setActiveSummary(null)}>
+                Fechar
+              </button>
+            </div>
+
+            <div className="ak-summary-list">
+              {activeSummaryCard.pedidos.length === 0 ? (
+                <div className="ak-summary-empty">Nenhum pedido nesse grupo.</div>
+              ) : (
+                activeSummaryCard.pedidos.map((pedido) => {
+                  const specs = parseEspecificacoes(pedido.fichaTecnica?.especificacoes)
+                  const etapa = getStageConfig(normalizeEtapa(pedido.etapaProducao))
+                  return (
+                    <button
+                      key={pedido.id}
+                      type="button"
+                      className="ak-summary-item"
+                      onClick={() => {
+                        setActiveSummary(null)
+                        setSelectedPedidoId(pedido.id)
+                      }}
+                    >
+                      <span className="ak-summary-code">
+                        {pedido.fichaTecnica?.codigoDisplay || `SERI-${pedido.id}`}
+                      </span>
+                      <strong>{pedido.fichaTecnica?.identificacao || 'Pedido em produção'}</strong>
+                      <small>
+                        {pedido.clienteNome || 'Cliente Seri.'} · {etapa.label} · {formatNumber(getTotalPecas(pedido.quantidades))} peças · {specs.cor}
+                      </small>
+                    </button>
+                  )
+                })
+              )}
             </div>
           </aside>
         </div>

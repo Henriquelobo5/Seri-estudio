@@ -10,6 +10,7 @@ import './AdminEstoque.css'
 type Categoria = 'TINTA' | 'TELA' | 'EMULSAO' | 'TECIDO' | 'OUTROS'
 type Status = 'OK' | 'BAIXO' | 'CRITICO' | 'SEM_ESTOQUE'
 type TipoMovimentacao = 'ENTRADA' | 'SAIDA' | 'AJUSTE'
+type EstoqueSummaryKey = 'ITENS' | 'OK' | 'BAIXO' | 'CRITICO' | 'MOVIMENTACOES'
 
 type InsumoResponse = {
   idInsumo: number
@@ -61,7 +62,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: 'Pedidos' },
   { label: 'Clientes' },
   { label: 'PRODUÇÃO', section: 'title' },
-  { label: 'Kanban', route: ROUTES.ADMIN_KANBAN },
+  { label: 'Fluxo de produção', route: ROUTES.ADMIN_KANBAN },
   { label: 'Estoque', active: true, route: ROUTES.ADMIN_ESTOQUE },
   { label: 'RELATÓRIOS', section: 'title' },
   { label: 'Custos e lucro', route: ROUTES.ADMIN_CUSTOS },
@@ -165,7 +166,7 @@ function renderSidebarIcon(label: string) {
       </svg>
     )
   }
-  if (label === 'Kanban') {
+  if (label === 'Fluxo de produção') {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <rect x="4" y="5" width="16" height="14" rx="2" fill="none" />
@@ -270,6 +271,7 @@ export default function AdminEstoque() {
   const [menuAberto, setMenuAberto] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [modalError, setModalError] = useState('')
+  const [activeSummary, setActiveSummary] = useState<EstoqueSummaryKey | null>(null)
 
   const [draftInsumo, setDraftInsumo] = useState(initialDraft)
   const [draftAbastecer, setDraftAbastecer] = useState({
@@ -338,6 +340,59 @@ export default function AdminEstoque() {
   const insumosCriticos = insumos.filter(
     (i) => i.status === 'CRITICO' || i.status === 'SEM_ESTOQUE',
   )
+  const summaryCards = [
+    {
+      key: 'ITENS' as const,
+      className: '',
+      label: 'Itens cadastrados',
+      value: kpiItens,
+      helper: 'tipos de insumo',
+    },
+    {
+      key: 'OK' as const,
+      className: 'ak-metric-card-green',
+      label: 'Nível adequado',
+      value: kpiOk,
+      helper: 'insumos com saldo OK',
+    },
+    {
+      key: 'BAIXO' as const,
+      className: 'ak-metric-card-yellow',
+      label: 'Atenção',
+      value: kpiBaixo,
+      helper: 'nível baixo',
+    },
+    {
+      key: 'CRITICO' as const,
+      className: 'ak-metric-card-red',
+      label: 'Urgente',
+      value: kpiCritico,
+      helper: 'crítico ou sem estoque',
+    },
+    {
+      key: 'MOVIMENTACOES' as const,
+      className: '',
+      label: 'Movimentações',
+      value: movimentacoes.length,
+      helper: 'registradas no período',
+    },
+  ]
+  const activeSummaryCard = summaryCards.find((card) => card.key === activeSummary) ?? null
+  const activeSummaryInsumos =
+    activeSummary === 'ITENS'
+      ? insumos
+      : activeSummary === 'OK'
+        ? insumos.filter((i) => i.status === 'OK')
+        : activeSummary === 'BAIXO'
+          ? insumos.filter((i) => i.status === 'BAIXO')
+          : activeSummary === 'CRITICO'
+            ? insumosCriticos
+            : []
+  const activeSummaryMovimentacoes = activeSummary === 'MOVIMENTACOES' ? movimentacoes : []
+  const activeSummaryCount =
+    activeSummary === 'MOVIMENTACOES'
+      ? activeSummaryMovimentacoes.length
+      : activeSummaryInsumos.length
 
   const hasFilters = busca.trim().length > 0 || categoriaFiltro !== 'TODAS'
 
@@ -353,6 +408,7 @@ export default function AdminEstoque() {
   }
 
   function abrirEditar(ins: InsumoResponse) {
+    setActiveSummary(null)
     setDraftInsumo({
       nomeItem: ins.nomeItem,
       categoria: ins.categoria,
@@ -376,6 +432,7 @@ export default function AdminEstoque() {
   }
 
   function abrirAbastecerCard(ins: InsumoResponse) {
+    setActiveSummary(null)
     setInsumoSelecionado(ins)
     setDraftAbastecer({ idInsumo: ins.idInsumo, quantidade: 0, motivo: '' })
     setModalError('')
@@ -383,6 +440,7 @@ export default function AdminEstoque() {
   }
 
   function abrirSimular(ins: InsumoResponse) {
+    setActiveSummary(null)
     setInsumoSelecionado(ins)
     setDraftSimular({ quantidadePecas: 0, observacao: '' })
     setModalError('')
@@ -390,6 +448,7 @@ export default function AdminEstoque() {
   }
 
   function abrirAjuste(ins: InsumoResponse) {
+    setActiveSummary(null)
     setInsumoSelecionado(ins)
     setDraftAjuste({ novoSaldo: ins.qtdEstoque, motivo: '' })
     setModalError('')
@@ -398,6 +457,7 @@ export default function AdminEstoque() {
   }
 
   function abrirSaidaManual(ins: InsumoResponse) {
+    setActiveSummary(null)
     setInsumoSelecionado(ins)
     setDraftSaidaManual({ quantidade: 0, motivo: '' })
     setModalError('')
@@ -406,6 +466,7 @@ export default function AdminEstoque() {
   }
 
   function abrirExcluir(ins: InsumoResponse) {
+    setActiveSummary(null)
     setInsumoSelecionado(ins)
     setModalError('')
     setModalAberto('excluir')
@@ -672,31 +733,21 @@ export default function AdminEstoque() {
         ) : null}
 
         <section className="ak-overview" aria-label="Resumo do estoque">
-          <article className="ak-metric-card">
-            <span>Itens cadastrados</span>
-            <strong>{formatNumber(kpiItens)}</strong>
-            <small>tipos de insumo</small>
-          </article>
-          <article className="ak-metric-card ak-metric-card-green">
-            <span>Nível adequado</span>
-            <strong>{formatNumber(kpiOk)}</strong>
-            <small>insumos com saldo OK</small>
-          </article>
-          <article className="ak-metric-card ak-metric-card-yellow">
-            <span>Atenção</span>
-            <strong>{formatNumber(kpiBaixo)}</strong>
-            <small>nível baixo</small>
-          </article>
-          <article className="ak-metric-card ak-metric-card-red">
-            <span>Urgente</span>
-            <strong>{formatNumber(kpiCritico)}</strong>
-            <small>crítico ou sem estoque</small>
-          </article>
-          <article className="ak-metric-card">
-            <span>Movimentações</span>
-            <strong>{formatNumber(movimentacoes.length)}</strong>
-            <small>registradas no período</small>
-          </article>
+          {summaryCards.map((card) => (
+            <button
+              key={card.key}
+              type="button"
+              className={`ak-metric-card ak-metric-button ${card.className} ${activeSummary === card.key ? 'is-active' : ''}`}
+              onClick={() => {
+                setModalAberto(null)
+                setActiveSummary(activeSummary === card.key ? null : card.key)
+              }}
+            >
+              <span>{card.label}</span>
+              <strong>{formatNumber(card.value)}</strong>
+              <small>{card.helper}</small>
+            </button>
+          ))}
         </section>
 
         <section className="ak-toolbar" aria-label="Filtros do estoque">
@@ -781,7 +832,11 @@ export default function AdminEstoque() {
                               <button type="button" onClick={() => abrirAjuste(ins)}>
                                 Ajuste de inventário
                               </button>
-                              <button type="button" onClick={() => abrirSaidaManual(ins)}>
+                              <button
+                                type="button"
+                                className="ae-menu-outflow"
+                                onClick={() => abrirSaidaManual(ins)}
+                              >
                                 Dar saída manual
                               </button>
                               <button
@@ -842,7 +897,7 @@ export default function AdminEstoque() {
                       </button>
                       <button
                         type="button"
-                        className="ae-btn ae-btn-card-danger"
+                        className="ae-btn ae-btn-card-outflow"
                         disabled={semConsumo}
                         title={
                           semConsumo
@@ -894,6 +949,66 @@ export default function AdminEstoque() {
           </aside>
         </div>
       </main>
+
+      {activeSummaryCard ? (
+        <div className="ak-drawer-backdrop" onClick={() => setActiveSummary(null)}>
+          <aside className="ak-drawer ak-summary-drawer" onClick={(event) => event.stopPropagation()}>
+            <div className="ak-drawer-head">
+              <div>
+                <span className="ak-drawer-code">Resumo do estoque</span>
+                <h2>{activeSummaryCard.label}</h2>
+                <p className="ak-summary-drawer-subtitle">
+                  {formatNumber(activeSummaryCount)}{' '}
+                  {activeSummary === 'MOVIMENTACOES'
+                    ? activeSummaryCount === 1 ? 'movimentação encontrada' : 'movimentações encontradas'
+                    : activeSummaryCount === 1 ? 'insumo encontrado' : 'insumos encontrados'}
+                </p>
+              </div>
+              <button type="button" className="ak-drawer-close" onClick={() => setActiveSummary(null)}>
+                Fechar
+              </button>
+            </div>
+
+            <div className="ak-summary-list">
+              {activeSummary === 'MOVIMENTACOES' ? (
+                activeSummaryMovimentacoes.length === 0 ? (
+                  <div className="ak-summary-empty">Nenhuma movimentação registrada.</div>
+                ) : (
+                  activeSummaryMovimentacoes.map((mov) => {
+                    const sinal = mov.tipo === 'ENTRADA' ? '+' : mov.tipo === 'SAIDA' ? '-' : '≈'
+                    return (
+                      <div key={mov.idMovimentacao} className="ak-summary-item ae-summary-static">
+                        <span className="ak-summary-code">{mov.tipo}</span>
+                        <strong>{mov.insumoNome}</strong>
+                        <small>
+                          {sinal}{mov.quantidade} · {truncate(mov.motivo)} · {formatDataHora(mov.dataHora)}
+                        </small>
+                      </div>
+                    )
+                  })
+                )
+              ) : activeSummaryInsumos.length === 0 ? (
+                <div className="ak-summary-empty">Nenhum insumo nesse grupo.</div>
+              ) : (
+                activeSummaryInsumos.map((ins) => (
+                  <button
+                    key={ins.idInsumo}
+                    type="button"
+                    className="ak-summary-item"
+                    onClick={() => abrirEditar(ins)}
+                  >
+                    <span className="ak-summary-code">{categoriaLabel(ins.categoria)}</span>
+                    <strong>{ins.nomeItem}</strong>
+                    <small>
+                      {statusLabel(ins.status)} · {formatNumber(ins.qtdEstoque)} {ins.unidadeMedida} em estoque · mínimo {formatNumber(ins.qtdMinima)}
+                    </small>
+                  </button>
+                ))
+              )}
+            </div>
+          </aside>
+        </div>
+      ) : null}
 
       {/* MODAIS */}
       {(modalAberto === 'cadastrar' || modalAberto === 'editar') && (
@@ -1142,7 +1257,7 @@ export default function AdminEstoque() {
               </button>
               <button
                 type="button"
-                className="ae-btn ae-btn-danger"
+                className="ae-btn ae-btn-outflow"
                 onClick={submitSimular}
                 disabled={submitting || consumoSimulado?.insuficiente}
               >
@@ -1261,7 +1376,7 @@ export default function AdminEstoque() {
               </button>
               <button
                 type="button"
-                className="ae-btn ae-btn-danger"
+                className="ae-btn ae-btn-outflow"
                 onClick={submitSaidaManual}
                 disabled={
                   submitting ||

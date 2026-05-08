@@ -143,23 +143,13 @@
 }
 
 .ac-margin-hi { color: var(--ak-brand-lime); }
-.ac-margin-mid { color: #fcd34d; }
-.ac-margin-lo { color: #fca5a5; }
+.ac-margin-mid { color: #B38A36; }
+.ac-margin-lo { color: #8F3F3F; }
 .ac-margin-none { color: var(--ak-text-dim); }
 
 .ac-mono {
   font-family: 'DM Mono', 'Courier New', monospace;
   font-size: 0.82rem;
-}
-
-/* Yellow metric variant (Margem média) — used by ak-overview */
-.ak-metric-card-yellow {
-  border-color: rgba(240, 179, 94, 0.3);
-  background: linear-gradient(180deg, rgba(120, 84, 32, 0.24), rgba(16, 22, 16, 0.72));
-}
-
-.ak-metric-card-yellow strong {
-  color: #f0b35e;
 }
 
 /* RIGHT PANEL — sticky form like the movimentações sidebar in Estoque */

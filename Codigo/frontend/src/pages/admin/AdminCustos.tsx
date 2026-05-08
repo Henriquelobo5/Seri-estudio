@@ -51,7 +51,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: 'Pedidos' },
   { label: 'Clientes' },
   { label: 'PRODUÇÃO', section: 'title' },
-  { label: 'Kanban', route: ROUTES.ADMIN_KANBAN },
+  { label: 'Fluxo de produção', route: ROUTES.ADMIN_KANBAN },
   { label: 'Estoque', route: ROUTES.ADMIN_ESTOQUE },
   { label: 'RELATÓRIOS', section: 'title' },
   { label: 'Custos e lucro', active: true, route: ROUTES.ADMIN_CUSTOS },
@@ -151,7 +151,7 @@ function renderSidebarIcon(label: string) {
       </svg>
     )
   }
-  if (label === 'Kanban') {
+  if (label === 'Fluxo de produção') {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <rect x="4" y="5" width="16" height="14" rx="2" fill="none" />
@@ -378,7 +378,7 @@ export default function AdminCustos() {
             <strong>{formatBRL(lucroTotal)}</strong>
             <small>faturamento − custos</small>
           </article>
-          <article className="ak-metric-card ak-metric-card-yellow">
+          <article className="ak-metric-card">
             <span>Margem média</span>
             <strong>{margemMedia.toFixed(1).replace('.', ',')}%</strong>
             <small>média dos pedidos</small>
