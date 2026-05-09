@@ -98,7 +98,7 @@ export default function ConstrutorFichaTecnica() {
   const [tecido,      setTecido]      = useState(prefill?.detalhes?.tecido ?? '100% Algodão')
   const [gramatura,   setGramatura]   = useState(resolveGramatura(prefill?.detalhes?.gramatura ?? ''))
   const [cor,         setCor]         = useState(prefill?.detalhes?.cor ?? 'Preto')
-  const [tamanhos,    setTamanhos]    = useState<string[]>(resolveTamanhos(prefill?.detalhes?.tamanhos ?? ['M', 'G']))
+  const [tamanhos,    setTamanhos]    = useState<string[]>(resolveTamanhos(prefill?.detalhes?.tamanhos ?? []))
   const [identificacao, setIdentificacao] = useState(prefill?.nome ?? '')
 
   const [loading, setLoading] = useState(false)

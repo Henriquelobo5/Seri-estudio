@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import AuthNavCta from '../../components/ui/AuthNavCta'
 import MyOrdersLink from '../../components/ui/MyOrdersLink'
+import ThreeViewer from '../../components/ui/ThreeViewer'
 import logo from '../../assets/images/logo.png'
 import './DetalhesProduto.css'
 
@@ -49,27 +50,12 @@ function makePlaceholderDataUrl(ext: string): string {
   return oc.toDataURL()
 }
 
-type PosCfg = {
-  topPct:   number
-  localX:   number
-  widthPct: number
-  hPct:     number
-  front:    boolean
-}
-
-type Product3DConfig = {
-  splineUrl: string
-  posicoes:  { key: PosKey; label: string }[]
-  posCfg:    Record<string, PosCfg>
-}
-
-const BASE_POS_CFG: Record<string, PosCfg> = {
-  fc: { topPct: 42, localX:  0,    widthPct: 30, hPct: 28, front: true  },
-  fe: { topPct: 40, localX: -0.28, widthPct: 16, hPct: 18, front: true  },
-  fd: { topPct: 40, localX:  0.28, widthPct: 16, hPct: 18, front: true  },
-  cc: { topPct: 42, localX:  0,    widthPct: 30, hPct: 28, front: false },
-  me: { topPct: 44, localX: -0.60, widthPct: 13, hPct: 13, front: true  },
-  md: { topPct: 44, localX:  0.60, widthPct: 13, hPct: 13, front: true  },
+type ProductConfig = {
+  modelUrl:           string | null
+  posicoes:           { key: PosKey; label: string }[]
+  hideMeshMaterials?: string[]
+  hidePosSelector?:    boolean
+  posRayOriginOffset?: Partial<Record<PosKey, [number, number, number]>>
 }
 
 const TODAS_POSICOES: { key: PosKey; label: string }[] = [
@@ -81,67 +67,45 @@ const TODAS_POSICOES: { key: PosKey; label: string }[] = [
   { key: 'md', label: 'Manga dir.' },
 ]
 
-const PRODUCT_3D_CONFIG: Record<string, Product3DConfig> = {
-  Camiseta: {
-    splineUrl: 'https://prod.spline.design/rfUuD0pkFEL3StiT/scene.splinecode',
-    posicoes:  TODAS_POSICOES,
-    posCfg:    BASE_POS_CFG,
-  },
-  Moletom: {
-    splineUrl: 'https://prod.spline.design/MOLETOM_PLACEHOLDER/scene.splinecode',
-    posicoes:  TODAS_POSICOES,
-    posCfg:    BASE_POS_CFG,
-  },
+const PRODUCT_CONFIG: Record<string, ProductConfig> = {
+  Camiseta: { modelUrl: '/models/tshirt.glb', posicoes: TODAS_POSICOES },
+  Moletom:  { modelUrl: '/models/hoodie.glb', posicoes: TODAS_POSICOES },
   Regata: {
-    splineUrl: 'https://prod.spline.design/REGATA_PLACEHOLDER/scene.splinecode',
-    posicoes:  [
+    modelUrl: '/models/regata.glb',
+    posicoes: [
       { key: 'fc', label: 'Frente central' },
       { key: 'fe', label: 'Frente esq.' },
       { key: 'fd', label: 'Frente dir.' },
       { key: 'cc', label: 'Costas' },
     ],
-    posCfg: BASE_POS_CFG,
   },
   Polo: {
-    splineUrl: 'https://prod.spline.design/POLO_PLACEHOLDER/scene.splinecode',
-    posicoes:  TODAS_POSICOES,
-    posCfg:    BASE_POS_CFG,
+    modelUrl:          '/models/polo.glb',
+    hideMeshMaterials: ['PT_FABRIC'],
+    posicoes:          TODAS_POSICOES,
   },
   Ecobag: {
-    splineUrl: 'https://prod.spline.design/ECOBAG_PLACEHOLDER/scene.splinecode',
-    posicoes:  [
-      { key: 'fc', label: 'Frente' },
-      { key: 'cc', label: 'Costas' },
-    ],
-    posCfg: {
-      fc: { topPct: 45, localX: 0, widthPct: 40, hPct: 35, front: true  },
-      cc: { topPct: 45, localX: 0, widthPct: 40, hPct: 35, front: false },
-    },
+    modelUrl:           '/models/ecobag.glb',
+    hidePosSelector:    true,
+    posicoes:           [{ key: 'fc', label: 'Frente' }],
+    // The bounding box includes the handles at the top, shifting the centroid up.
+    // Lower the ray origin so it hits the center of the bag body, not the handle area.
+    posRayOriginOffset: { fc: [0, -0.45, 0] },
   },
 }
 
 // ── Componente ────────────────────────────────────────────────────────────────
 
 export default function DetalhesProduto() {
-  const navigate  = useNavigate()
-  const location  = useLocation()
-  const locState  = (location.state ?? {}) as { fichaId?: number; fichaData?: any }
-  const tipo      = locState.fichaData?.tipo ?? 'Camiseta'
-  const config    = PRODUCT_3D_CONFIG[tipo] ?? PRODUCT_3D_CONFIG['Camiseta']
+  const navigate = useNavigate()
+  const location = useLocation()
+  const locState = (location.state ?? {}) as { fichaId?: number; fichaData?: any }
+  const tipo     = locState.fichaData?.tipo ?? 'Camiseta'
+  const config   = PRODUCT_CONFIG[tipo] ?? PRODUCT_CONFIG['Camiseta']
 
-  const splineRef      = useRef<HTMLElement>(null)
-  const [splineLoaded, setSplineLoaded] = useState(false)
+  const artObjUrlRef = useRef<string | null>(null)
 
-  const artOverlayRef  = useRef<HTMLDivElement>(null)
-  const cameraRef      = useRef<any>(null)
-  const initialDistRef = useRef<number>(0)
-  const rafRef         = useRef<number>(0)
-  const posRef         = useRef<PosKey>('fc')
-  const posCfgRef      = useRef(config.posCfg)
-  const artUrlRef      = useRef<string | null>(null)
-  const artObjUrlRef   = useRef<string | null>(null) // object URL para revogar
-
-  // Estado
+  const [modelLoaded, setModelLoaded] = useState(false)
   const [file,    setFile]    = useState<File | null>(null)
   const [artUrl,  setArtUrl]  = useState<string | null>(null)
   const [pos,     setPos]     = useState<PosKey>('fc')
@@ -150,158 +114,19 @@ export default function DetalhesProduto() {
   const [obs,     setObs]     = useState('')
   const [toast,   setToast]   = useState('')
   const [toastOn, setToastOn] = useState(false)
-  const [hintGone,setHintGone]= useState(false)
+  const [hintGone,    setHintGone]    = useState(false)
+  const [moveMode,    setMoveMode]    = useState(false)
+  const [artRotation, setArtRotation] = useState(0)
+  const [artScale,    setArtScale]    = useState(1)
+  const [flipH,       setFlipH]       = useState(false)
+  const [flipV,       setFlipV]       = useState(false)
 
   const btnNextOn = file !== null
 
-  // Mantém refs sincronizados com estado
-  useEffect(() => { posRef.current = pos },    [pos])
-  useEffect(() => { artUrlRef.current = artUrl }, [artUrl])
+  const handleModelLoad = useCallback(() => setModelLoaded(true), [])
 
-  // ── RAF: lê posição real da câmera → aplica CSS transform no overlay ────────
-  const startRaf = useCallback(() => {
-    const loop = () => {
-      const cam     = cameraRef.current
-      const overlay = artOverlayRef.current
-
-      if (cam?.position && overlay && artUrlRef.current) {
-        const cx   = cam.position.x as number
-        const cy   = cam.position.y as number
-        const cz   = cam.position.z as number
-        const dist = Math.sqrt(cx*cx + cy*cy + cz*cz) || 1
-
-        // Azimute (ângulo horizontal da câmera)
-        const az = Math.atan2(cx, cz)
-        // Elevação (ângulo vertical da câmera)
-        const ev = Math.atan2(-cy, Math.sqrt(cx*cx + cz*cz))
-
-        const cfg = posCfgRef.current[posRef.current]
-        if (!cfg) { rafRef.current = requestAnimationFrame(loop); return }
-
-        // Visibilidade: fade suave ao girar para o lado oposto da arte
-        let vis: number
-        if (posRef.current === 'cc') {
-          // Costas: visível quando câmera está atrás (az ≈ ±π)
-          vis = Math.max(0, -Math.cos(az))
-        } else if (posRef.current === 'me') {
-          // Manga esq. (do usuário = direita da câmera): visible quando az > 0
-          vis = Math.max(0, Math.sin(az))
-        } else if (posRef.current === 'md') {
-          // Manga dir. (do usuário = esquerda da câmera): visible quando az < 0
-          vis = Math.max(0, -Math.sin(az))
-        } else {
-          // Frente: visível quando câmera está na frente (az ≈ 0)
-          vis = Math.max(0, Math.cos(az))
-        }
-
-        // Compensação de zoom: mantém a arte no mesmo tamanho visual
-        const zoom = initialDistRef.current > 0 ? initialDistRef.current / dist : 1
-
-        // Deslocamento X em pixels para posições fora do centro.
-        // À medida que a camisa gira, o ponto localX acompanha: localX * cos(az)
-        const viewerW    = overlay.parentElement?.clientWidth ?? 800
-        const shirtHalfW = viewerW * 0.20 // estimativa de metade da largura da camisa em px
-        const xPx        = cfg.localX * shirtHalfW * Math.cos(az)
-
-        // Rotação Y: para frente, -az (camisa gira junto com câmera).
-        // Para costas, espelha: a face traseira aponta na direção oposta.
-        const rotY = cfg.front ? -az : (Math.PI - az)
-
-        overlay.style.top     = `${cfg.topPct}%`
-        overlay.style.width   = `${cfg.widthPct}%`
-        overlay.style.height  = `${cfg.hPct}%`
-        overlay.style.opacity = String(vis)
-        overlay.style.transform =
-          `translate(calc(-50% + ${xPx.toFixed(1)}px), -50%) ` +
-          `perspective(900px) ` +
-          `rotateY(${rotY.toFixed(4)}rad) ` +
-          `rotateX(${(ev * 0.5).toFixed(4)}rad) ` +
-          `scale(${zoom.toFixed(4)})`
-      }
-
-      rafRef.current = requestAnimationFrame(loop)
-    }
-    rafRef.current = requestAnimationFrame(loop)
-  }, [])
-
-  // ── Spline: aguarda carregamento e captura câmera ───────────────────────────
   useEffect(() => {
-    const el = splineRef.current
-    if (!el) return
-
-    let initialized = false
-
-    const initScene = () => {
-      if (initialized) return
-      const anyEl = el as any
-
-      // Spline@1.9.x expõe a Application em el._spline
-      const app = anyEl._spline ?? anyEl.spline
-      if (!app) return
-
-      // Câmera Three.js interna do viewer
-      const cam =
-        (app as any)._camera ??
-        (app as any).camera  ??
-        null
-
-      if (!cam?.position) {
-        console.warn('[Arte3D] Câmera não encontrada — props do app:', Object.keys(app as object).slice(0, 20))
-        return
-      }
-
-      initialized = true
-      cameraRef.current = cam
-      const { x, y, z } = cam.position
-      initialDistRef.current = Math.sqrt(x*x + y*y + z*z)
-
-      // Esconde logo do Spline
-      const sh = el.shadowRoot as ShadowRoot | null
-      if (sh && !sh.querySelector('#_hsl')) {
-        const s = document.createElement('style')
-        s.id = '_hsl'
-        s.textContent = '#logo,a[href*="spline"],[id*="logo"]{display:none!important;opacity:0!important}'
-        sh.appendChild(s)
-      }
-
-      startRaf()
-    }
-
-    const onLoadComplete = () => {
-      setSplineLoaded(true)
-      setTimeout(initScene, 200)
-    }
-
-    el.addEventListener('load-complete', onLoadComplete)
-
-    // Fallback: polling caso o evento já tenha disparado
-    const poll = setInterval(() => {
-      if ((el as any)._loaded) {
-        setSplineLoaded(true)
-        initScene()
-        if (initialized) clearInterval(poll)
-      }
-    }, 500)
-
-    // Timeout de segurança
-    const timeout = setTimeout(() => {
-      setSplineLoaded(true)
-      initScene()
-    }, 10000)
-
-    return () => {
-      el.removeEventListener('load-complete', onLoadComplete)
-      clearInterval(poll)
-      clearTimeout(timeout)
-      cancelAnimationFrame(rafRef.current)
-    }
-  }, [startRaf])
-
-  // Libera object URL ao desmontar
-  useEffect(() => {
-    return () => {
-      if (artObjUrlRef.current) URL.revokeObjectURL(artObjUrlRef.current)
-    }
+    return () => { if (artObjUrlRef.current) URL.revokeObjectURL(artObjUrlRef.current) }
   }, [])
 
   // ── Handle file upload ─────────────────────────────────────────────────────
@@ -316,13 +141,10 @@ export default function DetalhesProduto() {
       const url = URL.createObjectURL(f)
       artObjUrlRef.current = url
       setArtUrl(url)
-      artUrlRef.current = url
       showToast('Arte aplicada! Gire para ver.')
     } else {
       if (artObjUrlRef.current) { URL.revokeObjectURL(artObjUrlRef.current); artObjUrlRef.current = null }
-      const dataUrl = makePlaceholderDataUrl(ext)
-      setArtUrl(dataUrl)
-      artUrlRef.current = dataUrl
+      setArtUrl(makePlaceholderDataUrl(ext))
       showToast('Vetorial: preview representativo')
     }
   }
@@ -331,15 +153,15 @@ export default function DetalhesProduto() {
     if (artObjUrlRef.current) { URL.revokeObjectURL(artObjUrlRef.current); artObjUrlRef.current = null }
     setFile(null)
     setArtUrl(null)
-    artUrlRef.current = null
+    setArtRotation(0)
+    setArtScale(1)
+    setFlipH(false)
+    setFlipV(false)
     const inp = document.getElementById('dp-fi') as HTMLInputElement
     if (inp) inp.value = ''
   }
 
-  function handlePosChange(p: PosKey) {
-    setPos(p)
-    posRef.current = p
-  }
+  function handlePosChange(p: PosKey) { setPos(p) }
 
   // ── Drag-and-drop global ────────────────────────────────────────────────────
   useEffect(() => {
@@ -461,25 +283,87 @@ export default function DetalhesProduto() {
               </div>
             </div>
 
-            <div className="dp-blk">
-              <div className="dp-bh">Posição da estampa</div>
-              <div className="dp-bb">
-                <div className="dp-pgrid">
-                  {config.posicoes.map(({ key, label }) => (
-                    <button
-                      key={key}
-                      className={`dp-pbtn ${pos === key ? 'sel' : ''}`}
-                      onClick={() => handlePosChange(key as PosKey)}
-                    >
-                      {label}
-                    </button>
-                  ))}
+            {!config.hidePosSelector && (
+              <div className="dp-blk">
+                <div className="dp-bh">Posição da estampa</div>
+                <div className="dp-bb">
+                  <div className="dp-pgrid">
+                    {config.posicoes.map(({ key, label }) => (
+                      <button
+                        key={key}
+                        className={`dp-pbtn ${pos === key ? 'sel' : ''}`}
+                        onClick={() => handlePosChange(key as PosKey)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {artUrl && (
+              <div className="dp-blk">
+                <div className="dp-bh">Transformações da arte</div>
+                <div className="dp-bb" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+                  <div className="dp-df">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label>Rotação</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span className="dp-tf-val">{artRotation}°</span>
+                        {artRotation !== 0 && (
+                          <button className="dp-tf-reset" onClick={() => setArtRotation(0)}>↺</button>
+                        )}
+                      </div>
+                    </div>
+                    <input
+                      type="range" min={-180} max={180} step={1}
+                      value={artRotation}
+                      className="dp-range"
+                      onChange={e => setArtRotation(Number(e.target.value))}
+                    />
+                  </div>
+
+                  <div className="dp-df">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label>Tamanho</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span className="dp-tf-val">{Math.round(artScale * 100)}%</span>
+                        {artScale !== 1 && (
+                          <button className="dp-tf-reset" onClick={() => setArtScale(1)}>↺</button>
+                        )}
+                      </div>
+                    </div>
+                    <input
+                      type="range" min={30} max={250} step={5}
+                      value={Math.round(artScale * 100)}
+                      className="dp-range"
+                      onChange={e => setArtScale(Number(e.target.value) / 100)}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                    <button
+                      className={`dp-tf-flip ${flipH ? 'active' : ''}`}
+                      onClick={() => setFlipH(f => !f)}
+                    >
+                      ⇄ Flip horizontal
+                    </button>
+                    <button
+                      className={`dp-tf-flip ${flipV ? 'active' : ''}`}
+                      onClick={() => setFlipV(f => !f)}
+                    >
+                      ⇅ Flip vertical
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+            )}
 
             <div className="dp-blk">
-              <div className="dp-bh">Dimensões e observações</div>
+              <div className="dp-bh">Medidas da estampa</div>
               <div className="dp-bb" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div className="dp-drow">
                   <div className="dp-df">
@@ -520,30 +404,63 @@ export default function DetalhesProduto() {
 
         {/* VIEWER */}
         <div className="dp-viewer" id="dp-vw">
-          {!splineLoaded && (
+          {config.modelUrl ? (
+            <>
+              {!modelLoaded && (
+                <div className="dp-v-loading">
+                  <div className="dp-spinner" />
+                  <p>Carregando {tipo.toLowerCase()} 3D...</p>
+                </div>
+              )}
+              <ThreeViewer
+                modelUrl={config.modelUrl}
+                artUrl={artUrl}
+                pos={pos}
+                moveMode={moveMode}
+                color={locState.fichaData?.cor}
+                artRotation={artRotation}
+                artScale={artScale}
+                flipH={flipH}
+                flipV={flipV}
+                hideMeshMaterials={config.hideMeshMaterials}
+                posRayOriginOffset={config.posRayOriginOffset}
+                onLoad={handleModelLoad}
+              />
+            </>
+          ) : (
             <div className="dp-v-loading">
-              <div className="dp-spinner" />
-              <p>Carregando {tipo.toLowerCase()} 3D...</p>
+              <p style={{ opacity: 0.5, textAlign: 'center', padding: '0 2rem' }}>
+                Visualização 3D não disponível<br />para este tipo de produto.
+              </p>
             </div>
           )}
 
-          <spline-viewer
-            key={tipo}
-            ref={splineRef as React.RefObject<HTMLElement>}
-            url={config.splineUrl}
-            loading-anim-type="none"
-          />
-
-          {/* Arte sobreposta — rastreada pela posição real da câmera Spline via RAF */}
-          {artUrl && (
-            <div
-              ref={artOverlayRef}
-              className="dp-art-overlay"
-              style={{ backgroundImage: `url(${artUrl})` }}
-            />
+          {config.modelUrl && artUrl && (
+            <button
+              className={`dp-move-toggle ${moveMode ? 'active' : ''}`}
+              onClick={() => setMoveMode(m => !m)}
+              title={moveMode ? 'Clique para girar modelo' : 'Clique para mover arte'}
+            >
+              {moveMode ? (
+                <>
+                  <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3"/>
+                  </svg>
+                  Girar modelo
+                </>
+              ) : (
+                <>
+                  <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  Mover arte
+                </>
+              )}
+            </button>
           )}
 
-          {!file && (
+          {config.modelUrl && !file && (
             <div className="dp-noart">
               <div className="dp-noart-ring">
                 <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -556,7 +473,7 @@ export default function DetalhesProduto() {
             </div>
           )}
 
-          {file && (
+          {config.modelUrl && file && (
             <div className="dp-art-badge">
               <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="20 6 9 17 4 12"/>
@@ -565,7 +482,7 @@ export default function DetalhesProduto() {
             </div>
           )}
 
-          {!hintGone && (
+          {config.modelUrl && !hintGone && (
             <div className="dp-v-hint">
               <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3"/>
@@ -573,12 +490,6 @@ export default function DetalhesProduto() {
               Arraste para girar · Scroll para zoom
             </div>
           )}
-
-          <div className="dp-zbtns">
-            <div className="dp-zb" title="Zoom in"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
-            <div className="dp-zb" title="Zoom out"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
-            <div className="dp-zb" title="Resetar"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></div>
-          </div>
         </div>
 
         {/* DIREITO */}
@@ -631,7 +542,7 @@ export default function DetalhesProduto() {
               onClick={() => btnNextOn && navigate(ROUTES.DETALHES_PEDIDO, {
                 state: {
                   fichaId: locState.fichaId,
-                  fichaData: { ...locState.fichaData, posicao: config.posicoes.find(p => p.key === pos)?.label ?? '', arquivos: file ? 1 : 0 },
+                  fichaData: { ...locState.fichaData, posicao: config.posicoes.find(p => p.key === pos)?.label ?? '', arquivos: file ? 1 : 0, larguraEstampa: largura, alturaEstampa: altura, obsEstampa: obs },
                 },
               })}
             >

@@ -120,7 +120,7 @@
 .dp-stage {
   flex: 1;
   display: grid;
-  grid-template-columns: 260px 1fr 260px;
+  grid-template-columns: 320px 1fr 320px;
   overflow: hidden;
   min-height: 0;
 }
@@ -309,31 +309,13 @@
   background: var(--dp-ink);
 }
 
-/* Spline viewer preenche o container via posicionamento absoluto — mesma
-   abordagem do .hero-spline na Home, que funciona corretamente */
-.dp-viewer spline-viewer {
+/* Three.js canvas preenche o container */
+.dp-viewer canvas {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  height: 100% !important;
   display: block;
-}
-
-/* Arte overlay — rastreado pela posição real da câmera Spline via requestAnimationFrame */
-.dp-art-overlay {
-  position: absolute;
-  left: 50%;
-  top: 42%;          /* sobrescrito pelo RAF loop */
-  width: 30%;        /* sobrescrito pelo RAF loop */
-  height: 28%;       /* sobrescrito pelo RAF loop */
-  transform: translate(-50%, -50%);
-  transform-origin: 50% 50%;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  pointer-events: none;
-  will-change: transform, opacity;
-  z-index: 8;
 }
 
 /* Loading */
@@ -391,19 +373,79 @@
   animation: dp-pop .25s ease;
 }
 
-/* Zoom buttons */
-.dp-zbtns {
-  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
-  display: flex; flex-direction: column; gap: 5px; z-index: 10;
+
+/* Move toggle */
+.dp-move-toggle {
+  position: absolute;
+  bottom: 16px; right: 16px;
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(13,15,12,.82); backdrop-filter: blur(10px);
+  border: 1px solid var(--dp-border);
+  color: var(--dp-muted); font-family: inherit; font-size: 12px;
+  padding: 7px 14px; border-radius: 100px;
+  cursor: pointer; transition: all var(--dp-t); z-index: 10;
 }
-.dp-zb {
-  width: 30px; height: 30px;
-  background: rgba(13,15,12,.75); backdrop-filter: blur(8px);
-  border: 1px solid var(--dp-border); border-radius: 8px;
+.dp-move-toggle:hover {
+  border-color: rgba(255,255,255,.22); color: var(--dp-white);
+}
+.dp-move-toggle.active {
+  background: rgba(42,94,64,.85);
+  border-color: rgba(126,200,154,.4);
+  color: var(--dp-lime);
+}
+
+/* ── TRANSFORMAÇÕES DA ARTE ──────────────────────────────────────────────────── */
+.dp-range {
+  -webkit-appearance: none;
+  width: 100%; height: 3px;
+  border-radius: 99px;
+  background: rgba(255,255,255,.1);
+  outline: none; cursor: pointer;
+  accent-color: var(--dp-lime);
+}
+.dp-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--dp-lime);
+  box-shadow: 0 0 0 3px rgba(126,200,154,.2);
+  cursor: pointer; transition: box-shadow var(--dp-t);
+}
+.dp-range::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 5px rgba(126,200,154,.3);
+}
+.dp-range::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--dp-lime); border: none;
+  cursor: pointer;
+}
+
+.dp-tf-val {
+  font-size: 11px; color: var(--dp-lime);
+  font-variant-numeric: tabular-nums; min-width: 34px; text-align: right;
+}
+
+
+.dp-tf-reset {
+  background: rgba(255,255,255,.06); border: 1px solid var(--dp-border);
+  border-radius: 5px; color: var(--dp-muted);
+  width: 22px; height: 22px; font-size: 14px; line-height: 1;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: var(--dp-muted); transition: all var(--dp-t);
+  cursor: pointer; transition: all var(--dp-t); padding: 0;
+  font-family: inherit; flex-shrink: 0;
 }
-.dp-zb:hover { background: rgba(255,255,255,.1); color: var(--dp-white); }
+.dp-tf-reset:hover { color: var(--dp-white); border-color: rgba(255,255,255,.22); }
+
+.dp-tf-flip {
+  background: var(--dp-ink); border: 1px solid var(--dp-border);
+  border-radius: 6px; padding: 7px 4px;
+  font-family: inherit; font-size: 10.5px; color: var(--dp-muted);
+  cursor: pointer; transition: all var(--dp-t); text-align: center;
+}
+.dp-tf-flip:hover { border-color: rgba(126,200,154,.3); color: var(--dp-white); }
+.dp-tf-flip.active {
+  border-color: var(--dp-lime); background: rgba(126,200,154,.1);
+  color: var(--dp-lime); font-weight: 600;
+}
 
 /* ── TOAST ──────────────────────────────────────────────────────────────────── */
 .dp-toast {
