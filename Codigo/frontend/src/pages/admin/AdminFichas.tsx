@@ -69,9 +69,9 @@ const FILTER_OPTIONS: Array<{ value: FiltroStatus; label: string }> = [
 const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: 'PRINCIPAL', section: 'title' },
   { label: 'Dashboard' },
-  { label: 'Fichas técnicas', badge: '3', active: true, route: ROUTES.ADMIN_FICHAS },
+  { label: 'Fichas técnicas', active: true, route: ROUTES.ADMIN_FICHAS },
   { label: 'Pedidos' },
-  { label: 'Clientes' },
+  { label: 'Clientes', route: ROUTES.ADMIN_CLIENTES },
   { label: 'PRODUÇÃO', section: 'title' },
   { label: 'Fluxo de produção', route: ROUTES.ADMIN_KANBAN },
   { label: 'Estoque', route: ROUTES.ADMIN_ESTOQUE },

@@ -378,8 +378,26 @@
 }
 
 .ak-metric-card-green {
-  border-color: rgba(126, 200, 154, 0.24);
-  background: linear-gradient(180deg, rgba(42, 94, 64, 0.24), rgba(16, 22, 16, 0.72));
+  border-color: rgba(126, 200, 154, 0.42);
+  background:
+    linear-gradient(180deg, rgba(42, 94, 64, 0.36), rgba(8, 14, 9, 0.92));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    0 0 0 1px rgba(126, 200, 154, 0.06),
+    0 16px 30px rgba(0, 0, 0, 0.18);
+}
+
+.ak-metric-card-green span {
+  color: var(--ak-brand-lime);
+}
+
+.ak-metric-card-green strong {
+  color: var(--ak-green);
+  text-shadow: 0 0 18px rgba(130, 216, 154, 0.22);
+}
+
+.ak-metric-card-green small {
+  color: #7fa889;
 }
 
 .ak-metric-card-red {

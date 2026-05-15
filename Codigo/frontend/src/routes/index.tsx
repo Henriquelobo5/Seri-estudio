@@ -12,6 +12,7 @@ import Cadastro from '../pages/auth/Cadastro'
 import Dashboard from '../pages/cliente/Dashboard'
 import AdminKanban from '../pages/admin/AdminKanban'
 import AdminFichas from '../pages/admin/AdminFichas'
+import AdminClientes from '../pages/admin/AdminClientes'
 import AdminCustos from '../pages/admin/AdminCustos'
 import AdminEstoque from '../pages/admin/AdminEstoque'
 import MeuPerfil from '../pages/cliente/MeuPerfil'
@@ -57,6 +58,7 @@ export default function RoutesApp() {
 
       <Route element={<RequireAdminRoute />}>
         <Route path={ROUTES.ADMIN_FICHAS} element={<AdminFichas />} />
+        <Route path={ROUTES.ADMIN_CLIENTES} element={<AdminClientes />} />
         <Route path={ROUTES.ADMIN_KANBAN} element={<AdminKanban />} />
         <Route path={ROUTES.ADMIN_CUSTOS} element={<AdminCustos />} />
         <Route path={ROUTES.ADMIN_ESTOQUE} element={<AdminEstoque />} />
