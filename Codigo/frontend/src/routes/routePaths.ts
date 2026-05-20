@@ -14,5 +14,6 @@ export const ROUTES = {
   ADMIN_CLIENTES: '/admin/clientes',
   ADMIN_CUSTOS: '/admin/custos',
   ADMIN_ESTOQUE: '/admin/estoque',
+  ADMIN_FINANCEIRO_DASHBOARD: '/admin/financeiro/dashboard',
   DASHBOARD: '/cliente',
 }

@@ -77,7 +77,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: 'Estoque', route: ROUTES.ADMIN_ESTOQUE },
   { label: 'RELATÓRIOS', section: 'title' },
   { label: 'Custos e lucro', route: ROUTES.ADMIN_CUSTOS },
-  { label: 'Dashboard financeiro' },
+  { label: 'Dashboard financeiro', route: ROUTES.ADMIN_FINANCEIRO_DASHBOARD },
 ]
 
 function normalizeStatus(status?: string | null): AdminStatus {

@@ -15,6 +15,7 @@ import AdminFichas from '../pages/admin/AdminFichas'
 import AdminClientes from '../pages/admin/AdminClientes'
 import AdminCustos from '../pages/admin/AdminCustos'
 import AdminEstoque from '../pages/admin/AdminEstoque'
+import AdminFinanceiroDashboard from '../pages/admin/AdminFinanceiroDashboard'
 import MeuPerfil from '../pages/cliente/MeuPerfil'
 import ConstrutorFichaTecnica from '../pages/public/ConstrutorFichaTecnica'
 import DetalhesProduto from '../pages/public/DetalhesProduto'
@@ -62,6 +63,7 @@ export default function RoutesApp() {
         <Route path={ROUTES.ADMIN_KANBAN} element={<AdminKanban />} />
         <Route path={ROUTES.ADMIN_CUSTOS} element={<AdminCustos />} />
         <Route path={ROUTES.ADMIN_ESTOQUE} element={<AdminEstoque />} />
+        <Route path={ROUTES.ADMIN_FINANCEIRO_DASHBOARD} element={<AdminFinanceiroDashboard />} />
       </Route>
 
       <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
