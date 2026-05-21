@@ -42,6 +42,39 @@ type AtividadeRecenteResponse = {
   dataHora: string
 }
 
+type AdminPedidoLite = {
+  id: number
+  statusAtual: string
+  dataAbertura?: string
+  quantidades?: string | null
+  clienteNome?: string | null
+  fichaTecnica?: {
+    codigoDisplay?: string | null
+    identificacao?: string | null
+  } | null
+}
+
+type InsumoLite = {
+  idInsumo: number
+  nomeItem: string
+  categoria: string
+  qtdEstoque: number
+  qtdMinima: number
+  unidadeMedida: string
+  status: 'OK' | 'BAIXO' | 'CRITICO' | 'SEM_ESTOQUE'
+}
+
+type MovimentacaoLite = {
+  idMovimentacao: number
+  tipo: 'ENTRADA' | 'SAIDA' | 'AJUSTE'
+  quantidade: number
+  motivo: string
+  dataHora: string
+  insumoNome: string
+}
+
+type SummaryKey = 'PERIODO' | 'EM_PRODUCAO' | 'INSUMOS_ALERTA' | 'MOVIMENTACOES'
+
 type SidebarItem = {
   label: string
   section?: string
@@ -519,7 +552,11 @@ export default function AdminDashboard() {
   const [error, setError] = useState('')
   const [overview, setOverview] = useState<DashboardOverviewResponse | null>(null)
   const [atividades, setAtividades] = useState<AtividadeRecenteResponse[]>([])
+  const [pedidosAll, setPedidosAll] = useState<AdminPedidoLite[]>([])
+  const [insumosAll, setInsumosAll] = useState<InsumoLite[]>([])
+  const [movimentacoesAll, setMovimentacoesAll] = useState<MovimentacaoLite[]>([])
   const [lineTip, setLineTip] = useState<TooltipState>(null)
+  const [activeSummary, setActiveSummary] = useState<SummaryKey | null>(null)
 
   useEffect(() => {
     let cancelado = false
@@ -560,34 +597,104 @@ export default function AdminDashboard() {
     }
   }, [])
 
+  useEffect(() => {
+    let cancelado = false
+    Promise.all([
+      apiRequest<AdminPedidoLite[]>('/admin/pedidos').catch(() => [] as AdminPedidoLite[]),
+      apiRequest<InsumoLite[]>('/admin/estoque').catch(() => [] as InsumoLite[]),
+      apiRequest<MovimentacaoLite[]>('/admin/estoque/movimentacoes').catch(
+        () => [] as MovimentacaoLite[],
+      ),
+    ]).then(([pedidos, insumos, movs]) => {
+      if (cancelado) return
+      setPedidosAll(pedidos)
+      setInsumosAll(insumos)
+      setMovimentacoesAll(movs)
+    })
+    return () => {
+      cancelado = true
+    }
+  }, [])
+
   function handleLogout() {
     logout()
     navigate(ROUTES.LOGIN, { replace: true })
   }
 
-  const kpis = [
+  const kpis: Array<{
+    key: SummaryKey
+    label: string
+    value: number
+    helper: string
+    className?: string
+  }> = [
     {
+      key: 'PERIODO',
       label: 'Pedidos do período',
       value: overview?.pedidosDoPeriodo ?? 0,
       helper: `últimos ${periodo} dias`,
     },
     {
+      key: 'EM_PRODUCAO',
       label: 'Em produção',
       value: overview?.pedidosEmProducao ?? 0,
       helper: 'pedidos ativos no fluxo',
     },
     {
+      key: 'INSUMOS_ALERTA',
       label: 'Insumos em alerta',
       value: overview?.insumosEmAlerta ?? 0,
       helper: 'crítico ou sem estoque',
       className: (overview?.insumosEmAlerta ?? 0) > 0 ? 'ak-metric-card-red' : '',
     },
     {
+      key: 'MOVIMENTACOES',
       label: 'Movimentações do mês',
       value: overview?.movimentacoesDoMes ?? 0,
       helper: 'entradas, saídas e ajustes',
     },
   ]
+
+  const inicioMes = (() => {
+    const d = new Date()
+    return new Date(d.getFullYear(), d.getMonth(), 1)
+  })()
+  const inicioPeriodo = (() => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    d.setDate(d.getDate() - (periodo - 1))
+    return d
+  })()
+
+  const pedidosNoPeriodo = pedidosAll.filter((p) => {
+    if (!p.dataAbertura) return false
+    const dt = new Date(p.dataAbertura)
+    return !Number.isNaN(dt.getTime()) && dt >= inicioPeriodo
+  })
+  const pedidosEmProducaoList = pedidosAll.filter((p) => p.statusAtual === 'EM_PRODUCAO')
+  const insumosEmAlertaList = insumosAll.filter(
+    (i) => i.status === 'CRITICO' || i.status === 'SEM_ESTOQUE',
+  )
+  const movimentacoesDoMesList = movimentacoesAll.filter((m) => {
+    const dt = new Date(m.dataHora)
+    return !Number.isNaN(dt.getTime()) && dt >= inicioMes
+  })
+
+  const activeKpi = kpis.find((k) => k.key === activeSummary) ?? null
+  const drawerTitle = activeKpi?.label ?? ''
+  const drawerSubtitle = (() => {
+    if (!activeSummary) return ''
+    if (activeSummary === 'MOVIMENTACOES') {
+      const n = movimentacoesDoMesList.length
+      return `${n} ${n === 1 ? 'movimentação encontrada' : 'movimentações encontradas'}`
+    }
+    if (activeSummary === 'INSUMOS_ALERTA') {
+      const n = insumosEmAlertaList.length
+      return `${n} ${n === 1 ? 'insumo encontrado' : 'insumos encontrados'}`
+    }
+    const n = activeSummary === 'EM_PRODUCAO' ? pedidosEmProducaoList.length : pedidosNoPeriodo.length
+    return `${n} ${n === 1 ? 'pedido encontrado' : 'pedidos encontrados'}`
+  })()
 
   return (
     <div className="ak-page">
@@ -671,16 +778,22 @@ export default function AdminDashboard() {
 
         <section className="ak-overview" aria-label="Indicadores do estúdio">
           {kpis.map((kpi) => (
-            <div
-              key={kpi.label}
-              className={`ak-metric-card ${kpi.className ?? ''}`}
+            <button
+              key={kpi.key}
+              type="button"
+              className={`ak-metric-card ak-metric-button ${kpi.className ?? ''} ${
+                activeSummary === kpi.key ? 'is-active' : ''
+              }`}
+              onClick={() =>
+                setActiveSummary(activeSummary === kpi.key ? null : kpi.key)
+              }
             >
               <span>{kpi.label}</span>
               <strong>
                 {loadingOverview && !overview ? '—' : formatNumber(kpi.value)}
               </strong>
               <small>{kpi.helper}</small>
-            </div>
+            </button>
           ))}
         </section>
 
@@ -794,6 +907,114 @@ export default function AdminDashboard() {
           </div>
         </section>
       </main>
+
+      {activeKpi ? (
+        <div className="ak-drawer-backdrop" onClick={() => setActiveSummary(null)}>
+          <aside
+            className="ak-drawer ak-summary-drawer"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="ak-drawer-head">
+              <div>
+                <span className="ak-drawer-code">Resumo do dashboard</span>
+                <h2>{drawerTitle}</h2>
+                <p className="ak-summary-drawer-subtitle">{drawerSubtitle}</p>
+              </div>
+              <button
+                type="button"
+                className="ak-drawer-close"
+                onClick={() => setActiveSummary(null)}
+              >
+                Fechar
+              </button>
+            </div>
+
+            <div className="ak-summary-list">
+              {activeSummary === 'MOVIMENTACOES' ? (
+                movimentacoesDoMesList.length === 0 ? (
+                  <div className="ak-summary-empty">
+                    Nenhuma movimentação registrada neste mês.
+                  </div>
+                ) : (
+                  movimentacoesDoMesList.map((mov) => {
+                    const sinal = mov.tipo === 'ENTRADA' ? '+' : mov.tipo === 'SAIDA' ? '-' : '≈'
+                    return (
+                      <div
+                        key={mov.idMovimentacao}
+                        className="ak-summary-item ae-summary-static"
+                      >
+                        <span className="ak-summary-code">{mov.tipo}</span>
+                        <strong>{mov.insumoNome}</strong>
+                        <small>
+                          {sinal}
+                          {mov.quantidade} · {mov.motivo} ·{' '}
+                          {tempoRelativo(mov.dataHora)}
+                        </small>
+                      </div>
+                    )
+                  })
+                )
+              ) : activeSummary === 'INSUMOS_ALERTA' ? (
+                insumosEmAlertaList.length === 0 ? (
+                  <div className="ak-summary-empty">
+                    Nenhum insumo em nível crítico.
+                  </div>
+                ) : (
+                  insumosEmAlertaList.map((ins) => (
+                    <button
+                      key={ins.idInsumo}
+                      type="button"
+                      className="ak-summary-item"
+                      onClick={() => navigate(ROUTES.ADMIN_ESTOQUE)}
+                    >
+                      <span className="ak-summary-code">
+                        {ins.status === 'SEM_ESTOQUE' ? 'Sem estoque' : 'Crítico'}
+                      </span>
+                      <strong>{ins.nomeItem}</strong>
+                      <small>
+                        {formatNumber(ins.qtdEstoque)} {ins.unidadeMedida} em
+                        estoque · mínimo {formatNumber(ins.qtdMinima)}{' '}
+                        {ins.unidadeMedida}
+                      </small>
+                    </button>
+                  ))
+                )
+              ) : (() => {
+                const list =
+                  activeSummary === 'EM_PRODUCAO'
+                    ? pedidosEmProducaoList
+                    : pedidosNoPeriodo
+                if (list.length === 0) {
+                  return (
+                    <div className="ak-summary-empty">
+                      Nenhum pedido nesse grupo.
+                    </div>
+                  )
+                }
+                return list.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="ak-summary-item"
+                    onClick={() => navigate(ROUTES.ADMIN_PEDIDOS)}
+                  >
+                    <span className="ak-summary-code">
+                      {p.fichaTecnica?.codigoDisplay || `SERI-${p.id}`}
+                    </span>
+                    <strong>
+                      {p.fichaTecnica?.identificacao || 'Pedido sem nome'}
+                    </strong>
+                    <small>
+                      {p.clienteNome || 'Cliente Seri.'} ·{' '}
+                      {p.dataAbertura ? tempoRelativo(p.dataAbertura) : '—'}
+                    </small>
+                  </button>
+                ))
+              })()}
+            </div>
+          </aside>
+        </div>
+      ) : null}
     </div>
   )
 }
