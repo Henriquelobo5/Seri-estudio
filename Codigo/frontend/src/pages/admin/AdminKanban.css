@@ -933,6 +933,12 @@
   border: 1px solid rgba(210, 97, 97, 0.18);
 }
 
+.ak-priority-attention {
+  background: rgba(146, 107, 35, 0.26);
+  color: #ffd27d;
+  border: 1px solid rgba(232, 180, 80, 0.18);
+}
+
 .ak-priority-ok {
   background: rgba(25, 102, 63, 0.26);
   color: #75ebad;

@@ -132,6 +132,35 @@ function getTotalPecas(quantidades?: string) {
     }, 0)
 }
 
+function parsePrazoDesejado(observacoes?: string | null) {
+  const match = (observacoes ?? '').match(/Preciso para\s+(\d{2})\/(\d{2})\/(\d{4})/i)
+  if (!match) return null
+
+  const day = Number.parseInt(match[1], 10)
+  const month = Number.parseInt(match[2], 10)
+  const year = Number.parseInt(match[3], 10)
+  const date = new Date(year, month - 1, day)
+
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getDate() !== day ||
+    date.getMonth() !== month - 1 ||
+    date.getFullYear() !== year
+  ) {
+    return null
+  }
+
+  return date
+}
+
+function getDaysUntil(date: Date) {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+
+  return Math.ceil((target.getTime() - today.getTime()) / 86400000)
+}
+
 function getTamanhos(quantidades?: string, fallback?: string) {
   const parsed = (quantidades ?? '')
     .split(',')
@@ -157,6 +186,16 @@ function getInitials(name?: string | null) {
 }
 
 function getPrazoInfo(pedido: AdminPedido) {
+  const prazoDesejado = parsePrazoDesejado(pedido.observacoes)
+
+  if (prazoDesejado) {
+    const daysUntil = getDaysUntil(prazoDesejado)
+
+    if (daysUntil <= 7) return { label: 'Urgente', className: 'af-prazo af-prazo-urgent' }
+    if (daysUntil <= 14) return { label: 'Atenção', className: 'af-prazo af-prazo-attention' }
+    return { label: 'Normal', className: 'af-prazo af-prazo-normal' }
+  }
+
   const totalPecas = getTotalPecas(pedido.quantidades)
   const createdAt = pedido.dataAbertura ? new Date(pedido.dataAbertura) : null
   const daysOpen = createdAt ? Math.floor((Date.now() - createdAt.getTime()) / 86400000) : 0

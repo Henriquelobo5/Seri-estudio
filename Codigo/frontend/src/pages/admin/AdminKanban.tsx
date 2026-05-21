@@ -37,7 +37,7 @@ type StageConfig = {
   accentColor: string
 }
 
-type PriorityFilter = 'TODOS' | 'URGENTES' | 'NO_PRAZO'
+type PriorityFilter = 'TODOS' | 'URGENTES' | 'ATENCAO' | 'NO_PRAZO'
 type SummaryKey = 'ATIVOS' | 'URGENTES' | 'PECAS' | 'MAIOR_FILA' | 'PRONTOS'
 
 type SidebarItem = {
@@ -111,6 +111,35 @@ function getTotalPecas(quantidades?: string) {
     }, 0)
 }
 
+function parsePrazoDesejado(observacoes?: string | null) {
+  const match = (observacoes ?? '').match(/Preciso para\s+(\d{2})\/(\d{2})\/(\d{4})/i)
+  if (!match) return null
+
+  const day = Number.parseInt(match[1], 10)
+  const month = Number.parseInt(match[2], 10)
+  const year = Number.parseInt(match[3], 10)
+  const date = new Date(year, month - 1, day)
+
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getDate() !== day ||
+    date.getMonth() !== month - 1 ||
+    date.getFullYear() !== year
+  ) {
+    return null
+  }
+
+  return date
+}
+
+function getDaysUntil(date: Date) {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+
+  return Math.ceil((target.getTime() - today.getTime()) / 86400000)
+}
+
 function getInitials(name?: string | null) {
   if (!name) return 'ST'
 
@@ -123,6 +152,16 @@ function getInitials(name?: string | null) {
 }
 
 function getPriority(pedido: AdminPedido) {
+  const prazoDesejado = parsePrazoDesejado(pedido.observacoes)
+
+  if (prazoDesejado) {
+    const daysUntil = getDaysUntil(prazoDesejado)
+
+    if (daysUntil <= 7) return { label: 'Urgente', className: 'ak-priority-urgent' }
+    if (daysUntil <= 14) return { label: 'Atenção', className: 'ak-priority-attention' }
+    return { label: 'No prazo', className: 'ak-priority-ok' }
+  }
+
   const totalPecas = getTotalPecas(pedido.quantidades)
   const createdAt = pedido.dataAbertura ? new Date(pedido.dataAbertura) : null
   const daysOpen = createdAt ? Math.floor((Date.now() - createdAt.getTime()) / 86400000) : 0
@@ -416,6 +455,7 @@ export default function AdminKanban() {
       const matchesPriority =
         priorityFilter === 'TODOS' ||
         (priorityFilter === 'URGENTES' && prioridade === 'Urgente') ||
+        (priorityFilter === 'ATENCAO' && prioridade === 'Atenção') ||
         (priorityFilter === 'NO_PRAZO' && prioridade === 'No prazo')
       const matchesSearch = searchQuery.length === 0 || getSearchText(pedido).includes(searchQuery)
 
@@ -719,6 +759,13 @@ export default function AdminKanban() {
               onClick={() => setPriorityFilter('URGENTES')}
             >
               Urgentes
+            </button>
+            <button
+              type="button"
+              className={priorityFilter === 'ATENCAO' ? 'is-active' : ''}
+              onClick={() => setPriorityFilter('ATENCAO')}
+            >
+              Atenção
             </button>
             <button
               type="button"
