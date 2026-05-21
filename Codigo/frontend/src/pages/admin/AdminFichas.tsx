@@ -68,7 +68,7 @@ const FILTER_OPTIONS: Array<{ value: FiltroStatus; label: string }> = [
 
 const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: 'PRINCIPAL', section: 'title' },
-  { label: 'Dashboard' },
+  { label: 'Dashboard', route: ROUTES.ADMIN_DASHBOARD },
   { label: 'Fichas técnicas', active: true, route: ROUTES.ADMIN_FICHAS },
   { label: 'Pedidos', route: ROUTES.ADMIN_PEDIDOS },
   { label: 'Clientes', route: ROUTES.ADMIN_CLIENTES },

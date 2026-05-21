@@ -57,7 +57,7 @@ type SidebarItem = {
 
 const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: 'PRINCIPAL', section: 'title' },
-  { label: 'Dashboard' },
+  { label: 'Dashboard', route: ROUTES.ADMIN_DASHBOARD },
   { label: 'Fichas técnicas', route: ROUTES.ADMIN_FICHAS },
   { label: 'Pedidos', route: ROUTES.ADMIN_PEDIDOS },
   { label: 'Clientes', route: ROUTES.ADMIN_CLIENTES },

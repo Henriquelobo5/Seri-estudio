@@ -10,6 +10,7 @@ import Home from '../pages/public/Home'
 import Login from '../pages/auth/Login'
 import Cadastro from '../pages/auth/Cadastro'
 import Dashboard from '../pages/cliente/Dashboard'
+import AdminDashboard from '../pages/admin/AdminDashboard'
 import AdminKanban from '../pages/admin/AdminKanban'
 import AdminFichas from '../pages/admin/AdminFichas'
 import AdminClientes from '../pages/admin/AdminClientes'
@@ -59,6 +60,7 @@ export default function RoutesApp() {
       </Route>
 
       <Route element={<RequireAdminRoute />}>
+        <Route path={ROUTES.ADMIN_DASHBOARD} element={<AdminDashboard />} />
         <Route path={ROUTES.ADMIN_PEDIDOS} element={<AdminPedidos />} />
         <Route path={ROUTES.ADMIN_FICHAS} element={<AdminFichas />} />
         <Route path={ROUTES.ADMIN_CLIENTES} element={<AdminClientes />} />
