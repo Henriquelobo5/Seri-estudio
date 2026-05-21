@@ -79,7 +79,7 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: 'PRINCIPAL', section: 'title' },
   { label: 'Dashboard' },
   { label: 'Fichas técnicas', route: ROUTES.ADMIN_FICHAS },
-  { label: 'Pedidos' },
+  { label: 'Pedidos', route: ROUTES.ADMIN_PEDIDOS },
   { label: 'Clientes', route: ROUTES.ADMIN_CLIENTES },
   { label: 'PRODUÇÃO', section: 'title' },
   { label: 'Fluxo de produção', route: ROUTES.ADMIN_KANBAN },
@@ -396,7 +396,7 @@ const PERIODOS: { value: Periodo; label: string }[] = [
 
 export default function AdminFinanceiroDashboard() {
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const { user, logout, isAuthenticated } = useAuth()
 
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -408,6 +408,12 @@ export default function AdminFinanceiroDashboard() {
 
   const cfRef = useRef<HTMLDivElement>(null)
   const evRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate(ROUTES.LOGIN, { replace: true })
+    }
+  }, [isAuthenticated, navigate])
 
   const fetchDashboard = useCallback((p: Periodo) => {
     setLoading(true)
@@ -479,13 +485,13 @@ export default function AdminFinanceiroDashboard() {
       </aside>
 
       {/* Main */}
-      <div className="ak-main" style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+      <main className="ak-main">
 
-        {/* Topbar */}
-        <div className="afd-topbar">
+        <header className="ak-header">
           <div>
-            <div className="afd-topbar-title">Dashboard financeiro</div>
-            <div className="afd-topbar-sub">Saúde financeira do estúdio em tempo real</div>
+            <span className="ak-header-kicker">Relatórios</span>
+            <h1>Dashboard <em>financeiro.</em></h1>
+            <p>Saúde financeira do estúdio em tempo real.</p>
           </div>
           <div className="afd-period-tabs">
             {PERIODOS.map(p => (
@@ -499,9 +505,9 @@ export default function AdminFinanceiroDashboard() {
               </button>
             ))}
           </div>
-        </div>
+        </header>
 
-        {error ? <div className="afd-error-banner">{error}</div> : null}
+        {error ? <div className="ak-alert">{error}</div> : null}
 
         {loading || !data ? (
           <div className="afd-loading-state">
@@ -753,7 +759,7 @@ export default function AdminFinanceiroDashboard() {
 
           </div>
         )}
-      </div>
+      </main>
     </div>
   )
 }
