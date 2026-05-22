@@ -1,8 +1,10 @@
 package com.seriestudio.backend.config;
 
+import com.seriestudio.backend.model.EtapaLabel;
 import com.seriestudio.backend.model.Insumo;
 import com.seriestudio.backend.model.usuario.Cliente;
 import com.seriestudio.backend.model.usuario.Administrador;
+import com.seriestudio.backend.repository.EtapaLabelRepository;
 import com.seriestudio.backend.repository.InsumoRepository;
 import com.seriestudio.backend.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,9 @@ public class DataSeeder implements CommandLineRunner {
 
     @Autowired
     private InsumoRepository insumoRepository;
+
+    @Autowired
+    private EtapaLabelRepository etapaLabelRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -64,6 +69,16 @@ public class DataSeeder implements CommandLineRunner {
             salvarInsumo("Algodão branco 30/1", "TECIDO", 200, 50, "m", 18.00, 0.5);
             salvarInsumo("Poliéster mescla", "TECIDO", 150, 50, "m", 22.00, 0.5);
             System.out.println("✓ Seed de 8 insumos criado");
+        }
+
+        // Seed dos labels das etapas do Kanban (apenas labels exibidos são editáveis)
+        if (etapaLabelRepository.count() == 0) {
+            etapaLabelRepository.save(new EtapaLabel(null, "CORTE", "Corte"));
+            etapaLabelRepository.save(new EtapaLabel(null, "ESTAMPARIA", "Estamparia"));
+            etapaLabelRepository.save(new EtapaLabel(null, "COSTURA", "Costura"));
+            etapaLabelRepository.save(new EtapaLabel(null, "REVISAO", "Revisão"));
+            etapaLabelRepository.save(new EtapaLabel(null, "EXPEDICAO", "Expedição"));
+            System.out.println("✓ Etapa-labels criadas");
         }
     }
 

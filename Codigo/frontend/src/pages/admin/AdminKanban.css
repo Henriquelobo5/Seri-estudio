@@ -789,6 +789,41 @@
   white-space: nowrap;
 }
 
+.ak-column-edit {
+  background: transparent;
+  border: 1px solid var(--ak-border);
+  color: var(--ak-text-soft);
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: all 0.18s ease;
+}
+
+.ak-column-edit svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+}
+
+.ak-column-edit:hover:not(:disabled) {
+  border-color: var(--ak-brand-lime);
+  color: var(--ak-brand-lime);
+  background: rgba(126, 200, 154, 0.08);
+}
+
+.ak-column-edit:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .ak-column-body {
   display: grid;
   align-content: start;

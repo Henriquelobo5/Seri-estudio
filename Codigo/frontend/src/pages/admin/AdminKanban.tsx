@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import logo from '../../assets/images/logo.png'
 import { ROUTES } from '../../routes/routePaths'
 import { apiRequest } from '../../services/api'
+import EtapaLabelEditModal from './EtapaLabelEditModal'
 import './AdminKanban.css'
 
 type EtapaProducao = 'CORTE' | 'ESTAMPARIA' | 'COSTURA' | 'REVISAO' | 'EXPEDICAO'
@@ -47,12 +48,20 @@ type SidebarItem = {
   route?: string
 }
 
-const STAGES: StageConfig[] = [
-  { key: 'CORTE', label: 'Corte', description: 'Preparação da base', borderColor: '#2A5E40', badgeColor: 'rgba(42,94,64,.18)', accentColor: '#2A5E40' },
-  { key: 'ESTAMPARIA', label: 'Estamparia', description: 'Arte em produção', borderColor: '#3d8c5e', badgeColor: 'rgba(61,140,94,.18)', accentColor: '#3d8c5e' },
-  { key: 'COSTURA', label: 'Costura', description: 'Montagem das peças', borderColor: '#7EC89A', badgeColor: 'rgba(126,200,154,.18)', accentColor: '#7EC89A' },
-  { key: 'REVISAO', label: 'Revisão', description: 'Conferência final', borderColor: '#B7CBBE', badgeColor: 'rgba(183,203,190,.18)', accentColor: '#B7CBBE' },
-  { key: 'EXPEDICAO', label: 'Expedição', description: 'Pronto para envio', borderColor: '#F0EBE3', badgeColor: 'rgba(240,235,227,.16)', accentColor: '#F0EBE3' },
+const DEFAULT_STAGE_LABELS: Record<EtapaProducao, string> = {
+  CORTE: 'Corte',
+  ESTAMPARIA: 'Estamparia',
+  COSTURA: 'Costura',
+  REVISAO: 'Revisão',
+  EXPEDICAO: 'Expedição',
+}
+
+const STAGE_VISUALS: Omit<StageConfig, 'label'>[] = [
+  { key: 'CORTE', description: 'Preparação da base', borderColor: '#2A5E40', badgeColor: 'rgba(42,94,64,.18)', accentColor: '#2A5E40' },
+  { key: 'ESTAMPARIA', description: 'Arte em produção', borderColor: '#3d8c5e', badgeColor: 'rgba(61,140,94,.18)', accentColor: '#3d8c5e' },
+  { key: 'COSTURA', description: 'Montagem das peças', borderColor: '#7EC89A', badgeColor: 'rgba(126,200,154,.18)', accentColor: '#7EC89A' },
+  { key: 'REVISAO', description: 'Conferência final', borderColor: '#B7CBBE', badgeColor: 'rgba(183,203,190,.18)', accentColor: '#B7CBBE' },
+  { key: 'EXPEDICAO', description: 'Pronto para envio', borderColor: '#F0EBE3', badgeColor: 'rgba(240,235,227,.16)', accentColor: '#F0EBE3' },
 ]
 
 const SIDEBAR_ITEMS: SidebarItem[] = [
@@ -76,8 +85,8 @@ function normalizeEtapa(etapa?: string | null): EtapaProducao {
   return 'CORTE'
 }
 
-function getStageConfig(etapa: EtapaProducao): StageConfig {
-  return STAGES.find((stage) => stage.key === etapa) ?? STAGES[0]
+function getStageConfig(etapa: EtapaProducao, stages: StageConfig[]): StageConfig {
+  return stages.find((stage) => stage.key === etapa) ?? stages[0]
 }
 
 function parseEspecificacoes(value?: string | null) {
@@ -330,6 +339,43 @@ export default function AdminKanban() {
   const [searchTerm, setSearchTerm] = useState('')
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('TODOS')
   const [activeSummary, setActiveSummary] = useState<SummaryKey | null>(null)
+  const [etapaLabels, setEtapaLabels] = useState<Record<EtapaProducao, string>>(DEFAULT_STAGE_LABELS)
+  const [etapaIds, setEtapaIds] = useState<Partial<Record<EtapaProducao, number>>>({})
+  const [editingEtapa, setEditingEtapa] = useState<{
+    labelId: number
+    labelAtual: string
+  } | null>(null)
+
+  const STAGES = useMemo<StageConfig[]>(
+    () => STAGE_VISUALS.map((visual) => ({ ...visual, label: etapaLabels[visual.key] })),
+    [etapaLabels],
+  )
+
+  useEffect(() => {
+    apiRequest<{ id: number; idInterno: string; labelExibido: string }[]>('/admin/etapa-labels')
+      .then((data) => {
+        const labelsMap = { ...DEFAULT_STAGE_LABELS }
+        const idsMap: Partial<Record<EtapaProducao, number>> = {}
+        data.forEach((e) => {
+          if (e.idInterno in labelsMap) {
+            labelsMap[e.idInterno as EtapaProducao] = e.labelExibido
+            idsMap[e.idInterno as EtapaProducao] = e.id
+          }
+        })
+        setEtapaLabels(labelsMap)
+        setEtapaIds(idsMap)
+      })
+      .catch(() => {
+        // Falha silenciosa: mantém labels padrão para não travar a tela
+      })
+  }, [])
+
+  function handleEtapaSaved(etapa: { id: number; idInterno: string; labelExibido: string }) {
+    if (!(etapa.idInterno in DEFAULT_STAGE_LABELS)) return
+    const key = etapa.idInterno as EtapaProducao
+    setEtapaLabels((prev) => ({ ...prev, [key]: etapa.labelExibido }))
+    setEtapaIds((prev) => ({ ...prev, [key]: etapa.id }))
+  }
 
   useEffect(() => {
     let isMounted = true
@@ -389,7 +435,7 @@ export default function AdminKanban() {
           pecas,
         }
       }),
-    [pedidosAtivos],
+    [pedidosAtivos, STAGES],
   )
 
   const busiestStage = stageStats.reduce((current, next) => (next.count > current.count ? next : current), stageStats[0])
@@ -550,7 +596,7 @@ export default function AdminKanban() {
               <span
                 key={stage.key}
                 className={`ak-progress-bar ${index <= stageIndex ? 'is-active' : ''}`}
-                style={{ '--progress-color': getStageConfig(etapa).accentColor } as CSSProperties}
+                style={{ '--progress-color': getStageConfig(etapa, STAGES).accentColor } as CSSProperties}
               />
             ))}
           </div>
@@ -733,6 +779,27 @@ export default function AdminKanban() {
                         <span className="ak-column-subtitle">{stage.description}</span>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      className="ak-column-edit"
+                      aria-label={`Renomear etapa ${stage.label}`}
+                      title="Renomear etapa"
+                      disabled={etapaIds[stage.key] === undefined}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        const labelId = etapaIds[stage.key]
+                        if (labelId === undefined) return
+                        setEditingEtapa({
+                          labelId,
+                          labelAtual: stage.label,
+                        })
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 20h4l10-10-4-4L4 16v4z" fill="none" />
+                        <path d="M14 6l4 4" fill="none" />
+                      </svg>
+                    </button>
                     <div className="ak-column-numbers">
                       <span className="ak-column-count">{formatPedidosLabel(columnPedidos.length)}</span>
                       <small>{formatNumber(columnPecas)} peças</small>
@@ -843,7 +910,7 @@ export default function AdminKanban() {
               ) : (
                 activeSummaryCard.pedidos.map((pedido) => {
                   const specs = parseEspecificacoes(pedido.fichaTecnica?.especificacoes)
-                  const etapa = getStageConfig(normalizeEtapa(pedido.etapaProducao))
+                  const etapa = getStageConfig(normalizeEtapa(pedido.etapaProducao), STAGES)
                   return (
                     <button
                       key={pedido.id}
@@ -869,6 +936,14 @@ export default function AdminKanban() {
           </aside>
         </div>
       ) : null}
+
+      <EtapaLabelEditModal
+        open={editingEtapa !== null}
+        labelId={editingEtapa?.labelId ?? null}
+        labelAtual={editingEtapa?.labelAtual ?? null}
+        onClose={() => setEditingEtapa(null)}
+        onSaved={handleEtapaSaved}
+      />
     </div>
   )
 }
