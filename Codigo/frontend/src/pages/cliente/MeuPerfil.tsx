@@ -259,16 +259,6 @@ export default function MeuPerfil() {
             <p className="mp-hero-sub">Atualize seus dados e mantenha sua conta pronta para novos pedidos.</p>
           </div>
 
-          <div className="pf-hero-badges">
-            <div className="pf-hero-badge">
-              <span className="pf-hero-badge-label">Conta</span>
-              <strong>Cliente</strong>
-            </div>
-            <div className="pf-hero-badge">
-              <span className="pf-hero-badge-label">Sessão</span>
-              <strong>Ativa</strong>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -403,7 +393,7 @@ export default function MeuPerfil() {
               <div className="mp-atl-title">Atalhos</div>
 
               <Link to={ROUTES.MEUS_PEDIDOS} className="mp-atl">
-                <span className="mp-atldot" style={{ background: '#60a5fa' }} />
+                <span className="mp-atldot" style={{ background: '#FAFAF8' }} />
                 <span className="mp-atllbl">Voltar para pedidos</span>
                 <svg className="mp-atlarr" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <polyline points="9 18 15 12 9 6" />

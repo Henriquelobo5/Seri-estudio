@@ -4,7 +4,6 @@ import { ROUTES } from '../../routes/routePaths'
 import AuthNavCta from '../../components/ui/AuthNavCta'
 import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
-import { apiRequest } from '../../services/api'
 import './ConstrutorFichaTecnica.css'
 
 // ── Dados ────────────────────────────────────────────────────────────────────
@@ -97,29 +96,39 @@ export default function ConstrutorFichaTecnica() {
   const [tipo,        setTipo]        = useState(prefill?.detalhes?.tipo ?? 'Camiseta')
   const [tecido,      setTecido]      = useState(prefill?.detalhes?.tecido ?? '100% Algodão')
   const [gramatura,   setGramatura]   = useState(resolveGramatura(prefill?.detalhes?.gramatura ?? ''))
-  const [cor,         setCor]         = useState(prefill?.detalhes?.cor ?? 'Preto')
+  const initialCor = prefill?.detalhes?.cor ?? CORES[0].nome
   const [tamanhos,    setTamanhos]    = useState<string[]>(resolveTamanhos(prefill?.detalhes?.tamanhos ?? []))
   const [identificacao, setIdentificacao] = useState(prefill?.nome ?? '')
-
-  const [loading, setLoading] = useState(false)
-  const [erro, setErro] = useState('')
 
   const toggleTam = (tam: string) =>
     setTamanhos(prev => prev.includes(tam) ? prev.filter(t => t !== tam) : [...prev, tam])
 
+  function handleBack() {
+    if (currentStep > 1) {
+      setCurrentStep(step => step - 1)
+      return
+    }
+
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+
+    navigate(ROUTES.CATALOGO)
+  }
+
   // progresso
   const score = [
     true,                        // tipo sempre selecionado
-    true,                        // cor sempre selecionada
     tamanhos.length > 0,
     identificacao.length > 2,
   ].filter(Boolean).length
-  const progressPct = Math.max(15, Math.round((score / 4) * 75))
+  const progressPct = Math.max(15, Math.round((score / 3) * 75))
 
   const btnNextOn = tamanhos.length > 0 && identificacao.length > 2
 
   // step detail no sidebar
-  const stepDetail = `${tipo} · ${cor}` + (tamanhos.length ? ` · ${tamanhos.join(', ')}` : '')
+  const stepDetail = `${tipo}` + (tamanhos.length ? ` · ${tamanhos.join(', ')}` : '')
 
   return (
     <div className="cf-page">
@@ -223,7 +232,7 @@ export default function ConstrutorFichaTecnica() {
                   </div>
                   <div>
                     <div className="cf-ch-title">Especificações do tecido</div>
-                    <div className="cf-ch-sub">Composição, gramatura, cor e tamanhos</div>
+                    <div className="cf-ch-sub">Composição, gramatura e tamanhos</div>
                   </div>
                 </div>
                 <div className="cf-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -241,28 +250,6 @@ export default function ConstrutorFichaTecnica() {
                       <select className="cf-select" value={gramatura} onChange={e => setGramatura(e.target.value)}>
                         {GRAMATURAS.map(g => <option key={g}>{g}</option>)}
                       </select>
-                    </div>
-                  </div>
-
-                  {/* Cor */}
-                  <div className="cf-fld">
-                    <label>Cor da peça</label>
-                    <div className="cf-cores-grid">
-                      {CORES.map(({ nome, hex, borda }) => (
-                        <div
-                          key={nome}
-                          title={nome}
-                          className={`cf-cor-dot ${cor === nome ? 'sel' : ''}`}
-                          style={{
-                            background: hex,
-                            border: borda ? '2px solid rgba(255,255,255,.25)' : undefined,
-                          }}
-                          onClick={() => setCor(nome)}
-                        />
-                      ))}
-                    </div>
-                    <div className="cf-cor-label">
-                      Selecionado: <strong>{cor}</strong>
                     </div>
                   </div>
 
@@ -394,43 +381,28 @@ export default function ConstrutorFichaTecnica() {
           <div className="cf-footer-row">
             {currentStep < STEPS.length ? (
               <>
-                {erro && <p style={{ color: '#e05252', fontSize: 13, marginBottom: 8 }}>{erro}</p>}
+                <button type="button" className="cf-btn-back" onClick={handleBack}>
+                  ← Voltar
+                </button>
                 <button
                   className={`cf-btn-next ${btnNextOn || currentStep > 1 ? 'on' : ''}`}
-                  disabled={loading}
-                  onClick={async () => {
+                  onClick={() => {
                     if (currentStep === 1) {
                       if (!btnNextOn) return
-                      setLoading(true)
-                      setErro('')
-                      try {
-                        const especificacoes = `${tecido}, ${gramShort(gramatura)}, ${cor}, ${tamanhos.join(', ')}`
-                        const ficha = await apiRequest<{ codUnico: number; codigoDisplay: string }>('/ficha-tecnica', {
-                          method: 'POST',
-                          body: JSON.stringify({ identificacao, produtoTipo: tipo, especificacoes, urlArte: '' }),
-                        })
-                        navigate(ROUTES.DETALHES_PRODUTO, {
-                          state: {
-                            fichaId: ficha.codUnico,
-                            fichaData: { identificacao, tipo, tecido, gramatura: gramShort(gramatura), cor, tamanhos, posicao: '' },
-                          },
-                        })
-                      } catch (e: any) {
-                        setErro(e.message ?? 'Erro ao salvar ficha. Tente novamente.')
-                      } finally {
-                        setLoading(false)
-                      }
+                      navigate(ROUTES.DETALHES_PRODUTO, {
+                        state: {
+                          fichaData: { identificacao, tipo, tecido, gramatura: gramShort(gramatura), cor: initialCor, tamanhos, posicao: '' },
+                        },
+                      })
                     } else {
                       setCurrentStep(s => s + 1)
                     }
                   }}
                 >
-                  {loading ? 'Salvando...' : currentStep === 1 ? 'Próximo: Detalhes do produto' : `Próximo: ${STEPS[currentStep].label}`}
-                  {!loading && (
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
-                    </svg>
-                  )}
+                  {currentStep === 1 ? 'Próximo: Detalhes do produto' : `Próximo: ${STEPS[currentStep].label}`}
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
+                  </svg>
                 </button>
               </>
             ) : (
@@ -489,10 +461,6 @@ export default function ConstrutorFichaTecnica() {
             <div className="cf-ri">
               <span className="cf-rk">Gramatura</span>
               <span className="cf-rv">{gramShort(gramatura)}</span>
-            </div>
-            <div className="cf-ri">
-              <span className="cf-rk">Cor</span>
-              <span className="cf-rv">{cor}</span>
             </div>
             <div className="cf-ri">
               <span className="cf-rk">Tamanhos</span>

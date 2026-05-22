@@ -281,7 +281,26 @@
 .cf-id-hint { font-size: 11.5px; color: rgba(250,250,248,.22); margin-top: 7px; }
 
 /* ── BTN NEXT ───────────────────────────────────────────────────────────────── */
-.cf-footer-row { display: flex; justify-content: flex-end; }
+.cf-footer-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+.cf-btn-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 220px;
+  min-height: 48px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 7px;
+  color: rgba(250,250,248,.48);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.cf-btn-back:hover {
+  border-color: rgba(255,255,255,.25);
+  color: #FAFAF8;
+}
 .cf-btn-next {
   display: inline-flex; align-items: center; gap: 9px;
   background: #FAFAF8; color: #0D0F0C;

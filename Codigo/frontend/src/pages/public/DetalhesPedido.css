@@ -210,6 +210,44 @@
 }
 
 /* ── OBSERVAÇÕES ────────────────────────────────────────────────────────────── */
+.dpd-date-field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.dpd-date-field span {
+  color: var(--dpd-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.dpd-date-field input {
+  width: 220px;
+  max-width: 100%;
+  background: var(--dpd-ink3);
+  border: 1px solid var(--dpd-border);
+  border-radius: var(--dpd-r-sm);
+  color: var(--dpd-white);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  padding: 11px 13px;
+  transition: border-color var(--dpd-t);
+}
+
+.dpd-date-field input:focus {
+  border-color: rgba(126,200,154,.4);
+}
+
+.dpd-date-field input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(1);
+  opacity: .72;
+}
+
 .dpd-obs-ta {
   width: 100%; background: var(--dpd-ink3); border: 1px solid var(--dpd-border);
   border-radius: var(--dpd-r-sm); padding: 11px 13px;

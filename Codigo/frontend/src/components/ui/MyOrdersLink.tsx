@@ -11,10 +11,11 @@ type MyOrdersLinkProps = Omit<LinkProps, 'to'> & {
 export default function MyOrdersLink({ children, hideForAdmin = false, ...props }: MyOrdersLinkProps) {
   const { isAuthenticated, isAdmin } = useAuth()
 
+  if (!isAuthenticated) return null
   if (isAdmin && hideForAdmin) return null
 
   return (
-    <Link to={isAuthenticated ? (isAdmin ? ROUTES.ADMIN_KANBAN : ROUTES.MEUS_PEDIDOS) : ROUTES.LOGIN} {...props}>
+    <Link to={isAdmin ? ROUTES.ADMIN_KANBAN : ROUTES.MEUS_PEDIDOS} {...props}>
       {children}
     </Link>
   )

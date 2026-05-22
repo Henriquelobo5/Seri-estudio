@@ -12,36 +12,6 @@
   margin-left: 24px;
 }
 
-.pf-hero-badges {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  min-width: 250px;
-}
-
-.pf-hero-badge {
-  background: rgba(28, 31, 26, 0.88);
-  border: 1px solid var(--mp-border);
-  border-radius: 12px;
-  padding: 16px 18px;
-}
-
-.pf-hero-badge-label {
-  display: block;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--mp-muted);
-  margin-bottom: 6px;
-}
-
-.pf-hero-badge strong {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 22px;
-  font-weight: 400;
-  color: var(--mp-white);
-}
-
 .pf-layout {
   flex: 1;
   max-width: 1100px;
@@ -369,12 +339,6 @@
 }
 
 @media (max-width: 860px) {
-  .pf-hero-badges {
-    min-width: 0;
-    width: 100%;
-    grid-template-columns: 1fr;
-  }
-
   .pf-card-head {
     flex-direction: column;
   }

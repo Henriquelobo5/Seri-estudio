@@ -108,6 +108,11 @@
   background: rgba(132, 41, 41, 0.2);
 }
 
+.af-prazo-attention {
+  color: #ffd27d;
+  background: rgba(146, 107, 35, 0.22);
+}
+
 .af-status {
   display: inline-flex;
   align-items: center;

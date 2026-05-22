@@ -13,6 +13,15 @@ const STEPS = [
   { id: 3, label: 'Detalhes do pedido' },
 ]
 
+function formatDateInput(value: string) {
+  if (!value) return ''
+
+  const [year, month, day] = value.split('-')
+  if (!year || !month || !day) return value
+
+  return `${day}/${month}/${year}`
+}
+
 export default function DetalhesPedido() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -35,6 +44,7 @@ export default function DetalhesPedido() {
     Object.fromEntries(tamanhos.map(t => [t, 0]))
   )
   const [obs, setObs] = useState('')
+  const [dataNecessidade, setDataNecessidade] = useState('')
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
 
@@ -42,6 +52,10 @@ export default function DetalhesPedido() {
 
   function setQtd(tam: string, val: number) {
     setQtds(prev => ({ ...prev, [tam]: Math.max(0, val) }))
+  }
+
+  function onlyDigits(value: string) {
+    return value.replace(/\D/g, '')
   }
 
   async function handleConfirmar() {
@@ -57,9 +71,11 @@ export default function DetalhesPedido() {
     setErro('')
     try {
       const quantidadesStr = tamanhos.map(t => `${t}:${qtds[t] ?? 0}`).join(',')
+      const prazoTexto = dataNecessidade ? `Preciso para ${formatDateInput(dataNecessidade)}` : ''
+      const observacoesComPrazo = [prazoTexto, obs.trim()].filter(Boolean).join('\n')
       const pedido = await apiRequest<{ id: number; fichaTecnica?: { codigoDisplay?: string } }>('/pedido', {
         method: 'POST',
-        body: JSON.stringify({ fichaId: locState.fichaId, quantidades: quantidadesStr, observacoes: obs }),
+        body: JSON.stringify({ fichaId: locState.fichaId, quantidades: quantidadesStr, observacoes: observacoesComPrazo }),
       })
       const codigoDisplay = pedido.fichaTecnica?.codigoDisplay ?? ''
       navigate(ROUTES.CONFIRMACAO, { state: { total, codigoDisplay, fichaData } })
@@ -184,12 +200,26 @@ export default function DetalhesPedido() {
                   <div key={tam} className="dpd-qtd-card">
                     <div className="dpd-qtd-size">{tam}</div>
                     <input
-                      type="number"
+                      type="text"
                       className="dpd-qtd-inp"
-                      min={0}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       placeholder="0"
                       value={qtds[tam] || ''}
-                      onChange={e => setQtd(tam, parseInt(e.target.value) || 0)}
+                      onKeyDown={e => {
+                        const controlKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End']
+                        if (e.ctrlKey || e.metaKey || controlKeys.includes(e.key)) return
+                        if (!/^\d$/.test(e.key)) e.preventDefault()
+                      }}
+                      onPaste={e => {
+                        e.preventDefault()
+                        const digits = onlyDigits(e.clipboardData.getData('text'))
+                        setQtd(tam, digits ? parseInt(digits, 10) : 0)
+                      }}
+                      onChange={e => {
+                        const digits = onlyDigits(e.target.value)
+                        setQtd(tam, digits ? parseInt(digits, 10) : 0)
+                      }}
                     />
                   </div>
                 ))}
@@ -218,9 +248,17 @@ export default function DetalhesPedido() {
               </div>
             </div>
             <div className="dpd-card-body">
+              <label className="dpd-date-field">
+                <span>Data desejada</span>
+                <input
+                  type="date"
+                  value={dataNecessidade}
+                  onChange={e => setDataNecessidade(e.target.value)}
+                />
+              </label>
               <textarea
                 className="dpd-obs-ta"
-                placeholder="Ex: Preciso para evento no dia 20/04, manter proporção da arte, enviar amostra antes..."
+                placeholder="Ex: manter proporção da arte, enviar amostra antes, referências ou detalhes finais..."
                 value={obs}
                 onChange={e => setObs(e.target.value)}
               />

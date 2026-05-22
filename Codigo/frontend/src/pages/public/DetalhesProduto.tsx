@@ -5,6 +5,7 @@ import AuthNavCta from '../../components/ui/AuthNavCta'
 import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import ThreeViewer from '../../components/ui/ThreeViewer'
 import logo from '../../assets/images/logo.png'
+import { apiRequest } from '../../services/api'
 import './DetalhesProduto.css'
 
 // ── Dados ─────────────────────────────────────────────────────────────────────
@@ -17,6 +18,21 @@ const STEPS = [
 
 type PosKey = 'fc' | 'fe' | 'fd' | 'cc' | 'me' | 'md'
 
+type UploadedArt = {
+  id: string
+  file: File
+  previewUrl: string
+  isObjectUrl: boolean
+  pos: PosKey
+  rotation: number
+  scale: number
+  flipH: boolean
+  flipV: boolean
+  largura: string
+  altura: string
+  obsMedidas: string
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const EXT_COLORS: Record<string, [string, string]> = {
@@ -27,6 +43,25 @@ const EXT_COLORS: Record<string, [string, string]> = {
   ai:   ['#FEF3C7', '#92400E'],
   svg:  ['#EDE9FE', '#5B21B6'],
 }
+
+const CORES = [
+  { nome: 'Preto',        hex: '#111111' },
+  { nome: 'Branco',       hex: '#F4F4F0', borda: true },
+  { nome: 'Verde',        hex: '#2A5E40' },
+  { nome: 'Verde limão',  hex: '#84CC16' },
+  { nome: 'Vermelho',     hex: '#B91C1C' },
+  { nome: 'Rosa',         hex: '#EC4899' },
+  { nome: 'Azul royal',   hex: '#1D4ED8' },
+  { nome: 'Azul marinho', hex: '#0F172A' },
+  { nome: 'Azul bebê',    hex: '#7DD3FC' },
+  { nome: 'Amarelo',      hex: '#EAB308' },
+  { nome: 'Laranja',      hex: '#EA580C' },
+  { nome: 'Cinza claro',  hex: '#9CA3AF' },
+  { nome: 'Cinza escuro', hex: '#374151' },
+  { nome: 'Roxo',         hex: '#7C3AED' },
+  { nome: 'Bordô',        hex: '#7F1D1D' },
+  { nome: 'Marrom',       hex: '#78350F' },
+]
 
 function makePlaceholderDataUrl(ext: string): string {
   const oc = document.createElement('canvas')
@@ -86,11 +121,13 @@ const PRODUCT_CONFIG: Record<string, ProductConfig> = {
   },
   Ecobag: {
     modelUrl:           '/models/ecobag.glb',
-    hidePosSelector:    true,
-    posicoes:           [{ key: 'fc', label: 'Frente' }],
+    posicoes:           [
+      { key: 'fc', label: 'Frente' },
+      { key: 'cc', label: 'Costas' },
+    ],
     // The bounding box includes the handles at the top, shifting the centroid up.
     // Lower the ray origin so it hits the center of the bag body, not the handle area.
-    posRayOriginOffset: { fc: [0, -0.45, 0] },
+    posRayOriginOffset: { fc: [0, -0.45, 0], cc: [0, -0.45, 0] },
   },
 }
 
@@ -103,73 +140,113 @@ export default function DetalhesProduto() {
   const tipo     = locState.fichaData?.tipo ?? 'Camiseta'
   const config   = PRODUCT_CONFIG[tipo] ?? PRODUCT_CONFIG['Camiseta']
 
-  const artObjUrlRef = useRef<string | null>(null)
+  const artObjUrlRef = useRef<string[]>([])
 
   const [modelLoaded, setModelLoaded] = useState(false)
-  const [file,    setFile]    = useState<File | null>(null)
-  const [artUrl,  setArtUrl]  = useState<string | null>(null)
-  const [pos,     setPos]     = useState<PosKey>('fc')
-  const [largura, setLargura] = useState(20)
-  const [altura,  setAltura]  = useState(25)
-  const [obs,     setObs]     = useState('')
+  const [files,   setFiles]   = useState<UploadedArt[]>([])
+  const [activeArtId, setActiveArtId] = useState<string | null>(null)
   const [toast,   setToast]   = useState('')
   const [toastOn, setToastOn] = useState(false)
   const [hintGone,    setHintGone]    = useState(false)
   const [moveMode,    setMoveMode]    = useState(false)
-  const [artRotation, setArtRotation] = useState(0)
-  const [artScale,    setArtScale]    = useState(1)
-  const [flipH,       setFlipH]       = useState(false)
-  const [flipV,       setFlipV]       = useState(false)
+  const [measureConfirmOpen, setMeasureConfirmOpen] = useState(false)
+  const [cor, setCor] = useState(locState.fichaData?.cor ?? CORES[0].nome)
+  const [submitting, setSubmitting] = useState(false)
+  const [erro, setErro] = useState('')
 
-  const btnNextOn = file !== null
+  const activeArt = files.find(art => art.id === activeArtId) ?? files[0] ?? null
+  const artUrl = activeArt?.previewUrl ?? null
+  const activePos = activeArt?.pos ?? config.posicoes[0]?.key ?? 'fc'
+  const activeRotation = activeArt?.rotation ?? 0
+  const activeScale = activeArt?.scale ?? 1
+  const activeFlipH = activeArt?.flipH ?? false
+  const activeFlipV = activeArt?.flipV ?? false
+  const btnNextOn = files.length > 0
+  const selectedColor = CORES.find(item => item.nome === cor) ?? CORES[0]
 
   const handleModelLoad = useCallback(() => setModelLoaded(true), [])
 
+  function onlyDigits(value: string) {
+    return value.replace(/\D/g, '')
+  }
+
   useEffect(() => {
-    return () => { if (artObjUrlRef.current) URL.revokeObjectURL(artObjUrlRef.current) }
+    return () => {
+      artObjUrlRef.current.forEach(url => URL.revokeObjectURL(url))
+      artObjUrlRef.current = []
+    }
   }, [])
 
   // ── Handle file upload ─────────────────────────────────────────────────────
-  function handleFile(f: File) {
+  function buildUploadedArt(f: File): UploadedArt {
     const ext   = f.name.split('.').pop()?.toLowerCase() ?? ''
     const isImg = ['png', 'jpg', 'jpeg', 'svg'].includes(ext)
-    setFile(f)
-    if (!hintGone) setHintGone(true)
-
+    const id = `${f.name}-${f.size}-${f.lastModified}-${crypto.randomUUID()}`
+    const baseArt = {
+      id,
+      file: f,
+      pos: config.posicoes[0]?.key ?? 'fc',
+      rotation: 0,
+      scale: 1,
+      flipH: false,
+      flipV: false,
+      largura: '20',
+      altura: '25',
+      obsMedidas: '',
+    }
     if (isImg) {
-      if (artObjUrlRef.current) URL.revokeObjectURL(artObjUrlRef.current)
       const url = URL.createObjectURL(f)
-      artObjUrlRef.current = url
-      setArtUrl(url)
-      showToast('Arte aplicada! Gire para ver.')
-    } else {
-      if (artObjUrlRef.current) { URL.revokeObjectURL(artObjUrlRef.current); artObjUrlRef.current = null }
-      setArtUrl(makePlaceholderDataUrl(ext))
-      showToast('Vetorial: preview representativo')
+      artObjUrlRef.current.push(url)
+      return { ...baseArt, previewUrl: url, isObjectUrl: true }
+    }
+    return { ...baseArt, previewUrl: makePlaceholderDataUrl(ext), isObjectUrl: false }
+  }
+
+  function handleFiles(selectedFiles: File[]) {
+    if (!selectedFiles.length) return
+    const nextArts = selectedFiles.map(buildUploadedArt)
+    setFiles(prev => [...prev, ...nextArts])
+    setActiveArtId(nextArts[0].id)
+    if (!hintGone) setHintGone(true)
+    showToast(nextArts.length > 1 ? `${nextArts.length} artes adicionadas` : 'Arte aplicada! Gire para ver.')
+  }
+
+  function removeFile(id: string) {
+    const removed = files.find(art => art.id === id)
+    if (removed?.isObjectUrl) {
+      URL.revokeObjectURL(removed.previewUrl)
+      artObjUrlRef.current = artObjUrlRef.current.filter(url => url !== removed.previewUrl)
+    }
+
+    const remaining = files.filter(art => art.id !== id)
+    setFiles(remaining)
+    if (activeArtId === id) setActiveArtId(remaining[0]?.id ?? null)
+
+    if (!remaining.length) {
+      setMoveMode(false)
+      const inp = document.getElementById('dp-fi') as HTMLInputElement
+      if (inp) inp.value = ''
     }
   }
 
-  function removeFile() {
-    if (artObjUrlRef.current) { URL.revokeObjectURL(artObjUrlRef.current); artObjUrlRef.current = null }
-    setFile(null)
-    setArtUrl(null)
-    setArtRotation(0)
-    setArtScale(1)
-    setFlipH(false)
-    setFlipV(false)
-    const inp = document.getElementById('dp-fi') as HTMLInputElement
-    if (inp) inp.value = ''
+  function updateArt(id: string, patch: Partial<Pick<UploadedArt, 'pos' | 'rotation' | 'scale' | 'flipH' | 'flipV' | 'largura' | 'altura' | 'obsMedidas'>>) {
+    setFiles(prev => prev.map(art => art.id === id ? { ...art, ...patch } : art))
   }
 
-  function handlePosChange(p: PosKey) { setPos(p) }
+  function updateActiveArt(patch: Partial<Pick<UploadedArt, 'pos' | 'rotation' | 'scale' | 'flipH' | 'flipV' | 'largura' | 'altura' | 'obsMedidas'>>) {
+    const id = activeArt?.id
+    if (!id) return
+    updateArt(id, patch)
+  }
+
+  function handlePosChange(p: PosKey) { updateActiveArt({ pos: p }) }
 
   // ── Drag-and-drop global ────────────────────────────────────────────────────
   useEffect(() => {
     const onDragOver = (e: DragEvent) => e.preventDefault()
     const onDrop = (e: DragEvent) => {
       e.preventDefault()
-      const f = e.dataTransfer?.files[0]
-      if (f) handleFile(f)
+      handleFiles(Array.from(e.dataTransfer?.files ?? []))
     }
     document.addEventListener('dragover', onDragOver)
     document.addEventListener('drop', onDrop)
@@ -188,22 +265,143 @@ export default function DetalhesProduto() {
   }
 
   // ── ExtChip ────────────────────────────────────────────────────────────────
-  function ExtChip() {
-    if (!file) return null
-    const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+  function ExtChip({ art }: { art: UploadedArt }) {
+    const ext = art.file.name.split('.').pop()?.toLowerCase() ?? ''
     const [bg, fg] = EXT_COLORS[ext] ?? ['#333', '#aaa']
     return (
-      <div className="dp-fchip">
+      <button
+        type="button"
+        className={`dp-fchip ${activeArt?.id === art.id ? 'active' : ''}`}
+        onClick={() => setActiveArtId(art.id)}
+      >
         <span className="dp-fext" style={{ background: bg, color: fg }}>
           {ext.toUpperCase()}
         </span>
-        <span className="dp-fname">{file.name}</span>
-        <button className="dp-fdel" onClick={removeFile}>×</button>
-      </div>
+        <span className="dp-fname">{art.file.name}</span>
+        <span className="dp-fpos">
+          {config.posicoes.find(p => p.key === art.pos)?.label ?? ''}
+        </span>
+        <span
+          className="dp-fdel"
+          role="button"
+          tabIndex={0}
+          onClick={e => {
+            e.stopPropagation()
+            removeFile(art.id)
+          }}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              e.stopPropagation()
+              removeFile(art.id)
+            }
+          }}
+        >
+          ×
+        </span>
+      </button>
     )
   }
 
-  const posLabel = config.posicoes.find(p => p.key === pos)?.label ?? ''
+  const posLabel = config.posicoes.find(p => p.key === activePos)?.label ?? ''
+  const posSummary = files.length
+    ? Array.from(new Set(files.map(art => config.posicoes.find(p => p.key === art.pos)?.label ?? '').filter(Boolean))).join(', ')
+    : ''
+  const medidasEstampas = files.map((art, index) => ({
+    indice: index + 1,
+    arquivo: art.file.name,
+    largura: art.largura,
+    altura: art.altura,
+    observacoes: art.obsMedidas,
+  }))
+  const primeiraMedida = medidasEstampas[0]
+  const moveToggle = artUrl ? (
+    <button
+      type="button"
+      className={`dp-side-move-toggle ${moveMode ? 'active' : ''}`}
+      onClick={() => setMoveMode(m => !m)}
+    >
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3"/>
+        {!moveMode && <circle cx="12" cy="12" r="3"/>}
+      </svg>
+      {moveMode ? 'Girar modelo' : 'Mover arte'}
+    </button>
+  ) : null
+
+  function scrollToMeasures() {
+    document.querySelector('.dp-measures-list')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
+  async function continueToOrderDetails() {
+    if (submitting) return
+
+    const fichaDataAtualizada = {
+      ...locState.fichaData,
+      cor,
+      posicao: posSummary || posLabel,
+      arquivos: files.length,
+      larguraEstampa: primeiraMedida?.largura ?? '',
+      alturaEstampa: primeiraMedida?.altura ?? '',
+      obsEstampa: medidasEstampas
+        .map(item => `${item.arquivo}: ${item.largura || '0'}x${item.altura || '0'}cm${item.observacoes ? ` - ${item.observacoes}` : ''}`)
+        .join('\n'),
+      medidasEstampas,
+    }
+
+    setSubmitting(true)
+    setErro('')
+    try {
+      let fichaId = locState.fichaId
+
+      if (!fichaId) {
+        const especificacoes = `${fichaDataAtualizada.tecido}, ${fichaDataAtualizada.gramatura}, ${cor}, ${(fichaDataAtualizada.tamanhos ?? []).join(', ')}`
+        const ficha = await apiRequest<{ codUnico: number; codigoDisplay: string }>('/ficha-tecnica', {
+          method: 'POST',
+          body: JSON.stringify({
+            identificacao: fichaDataAtualizada.identificacao,
+            produtoTipo: tipo,
+            especificacoes,
+            urlArte: '',
+          }),
+        })
+        fichaId = ficha.codUnico
+      }
+
+      setMeasureConfirmOpen(false)
+      navigate(ROUTES.DETALHES_PEDIDO, {
+        state: {
+          fichaId,
+          fichaData: fichaDataAtualizada,
+        },
+      })
+    } catch (e: any) {
+      setMeasureConfirmOpen(false)
+      setErro(e.message ?? 'Erro ao salvar ficha. Tente novamente.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function handleNextClick() {
+    if (!btnNextOn || submitting) return
+
+    const hasMissingMeasure = files.some(art => !art.largura.trim() || !art.altura.trim())
+    if (hasMissingMeasure) {
+      showToast('Preencha largura e altura de todas as estampas.')
+      scrollToMeasures()
+      return
+    }
+
+    setMeasureConfirmOpen(true)
+  }
+
+  function handleBackToMeasures() {
+    if (submitting) return
+    setMeasureConfirmOpen(false)
+    showToast('Altere as medidas da estampa antes de continuar.')
+    setTimeout(scrollToMeasures, 0)
+  }
 
   return (
     <div className="dp-page">
@@ -260,9 +458,13 @@ export default function DetalhesProduto() {
                   <input
                     id="dp-fi"
                     type="file"
+                    multiple
                     accept=".png,.jpg,.jpeg,.svg,.pdf,.ai"
                     style={{ display: 'none' }}
-                    onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]) }}
+                    onChange={e => {
+                      handleFiles(Array.from(e.target.files ?? []))
+                      e.currentTarget.value = ''
+                    }}
                   />
                   <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -271,7 +473,7 @@ export default function DetalhesProduto() {
                   </svg>
                   Selecionar arquivo
                 </label>
-                {file && <ExtChip />}
+                {files.map(art => <ExtChip key={art.id} art={art} />)}
                 <div className="dp-aviso">
                   <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
@@ -291,13 +493,23 @@ export default function DetalhesProduto() {
                     {config.posicoes.map(({ key, label }) => (
                       <button
                         key={key}
-                        className={`dp-pbtn ${pos === key ? 'sel' : ''}`}
+                        className={`dp-pbtn ${activePos === key ? 'sel' : ''}`}
                         onClick={() => handlePosChange(key as PosKey)}
                       >
                         {label}
                       </button>
                     ))}
                   </div>
+                  {moveToggle}
+                </div>
+              </div>
+            )}
+
+            {config.hidePosSelector && artUrl && (
+              <div className="dp-blk">
+                <div className="dp-bh">Controle da estampa</div>
+                <div className="dp-bb">
+                  {moveToggle}
                 </div>
               </div>
             )}
@@ -311,17 +523,17 @@ export default function DetalhesProduto() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <label>Rotação</label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span className="dp-tf-val">{artRotation}°</span>
-                        {artRotation !== 0 && (
-                          <button className="dp-tf-reset" onClick={() => setArtRotation(0)}>↺</button>
+                        <span className="dp-tf-val">{activeRotation}°</span>
+                        {activeRotation !== 0 && (
+                          <button className="dp-tf-reset" onClick={() => updateActiveArt({ rotation: 0 })}>↺</button>
                         )}
                       </div>
                     </div>
                     <input
                       type="range" min={-180} max={180} step={1}
-                      value={artRotation}
+                      value={activeRotation}
                       className="dp-range"
-                      onChange={e => setArtRotation(Number(e.target.value))}
+                      onChange={e => updateActiveArt({ rotation: Number(e.target.value) })}
                     />
                   </div>
 
@@ -329,32 +541,32 @@ export default function DetalhesProduto() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <label>Tamanho</label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span className="dp-tf-val">{Math.round(artScale * 100)}%</span>
-                        {artScale !== 1 && (
-                          <button className="dp-tf-reset" onClick={() => setArtScale(1)}>↺</button>
+                        <span className="dp-tf-val">{Math.round(activeScale * 100)}%</span>
+                        {activeScale !== 1 && (
+                          <button className="dp-tf-reset" onClick={() => updateActiveArt({ scale: 1 })}>↺</button>
                         )}
                       </div>
                     </div>
                     <input
                       type="range" min={30} max={250} step={5}
-                      value={Math.round(artScale * 100)}
+                      value={Math.round(activeScale * 100)}
                       className="dp-range"
-                      onChange={e => setArtScale(Number(e.target.value) / 100)}
+                      onChange={e => updateActiveArt({ scale: Number(e.target.value) / 100 })}
                     />
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                     <button
-                      className={`dp-tf-flip ${flipH ? 'active' : ''}`}
-                      onClick={() => setFlipH(f => !f)}
+                      className={`dp-tf-flip ${activeFlipH ? 'active' : ''}`}
+                      onClick={() => updateActiveArt({ flipH: !activeFlipH })}
                     >
-                      ⇄ Flip horizontal
+                      ⇄ Virar na horizontal
                     </button>
                     <button
-                      className={`dp-tf-flip ${flipV ? 'active' : ''}`}
-                      onClick={() => setFlipV(f => !f)}
+                      className={`dp-tf-flip ${activeFlipV ? 'active' : ''}`}
+                      onClick={() => updateActiveArt({ flipV: !activeFlipV })}
                     >
-                      ⇅ Flip vertical
+                      ⇅ Virar na vertical
                     </button>
                   </div>
 
@@ -362,36 +574,65 @@ export default function DetalhesProduto() {
               </div>
             )}
 
-            <div className="dp-blk">
-              <div className="dp-bh">Medidas da estampa</div>
-              <div className="dp-bb" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div className="dp-drow">
-                  <div className="dp-df">
-                    <label>Largura</label>
-                    <div className="dp-diw">
-                      <input type="number" min={1} max={60} value={largura} onChange={e => setLargura(Number(e.target.value))} />
-                      <span>cm</span>
+            {files.length > 0 && (
+              <div className="dp-blk">
+                <div className="dp-bh">Medidas da estampa</div>
+                <div className="dp-bb dp-measures-list">
+                  {files.map((art, index) => (
+                    <div
+                      key={art.id}
+                      className={`dp-measure-card ${activeArt?.id === art.id ? 'active' : ''}`}
+                    >
+                      <button
+                        type="button"
+                        className="dp-measure-head"
+                        onClick={() => setActiveArtId(art.id)}
+                      >
+                        <span>Medidas da estampa {index + 1}</span>
+                        <strong>{art.file.name}</strong>
+                      </button>
+                      <div className="dp-drow">
+                        <div className="dp-df">
+                          <label>Largura</label>
+                          <div className="dp-diw">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              value={art.largura}
+                              onChange={e => updateArt(art.id, { largura: onlyDigits(e.target.value) })}
+                            />
+                            <span>cm</span>
+                          </div>
+                        </div>
+                        <div className="dp-df">
+                          <label>Altura</label>
+                          <div className="dp-diw">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              value={art.altura}
+                              onChange={e => updateArt(art.id, { altura: onlyDigits(e.target.value) })}
+                            />
+                            <span>cm</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="dp-df">
+                        <label>Observações</label>
+                        <textarea
+                          className="dp-obs"
+                          placeholder="Ex: manter proporção, fundo transparente..."
+                          value={art.obsMedidas}
+                          onChange={e => updateArt(art.id, { obsMedidas: e.target.value })}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="dp-df">
-                    <label>Altura</label>
-                    <div className="dp-diw">
-                      <input type="number" min={1} max={60} value={altura} onChange={e => setAltura(Number(e.target.value))} />
-                      <span>cm</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="dp-df">
-                  <label>Observações</label>
-                  <textarea
-                    className="dp-obs"
-                    placeholder="Ex: manter proporção, fundo transparente..."
-                    value={obs}
-                    onChange={e => setObs(e.target.value)}
-                  />
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
 
           </div>
 
@@ -401,6 +642,37 @@ export default function DetalhesProduto() {
             </button>
           </div>
         </div>
+
+        <aside className="dp-color-rail" aria-label="Cor da peça">
+          <div className="dp-color-head">
+            <div className="dp-color-title">Cor da peça</div>
+            <div className="dp-color-selected">
+              Selecionado: <strong>{cor}</strong>
+            </div>
+          </div>
+          <div className="dp-color-grid">
+            {CORES.map(({ nome, hex, borda }) => (
+              <button
+                key={nome}
+                type="button"
+                title={nome}
+                aria-label={`Selecionar cor ${nome}`}
+                className={`dp-color-dot ${cor === nome ? 'sel' : ''}`}
+                style={{
+                  background: hex,
+                  borderColor: borda ? 'rgba(255,255,255,.34)' : undefined,
+                }}
+                onClick={() => setCor(nome)}
+              >
+                {cor === nome && (
+                  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+        </aside>
 
         {/* VIEWER */}
         <div className="dp-viewer" id="dp-vw">
@@ -415,16 +687,27 @@ export default function DetalhesProduto() {
               <ThreeViewer
                 modelUrl={config.modelUrl}
                 artUrl={artUrl}
-                pos={pos}
+                activeArtId={activeArt?.id ?? null}
+                arts={files.map(art => ({
+                  id: art.id,
+                  url: art.previewUrl,
+                  pos: art.pos,
+                  rotation: art.rotation,
+                  scale: art.scale,
+                  flipH: art.flipH,
+                  flipV: art.flipV,
+                }))}
+                pos={activePos}
                 moveMode={moveMode}
-                color={locState.fichaData?.cor}
-                artRotation={artRotation}
-                artScale={artScale}
-                flipH={flipH}
-                flipV={flipV}
+                color={selectedColor.hex}
+                artRotation={activeRotation}
+                artScale={activeScale}
+                flipH={activeFlipH}
+                flipV={activeFlipV}
                 hideMeshMaterials={config.hideMeshMaterials}
                 posRayOriginOffset={config.posRayOriginOffset}
                 onLoad={handleModelLoad}
+                onActiveArtChange={setActiveArtId}
               />
             </>
           ) : (
@@ -435,32 +718,7 @@ export default function DetalhesProduto() {
             </div>
           )}
 
-          {config.modelUrl && artUrl && (
-            <button
-              className={`dp-move-toggle ${moveMode ? 'active' : ''}`}
-              onClick={() => setMoveMode(m => !m)}
-              title={moveMode ? 'Clique para girar modelo' : 'Clique para mover arte'}
-            >
-              {moveMode ? (
-                <>
-                  <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3"/>
-                  </svg>
-                  Girar modelo
-                </>
-              ) : (
-                <>
-                  <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
-                  Mover arte
-                </>
-              )}
-            </button>
-          )}
-
-          {config.modelUrl && !file && (
+          {config.modelUrl && !files.length && (
             <div className="dp-noart">
               <div className="dp-noart-ring">
                 <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -473,7 +731,7 @@ export default function DetalhesProduto() {
             </div>
           )}
 
-          {config.modelUrl && file && (
+          {config.modelUrl && files.length > 0 && (
             <div className="dp-art-badge">
               <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="20 6 9 17 4 12"/>
@@ -499,7 +757,7 @@ export default function DetalhesProduto() {
               <div className="dp-bh">Progresso</div>
               <div className="dp-bb">
                 <div className="dp-pb-wrap">
-                  <div className="dp-pb-fill" style={{ width: file ? '70%' : '50%' }} />
+                  <div className="dp-pb-fill" style={{ width: files.length ? '70%' : '50%' }} />
                 </div>
                 <div className="dp-pi">
                   <div className="dp-pidot done">
@@ -507,14 +765,14 @@ export default function DetalhesProduto() {
                   </div>
                   <div>
                     <div className="dp-pname done">Produto</div>
-                    <div className="dp-pdet">{locState.fichaData ? `${locState.fichaData.tipo} · ${locState.fichaData.cor} · ${(locState.fichaData.tamanhos ?? []).join(', ')}` : 'Concluído'}</div>
+                    <div className="dp-pdet">{locState.fichaData ? `${locState.fichaData.tipo} · ${cor} · ${(locState.fichaData.tamanhos ?? []).join(', ')}` : 'Concluído'}</div>
                   </div>
                 </div>
                 <div className="dp-pi">
                   <div className="dp-pidot active">2</div>
                   <div>
                     <div className="dp-pname active">Detalhes do produto</div>
-                    <div className="dp-pdet">{file ? `1 arquivo · ${posLabel}` : 'Aguardando arquivo...'}</div>
+                    <div className="dp-pdet">{files.length ? `${files.length} arquivo${files.length !== 1 ? 's' : ''} · ${posLabel}` : 'Aguardando arquivo...'}</div>
                   </div>
                 </div>
                 <div className="dp-pi">
@@ -536,22 +794,43 @@ export default function DetalhesProduto() {
           </div>
 
           <div className="dp-side-footer">
+            {erro && <p className="dp-submit-error">{erro}</p>}
             <button
               className={`dp-btn-next ${btnNextOn ? 'on' : ''}`}
-              disabled={!btnNextOn}
-              onClick={() => btnNextOn && navigate(ROUTES.DETALHES_PEDIDO, {
-                state: {
-                  fichaId: locState.fichaId,
-                  fichaData: { ...locState.fichaData, posicao: config.posicoes.find(p => p.key === pos)?.label ?? '', arquivos: file ? 1 : 0, larguraEstampa: largura, alturaEstampa: altura, obsEstampa: obs },
-                },
-              })}
+              disabled={!btnNextOn || submitting}
+              onClick={handleNextClick}
             >
-              Próximo: Detalhes →
+              {submitting ? 'Salvando...' : 'Próximo: Detalhes →'}
             </button>
           </div>
         </div>
 
       </div>
+
+      {measureConfirmOpen && (
+        <div className="dp-confirm-backdrop" role="dialog" aria-modal="true" aria-labelledby="dp-measure-confirm-title">
+          <div className="dp-confirm-modal">
+            <div className="dp-confirm-icon">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path d="M4 20h16"/>
+                <path d="M6 16l10-10 2 2L8 18H6v-2z"/>
+              </svg>
+            </div>
+            <h2 id="dp-measure-confirm-title">
+              Você alterou as <span>medidas de largura e altura</span> da sua estampa?
+            </h2>
+            <p>Se as medidas ainda estiverem no padrão, volte e ajuste antes de continuar.</p>
+            <div className="dp-confirm-actions">
+              <button type="button" className="dp-confirm-secondary" onClick={handleBackToMeasures} disabled={submitting}>
+                Voltar e alterar
+              </button>
+              <button type="button" className="dp-confirm-primary" onClick={continueToOrderDetails} disabled={submitting}>
+                {submitting ? 'Salvando...' : 'Sim, continuar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className={`dp-toast ${toastOn ? 'show' : ''}`}>{toast}</div>
     </div>
