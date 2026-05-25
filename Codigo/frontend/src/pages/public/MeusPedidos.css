@@ -281,9 +281,9 @@
 }
 .mp-badge-a::before { background: #fcd34d; }
 .mp-badge-o {
-  background: rgba(96, 107, 214, .14); border: 1px solid rgba(119,130,255,.22); color: #c7cfff;
+  background: rgba(240,235,227,.1); border: 1px solid rgba(240,235,227,.18); color: #f5efe5;
 }
-.mp-badge-o::before { background: #c7cfff; }
+.mp-badge-o::before { background: #f5efe5; }
 .mp-badge-r {
   background: rgba(126,200,154,.1); border: 1px solid rgba(126,200,154,.24); color: var(--mp-lime);
 }

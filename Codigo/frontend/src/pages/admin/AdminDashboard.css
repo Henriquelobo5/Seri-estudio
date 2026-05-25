@@ -1,39 +1,54 @@
-/* AdminDashboard uses ak-* shell from AdminKanban.css. */
+/* AdminDashboard uses the ak-* shell from AdminKanban.css. */
 
-/* Page-specific spacing inside ak-main */
-.ak-main > .ak-overview,
-.ak-main > .ad-charts,
-.ak-main > .ad-activity-shell {
-  margin-bottom: 14px;
+.ad-dashboard-main {
+  padding: 18px 20px 24px;
+  gap: 12px;
 }
 
-.ak-main > .ad-activity-shell:last-child {
-  margin-bottom: 0;
+.ad-dashboard-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 0 0 12px;
+  border-bottom: 1px solid rgba(126, 148, 118, 0.1);
 }
 
-/* Period tabs in header — match .ak-filter-group from AdminKanban.css */
+.ad-dashboard-top h1 {
+  margin: 0;
+  color: #f8faf6;
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ad-dashboard-top p {
+  margin: 3px 0 0;
+  color: var(--ak-text-soft);
+  font-size: 0.76rem;
+}
+
 .ad-period-tabs {
   display: inline-flex;
-  gap: 4px;
+  gap: 3px;
   padding: 4px;
   border: 1px solid rgba(128, 146, 121, 0.12);
-  border-radius: 10px;
+  border-radius: 9px;
   background: rgba(17, 22, 17, 0.72);
+  flex-shrink: 0;
 }
 
 .ad-ptab {
+  min-width: 58px;
   height: 30px;
-  padding: 0 14px;
   border: 0;
-  border-radius: 8px;
-  color: var(--ak-text-soft);
+  border-radius: 7px;
   background: transparent;
+  color: var(--ak-text-soft);
   font-family: inherit;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .ad-ptab:hover {
@@ -41,219 +56,548 @@
 }
 
 .ad-ptab.is-active {
-  color: #f5fff6;
+  color: #d9f5e3;
   background: rgba(42, 94, 64, 0.55);
   box-shadow: inset 0 0 0 1px rgba(126, 200, 154, 0.14);
 }
 
-/* Charts grid */
-.ad-charts {
+.ad-indicator-kpis {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.ad-card {
+.ad-indicator-kpis article {
+  position: relative;
+  min-height: 116px;
+  padding: 18px 20px;
   border: 1px solid var(--ak-border);
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(19, 24, 18, 0.96), rgba(11, 15, 11, 0.94));
+  border-radius: 10px;
+  background: var(--ak-surface);
   overflow: hidden;
+}
+
+.ad-indicator-kpis article::after {
+  content: '';
+  position: absolute;
+  right: -34px;
+  bottom: -48px;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.ad-indicator-kpis span,
+.ad-indicator-kpis small {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+
+.ad-indicator-kpis span {
+  color: var(--ak-text-soft);
+  font-size: 0.74rem;
+}
+
+.ad-indicator-kpis strong {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin: 5px 0 8px;
+  color: #fbfcf8;
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 2rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.ad-indicator-kpis small {
+  display: inline-flex;
+  align-items: center;
+  min-height: 21px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  width: max-content;
+}
+
+.ad-indicator-kpis small.is-up {
+  color: #8fe1ad;
+  background: rgba(42, 94, 64, 0.5);
+}
+
+.ad-indicator-kpis small.is-neutral {
+  color: #ced7cb;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ad-indicator-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.ad-indicator-grid-top {
+  grid-template-columns: minmax(0, 1.62fr) minmax(340px, 1fr);
+}
+
+.ad-indicator-grid-middle {
+  grid-template-columns: minmax(240px, 0.95fr) minmax(260px, 1fr) minmax(310px, 1fr);
+}
+
+.ad-indicator-grid-bottom {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.ad-indicator-card {
   display: flex;
   flex-direction: column;
-  min-height: 280px;
+  min-height: 260px;
+  border: 1px solid var(--ak-border);
+  border-radius: 10px;
+  background: var(--ak-surface);
+  overflow: hidden;
 }
 
-.ad-card-head {
-  padding: 14px 18px 12px;
-  border-bottom: 1px solid var(--ak-border);
+.ad-indicator-card > header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  flex-shrink: 0;
+  min-height: 60px;
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid rgba(133, 151, 120, 0.1);
 }
 
-.ad-card-title {
-  font-size: 0.9rem;
+.ad-indicator-card h2 {
+  margin: 0;
+  color: #f6faf4;
+  font-size: 0.88rem;
   font-weight: 700;
-  letter-spacing: -0.01em;
-  color: #f2f5ef;
-  margin-bottom: 2px;
+  line-height: 1.25;
 }
 
-.ad-card-sub {
-  font-size: 0.74rem;
+.ad-indicator-card p {
+  margin: 3px 0 0;
   color: var(--ak-text-soft);
+  font-size: 0.7rem;
 }
 
-.ad-card-body {
+.ad-indicator-body {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 16px 18px 18px;
+  padding: 14px 18px 16px;
 }
 
-.ad-chart-wrap {
-  position: relative;
-  flex: 1;
+.ad-revenue-card {
+  min-height: 298px;
+}
+
+.ad-status-card {
+  min-height: 298px;
+}
+
+.ad-revenue-legend {
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 200px;
-}
-
-.ad-chart-tip {
-  position: absolute;
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: var(--ak-surface-card);
-  border: 1px solid var(--ak-border-strong);
-  color: var(--ak-text);
-  font-size: 0.72rem;
-  pointer-events: none;
-  white-space: nowrap;
-  z-index: 5;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
-}
-
-.ad-empty-soft {
-  font-size: 0.78rem;
-  color: var(--ak-text-soft);
-  text-align: center;
-  padding: 24px;
-}
-
-/* Horizontal bars (Insumos por categoria) */
-.ad-hbar-list {
-  display: flex;
-  flex-direction: column;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ad-revenue-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ak-text-soft);
+  font-size: 0.68rem;
+}
+
+.ad-revenue-legend i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.ad-chart-surface {
+  flex: 1;
   width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  min-height: 176px;
 }
 
-.ad-hbar-item {
-  display: grid;
-  grid-template-columns: 100px 1fr 48px;
-  align-items: center;
-  gap: 12px;
+.ad-revenue-surface {
+  min-height: 214px;
 }
 
-.ad-hbar-label {
-  font-size: 0.8rem;
-  color: #dfe5dd;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ad-hbar-track {
-  height: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 99px;
-  overflow: hidden;
-}
-
-.ad-hbar-fill {
+.ad-fill-chart {
+  display: block;
+  width: 100%;
   height: 100%;
-  border-radius: 99px;
-  transition: width 0.4s ease;
+  overflow: visible;
 }
 
-.ad-hbar-val {
-  font-family: 'DM Mono', 'Courier New', monospace;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--ak-text);
-  text-align: right;
+.ad-fill-chart line {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
 }
 
-/* Activity — uses same shell pattern as table-shell / form-side */
-.ad-activity-shell {
-  border: 1px solid var(--ak-border);
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(19, 24, 18, 0.96), rgba(11, 15, 11, 0.94));
-  overflow: hidden;
+.ad-fill-chart line.is-target {
+  stroke: rgba(244, 114, 94, 0.28);
+  stroke-dasharray: 3 4;
 }
 
-.ad-activity-head {
-  padding: 14px 18px 12px;
-  border-bottom: 1px solid var(--ak-border);
+.ad-fill-chart text {
+  fill: rgba(198, 211, 196, 0.5);
+  font-family: 'DM Sans', Arial, sans-serif;
+  font-size: 10px;
 }
 
-.ad-activity-head-title {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #f2f5ef;
-  letter-spacing: -0.01em;
-  margin-bottom: 2px;
+.ad-status-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(132px, 190px) minmax(0, 1fr);
+  align-items: center;
+  gap: 22px;
 }
 
-.ad-activity-head-sub {
-  font-size: 0.74rem;
+.ad-status-donut {
+  width: 100%;
+  max-height: 190px;
+  overflow: visible;
+}
+
+.ad-status-donut circle {
+  fill: none;
+  transform: rotate(-90deg);
+  transform-origin: 85px 85px;
+}
+
+.ad-status-track {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 20;
+}
+
+.ad-status-total {
+  fill: #f7faf5;
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 26px;
+  font-weight: 500;
+}
+
+.ad-status-total-label {
+  fill: var(--ak-text-soft);
+  font-family: 'DM Sans', Arial, sans-serif;
+  font-size: 11px;
+}
+
+.ad-status-legend {
+  display: grid;
+  gap: 11px;
+  min-width: 0;
+}
+
+.ad-status-row {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
   color: var(--ak-text-soft);
 }
 
-.ad-activity-body {
-  padding: 4px 0;
-  max-height: 360px;
-  overflow-y: auto;
+.ad-status-row span {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
 }
 
-.ad-activity-body::-webkit-scrollbar {
-  width: 4px;
-}
-
-.ad-activity-body::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 99px;
-}
-
-.ad-activity-item {
-  display: grid;
-  grid-template-columns: 8px 1fr auto;
-  gap: 12px;
-  align-items: center;
-  padding: 10px 18px;
-  border-bottom: 1px solid rgba(133, 151, 120, 0.07);
-}
-
-.ad-activity-item:last-child {
-  border-bottom: none;
-}
-
-.ad-activity-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 99px;
-}
-
-.ad-activity-text {
-  font-size: 0.78rem;
-  color: var(--ak-text);
-  line-height: 1.4;
-  white-space: nowrap;
+.ad-status-row small {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.74rem;
 }
 
-.ad-activity-time {
+.ad-status-row strong {
+  color: #f6faf4;
+  font-size: 0.78rem;
+}
+
+.ad-panel-empty {
+  margin: auto;
+  color: var(--ak-text-soft);
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+.ad-margin-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
+}
+
+.ad-margin-gauge {
+  width: 100%;
+  height: 142px;
+  overflow: visible;
+}
+
+.ad-margin-gauge path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 16;
+}
+
+.ad-gauge-track,
+.ad-gauge-rest {
+  stroke: rgba(255, 255, 255, 0.09);
+}
+
+.ad-gauge-danger {
+  stroke: url('#adDanger');
+  stroke: #ff5e52;
+}
+
+.ad-gauge-needle {
+  stroke: #f8fbf6;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.ad-gauge-center {
+  fill: #f8fbf6;
+}
+
+.ad-margin-gauge text {
+  fill: var(--ak-text-soft);
+  font-size: 10px;
+  font-family: 'DM Sans', Arial, sans-serif;
+}
+
+.ad-margin-panel > strong {
+  margin-top: -8px;
+  color: #7ec89a;
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 2.35rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.ad-margin-panel > span {
+  color: var(--ak-text-soft);
+  font-size: 0.7rem;
+}
+
+.ad-margin-target {
+  width: 100%;
+  height: 7px;
+  margin-top: auto;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.ad-margin-target i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f65c4d, #ff9f43, #7ec89a);
+}
+
+.ad-margin-meta {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  color: var(--ak-text-soft);
+  font-size: 0.68rem;
+}
+
+.ad-margin-meta b {
+  color: #fca5a5;
+  font-weight: 700;
+}
+
+.ad-margin-meta b.is-good {
+  color: #7ec89a;
+}
+
+.ad-client-list {
+  display: grid;
+  gap: 0;
+  height: 100%;
+}
+
+.ad-client-row {
+  display: grid;
+  grid-template-columns: 18px 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  border-bottom: 1px solid rgba(133, 151, 120, 0.1);
+}
+
+.ad-client-row:last-child {
+  border-bottom: 0;
+}
+
+.ad-client-row > span {
+  color: var(--ak-text-soft);
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.ad-client-row i {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #eaf0ff;
+  color: #6366f1;
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.ad-client-row div {
+  min-width: 0;
+}
+
+.ad-client-row strong,
+.ad-client-row small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ad-client-row strong {
+  color: #f6faf4;
+  font-size: 0.76rem;
+}
+
+.ad-client-row small {
+  color: var(--ak-text-soft);
+  font-size: 0.66rem;
+}
+
+.ad-client-row > b {
+  color: #6bd58f;
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.ad-window-pill {
+  align-self: center;
+  min-height: 22px;
+  padding: 4px 10px;
+  border: 1px solid rgba(126, 200, 154, 0.18);
+  border-radius: 999px;
+  color: #7ec89a;
+  background: rgba(42, 94, 64, 0.35);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.ad-margin-line {
+  fill: none;
+  stroke: #7ec89a;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
+}
+
+.ad-margin-dot {
+  fill: #101610;
+  stroke: #7ec89a;
+  stroke-width: 2;
+}
+
+.ad-target-label {
+  fill: rgba(244, 114, 94, 0.7) !important;
+  font-size: 9px !important;
+}
+
+.ad-product-list {
+  display: grid;
+  gap: 14px;
+  padding-top: 2px;
+}
+
+.ad-product-row {
+  display: grid;
+  gap: 6px;
+}
+
+.ad-product-row div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #f6faf4;
+  font-size: 0.76rem;
+}
+
+.ad-product-row span {
+  color: var(--ak-text-soft);
   font-family: 'DM Mono', 'Courier New', monospace;
   font-size: 0.7rem;
-  color: var(--ak-text-dim);
-  white-space: nowrap;
 }
 
-/* Responsive */
-@media (max-width: 900px) {
-  .ad-charts {
+.ad-product-row i {
+  display: block;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.ad-product-row b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+@media (max-width: 1240px) {
+  .ad-indicator-grid-top,
+  .ad-indicator-grid-bottom {
     grid-template-columns: 1fr;
+  }
+
+  .ad-indicator-grid-middle {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 720px) {
-  .ad-hbar-item {
-    grid-template-columns: 90px 1fr 40px;
-    gap: 8px;
+@media (max-width: 900px) {
+  .ad-dashboard-main {
+    padding-inline: 14px;
+  }
+
+  .ad-dashboard-top,
+  .ad-indicator-card > header {
+    flex-direction: column;
+  }
+
+  .ad-indicator-kpis,
+  .ad-indicator-grid-middle {
+    grid-template-columns: 1fr;
+  }
+
+  .ad-status-layout {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .ad-status-donut {
+    max-height: 170px;
   }
 }

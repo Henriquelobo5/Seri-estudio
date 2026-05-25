@@ -126,15 +126,15 @@
 }
 
 .af-status-analise {
-  background: rgba(240, 235, 227, 0.08);
-  border-color: rgba(240, 235, 227, 0.14);
-  color: var(--ak-brand-cream);
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.22);
+  color: #fcd34d;
 }
 
 .af-status-orcamento {
-  background: rgba(91, 84, 162, 0.18);
-  border-color: rgba(132, 122, 228, 0.2);
-  color: #c7c2ff;
+  background: rgba(240, 235, 227, 0.08);
+  border-color: rgba(240, 235, 227, 0.14);
+  color: var(--ak-brand-cream);
 }
 
 .af-status-producao {
@@ -269,13 +269,17 @@
 .af-drawer-section select {
   width: 100%;
   height: 44px;
-  padding: 0 14px;
+  padding: 0 42px 0 14px;
   border: 1px solid rgba(136, 150, 129, 0.16);
   border-radius: 12px;
   background: rgba(18, 24, 18, 0.96);
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='7' viewBox='0 0 12 7' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23eef2ea' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: right 18px center;
+  background-repeat: no-repeat;
   color: #eef2ea;
   font-family: inherit;
   font-size: 0.86rem;
+  appearance: none;
   outline: none;
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import logo from '../../assets/images/logo.png'
@@ -134,11 +134,12 @@ const DONUT_COLORS = ['#2A5E40', '#7C3AED', '#2563EB', '#D97706']
 
 // ─── SVG Charts ──────────────────────────────────────────────────────────────
 
-function CashflowChart({ data, onTooltip }: {
+function CashflowChart({ data, onTooltip, width }: {
   data: FluxoMes[]
   onTooltip: (tip: TooltipState) => void
+  width: number
 }) {
-  const W = 500, H = 170, pL = 40, pR = 8, pT = 10, pB = 26
+  const W = Math.max(width, 420), H = 170, pL = 40, pR = 8, pT = 10, pB = 26
   const cW = W - pL - pR, cH = H - pT - pB
   const maxVal = Math.max(...data.map(d => Math.max(d.receita, d.custo, Math.max(d.lucro, 0))), 1) * 1.15
   const n = data.length || 1
@@ -153,7 +154,7 @@ function CashflowChart({ data, onTooltip }: {
   ]
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: `${H}px`, overflow: 'visible' }}>
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', width: '100%', height: `${H}px`, overflow: 'visible' }}>
       {gridTicks.map(t => {
         const y = pT + cH * (1 - t)
         const val = Math.round(maxVal * t)
@@ -209,11 +210,12 @@ function CashflowChart({ data, onTooltip }: {
   )
 }
 
-function EvolutionChart({ data, onTooltip }: {
+function EvolutionChart({ data, onTooltip, width }: {
   data: FluxoMes[]
   onTooltip: (tip: TooltipState) => void
+  width: number
 }) {
-  const W = 360, H = 140, pL = 36, pR = 8, pT = 10, pB = 22
+  const W = Math.max(width, 320), H = 140, pL = 36, pR = 8, pT = 10, pB = 22
   const cW = W - pL - pR, cH = H - pT - pB
   const maxVal = Math.max(...data.map(d => d.receita), 1) * 1.12
 
@@ -402,9 +404,15 @@ export default function AdminFinanceiroDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [periodo, setPeriodo] = useState<Periodo>('30d')
+  const [metaDraft, setMetaDraft] = useState('')
+  const [metaError, setMetaError] = useState('')
+  const [editingMeta, setEditingMeta] = useState(false)
+  const [savingMeta, setSavingMeta] = useState(false)
 
   const [cfTip, setCfTip] = useState<TooltipState>(null)
   const [evTip, setEvTip] = useState<TooltipState>(null)
+  const [cfChartWidth, setCfChartWidth] = useState(760)
+  const [evChartWidth, setEvChartWidth] = useState(520)
 
   const cfRef = useRef<HTMLDivElement>(null)
   const evRef = useRef<HTMLDivElement>(null)
@@ -419,7 +427,10 @@ export default function AdminFinanceiroDashboard() {
     setLoading(true)
     setError('')
     apiRequest<DashboardData>(`/admin/financeiro/dashboard?periodo=${p}`)
-      .then(d => setData(d))
+      .then(d => {
+        setData(d)
+        setMetaDraft(String(d.projecao.meta))
+      })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Não foi possível carregar o dashboard.'))
       .finally(() => setLoading(false))
   }, [])
@@ -428,6 +439,39 @@ export default function AdminFinanceiroDashboard() {
     fetchDashboard(periodo)
   }, [fetchDashboard, periodo])
 
+  useEffect(() => {
+    const chartWrap = cfRef.current
+    const evolutionWrap = evRef.current
+    if (!chartWrap && !evolutionWrap) return
+
+    const updateCashflowWidth = (nextWidth: number) => {
+      setCfChartWidth(Math.max(420, Math.floor(nextWidth)))
+    }
+
+    const updateEvolutionWidth = (nextWidth: number) => {
+      setEvChartWidth(Math.max(320, Math.floor(nextWidth)))
+    }
+
+    const resizeObserver = new ResizeObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.target === chartWrap) updateCashflowWidth(entry.contentRect.width)
+        if (entry.target === evolutionWrap) updateEvolutionWidth(entry.contentRect.width)
+      })
+    })
+
+    if (chartWrap) {
+      updateCashflowWidth(chartWrap.clientWidth)
+      resizeObserver.observe(chartWrap)
+    }
+
+    if (evolutionWrap) {
+      updateEvolutionWidth(evolutionWrap.clientWidth)
+      resizeObserver.observe(evolutionWrap)
+    }
+
+    return () => resizeObserver.disconnect()
+  }, [data])
+
   function handleLogout() {
     logout()
     navigate(ROUTES.LOGIN, { replace: true })
@@ -435,6 +479,32 @@ export default function AdminFinanceiroDashboard() {
 
   function handlePeriodo(p: Periodo) {
     if (p !== periodo) setPeriodo(p)
+  }
+
+  async function handleSaveMeta(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const meta = Number(metaDraft.replace(',', '.'))
+
+    if (!Number.isFinite(meta) || meta <= 0) {
+      setMetaError('Informe uma meta mensal maior que zero.')
+      return
+    }
+
+    setSavingMeta(true)
+    setMetaError('')
+
+    try {
+      await apiRequest<{ meta: number }>('/admin/financeiro/dashboard/meta-mensal', {
+        method: 'PUT',
+        body: JSON.stringify({ meta }),
+      })
+      setEditingMeta(false)
+      fetchDashboard(periodo)
+    } catch (err) {
+      setMetaError(err instanceof Error ? err.message : 'Nao foi possivel salvar a meta mensal.')
+    } finally {
+      setSavingMeta(false)
+    }
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -575,9 +645,9 @@ export default function AdminFinanceiroDashboard() {
                     ))}
                   </div>
                 </div>
-                <div className="afd-card-body">
+                <div className="afd-card-body afd-card-body-chart">
                   <div className="afd-chart-wrap" ref={cfRef}>
-                    <CashflowChart data={data.fluxoCaixa} onTooltip={setCfTip} />
+                    <CashflowChart data={data.fluxoCaixa} onTooltip={setCfTip} width={cfChartWidth} />
                     {cfTip && (
                       <div className="afd-chart-tip" style={{ left: cfTip.x, top: cfTip.y }}>{cfTip.text}</div>
                     )}
@@ -653,8 +723,64 @@ export default function AdminFinanceiroDashboard() {
                   </div>
                 </div>
                 <div className="afd-card-body">
-                  <div className="afd-proj-value">{formatBRLFull(data.projecao.meta)}</div>
-                  <div className="afd-proj-sub">meta mensal</div>
+                  {editingMeta ? (
+                    <form className="afd-proj-meta-form" onSubmit={handleSaveMeta}>
+                      <label htmlFor="meta-mensal">Meta mensal</label>
+                      <div className="afd-proj-meta-field">
+                        <span>R$</span>
+                        <input
+                          id="meta-mensal"
+                          type="number"
+                          inputMode="decimal"
+                          min="0.01"
+                          step="0.01"
+                          value={metaDraft}
+                          onChange={event => setMetaDraft(event.target.value)}
+                          autoFocus
+                        />
+                      </div>
+                      <div className="afd-proj-meta-actions">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMetaDraft(String(data.projecao.meta))
+                            setMetaError('')
+                            setEditingMeta(false)
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                        <button type="submit" className="is-primary" disabled={savingMeta}>
+                          {savingMeta ? 'Salvando...' : 'Salvar meta'}
+                        </button>
+                      </div>
+                      {metaError ? <div className="afd-proj-meta-error">{metaError}</div> : null}
+                    </form>
+                  ) : (
+                    <div className="afd-proj-meta-head">
+                      <div>
+                        <div className="afd-proj-value">{formatBRLFull(data.projecao.meta)}</div>
+                        <div className="afd-proj-sub">meta mensal</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="afd-proj-meta-edit"
+                        onClick={() => {
+                          setMetaDraft(String(data.projecao.meta))
+                          setMetaError('')
+                          setEditingMeta(true)
+                        }}
+                        aria-label="Alterar meta mensal"
+                        title="Alterar meta mensal"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M4 20h4L19 9l-4-4L4 16v4z" />
+                          <path d="M13.5 6.5l4 4" />
+                        </svg>
+                        Alterar
+                      </button>
+                    </div>
+                  )}
 
                   <div className="afd-proj-row">
                     <span>Realizado</span>
@@ -730,9 +856,9 @@ export default function AdminFinanceiroDashboard() {
                     <div className="afd-card-sub">Linha de tendência — últimos 8 meses</div>
                   </div>
                 </div>
-                <div className="afd-card-body">
+                <div className="afd-card-body afd-card-body-chart">
                   <div className="afd-chart-wrap" ref={evRef}>
-                    <EvolutionChart data={data.fluxoCaixa} onTooltip={setEvTip} />
+                    <EvolutionChart data={data.fluxoCaixa} onTooltip={setEvTip} width={evChartWidth} />
                     {evTip && (
                       <div className="afd-chart-tip" style={{ left: evTip.x, top: evTip.y }}>{evTip.text}</div>
                     )}

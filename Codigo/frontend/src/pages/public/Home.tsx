@@ -45,7 +45,7 @@ const STEPS = [
   {
     n: '02',
     title: 'Envie sua arte',
-    desc: 'Faça upload do seu arquivo em PDF, PNG ou AI direto na ficha técnica.',
+    desc: 'Faça upload do seu arquivo em PDF, PNG ou JPEG direto na ficha técnica.',
     icon: (
       <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -81,7 +81,7 @@ const PORTFOLIO = [
 ]
 
 const CTA_FEATURES = [
-  'Upload PDF, PNG ou AI',
+  'Upload PDF, PNG ou JPEG',
   'Código único por pedido',
   'Orçamento via WhatsApp',
   'Status em tempo real',

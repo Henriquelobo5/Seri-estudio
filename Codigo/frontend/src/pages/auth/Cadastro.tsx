@@ -228,7 +228,7 @@ export default function Cadastro() {
 
               <div className="auth-field-row">
                 <div className="auth-field">
-                  <label htmlFor="cpfCnpj">CPF / CNPJ</label>
+                  <label htmlFor="cpfCnpj">CPF / CNPJ (OPCIONAL)</label>
                   <input
                     id="cpfCnpj"
                     inputMode="numeric"

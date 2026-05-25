@@ -185,6 +185,10 @@
   padding: 16px 18px 18px;
 }
 
+.afd-card-body-chart {
+  padding-inline: 4px;
+}
+
 /* Legend */
 .afd-legend {
   display: flex;
@@ -344,6 +348,127 @@
   font-size: 12px;
   color: var(--ak-text-dim);
   margin-bottom: 14px;
+}
+
+.afd-proj-meta-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.afd-proj-meta-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 86px;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(126, 200, 154, 0.2);
+  border-radius: 8px;
+  background: rgba(126, 200, 154, 0.08);
+  color: var(--ak-brand-lime);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.afd-proj-meta-edit:hover {
+  background: rgba(126, 200, 154, 0.14);
+  border-color: rgba(126, 200, 154, 0.32);
+}
+
+.afd-proj-meta-edit svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.afd-proj-meta-form {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(126, 200, 154, 0.18);
+  border-radius: 9px;
+  background: rgba(126, 200, 154, 0.05);
+}
+
+.afd-proj-meta-form label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ak-text-dim);
+  text-transform: uppercase;
+}
+
+.afd-proj-meta-field {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  border: 1px solid var(--ak-border-strong);
+  border-radius: 8px;
+  background: rgba(7, 11, 8, 0.82);
+  color: var(--ak-text-soft);
+}
+
+.afd-proj-meta-field span {
+  padding: 0 0 0 12px;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+}
+
+.afd-proj-meta-field input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  padding: 0 12px 0 7px;
+  background: transparent;
+  color: var(--ak-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  outline: none;
+}
+
+.afd-proj-meta-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.afd-proj-meta-actions button {
+  flex: 1;
+  min-height: 34px;
+  border: 1px solid var(--ak-border);
+  border-radius: 7px;
+  background: var(--ak-surface-soft);
+  color: var(--ak-text-soft);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.afd-proj-meta-actions button.is-primary {
+  border-color: rgba(126, 200, 154, 0.3);
+  background: rgba(42, 94, 64, 0.54);
+  color: var(--ak-brand-lime);
+}
+
+.afd-proj-meta-actions button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.afd-proj-meta-error {
+  color: #fca5a5;
+  font-size: 11.5px;
 }
 
 .afd-proj-row {

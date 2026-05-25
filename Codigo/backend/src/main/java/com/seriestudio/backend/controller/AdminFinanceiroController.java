@@ -3,9 +3,12 @@ package com.seriestudio.backend.controller;
 import com.seriestudio.backend.dto.FinanceiroDashboardResponse;
 import com.seriestudio.backend.dto.FinanceiroRequest;
 import com.seriestudio.backend.dto.FinanceiroResponse;
+import com.seriestudio.backend.dto.MetaMensalRequest;
 import com.seriestudio.backend.dto.PedidoFinanceiroResponse;
+import com.seriestudio.backend.model.ConfiguracaoFinanceira;
 import com.seriestudio.backend.model.Financeiro;
 import com.seriestudio.backend.model.Pedido;
+import com.seriestudio.backend.repository.ConfiguracaoFinanceiraRepository;
 import com.seriestudio.backend.repository.FinanceiroRepository;
 import com.seriestudio.backend.repository.PedidoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,12 +22,16 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/admin/financeiro")
 public class AdminFinanceiroController {
+    private static final double META_MENSAL_PADRAO = 10_000.0;
 
     @Autowired
     private PedidoRepository pedidoRepository;
 
     @Autowired
     private FinanceiroRepository financeiroRepository;
+
+    @Autowired
+    private ConfiguracaoFinanceiraRepository configuracaoFinanceiraRepository;
 
     @GetMapping
     public ResponseEntity<List<PedidoFinanceiroResponse>> listarPedidosComFinanceiro() {
@@ -69,6 +76,21 @@ public class AdminFinanceiroController {
     // -------------------------------------------------------------------------
     // Dashboard endpoint
     // -------------------------------------------------------------------------
+
+    @PutMapping("/dashboard/meta-mensal")
+    public ResponseEntity<?> atualizarMetaMensal(@RequestBody MetaMensalRequest req) {
+        if (req == null || req.meta == null || !Double.isFinite(req.meta) || req.meta <= 0) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Informe uma meta mensal maior que zero."));
+        }
+
+        ConfiguracaoFinanceira configuracao = configuracaoFinanceiraRepository
+                .findTopByOrderByIdAsc()
+                .orElseGet(ConfiguracaoFinanceira::new);
+        configuracao.setMetaMensal(req.meta);
+        ConfiguracaoFinanceira saved = configuracaoFinanceiraRepository.save(configuracao);
+
+        return ResponseEntity.ok(Map.of("meta", saved.getMetaMensal()));
+    }
 
     @GetMapping("/dashboard")
     public ResponseEntity<FinanceiroDashboardResponse> getDashboard(
@@ -162,7 +184,7 @@ public class AdminFinanceiroController {
         int mesAtual = now.getMonthValue();
         List<Pedido> pedidosMesAtual = pedidosMes(todosPedidos, anoAtual, mesAtual);
         double realizadoMes = sumReceita(pedidosMesAtual, finMap);
-        double metaMes = 10_000.0;
+        double metaMes = getMetaMensal();
         double pctMeta = Math.min(realizadoMes / metaMes * 100, 100);
         int diaAtual = now.getDayOfMonth();
         int diasNoMes = now.toLocalDate().lengthOfMonth();
@@ -261,6 +283,14 @@ public class AdminFinanceiroController {
     // -------------------------------------------------------------------------
     // Métodos auxiliares
     // -------------------------------------------------------------------------
+
+    private double getMetaMensal() {
+        return configuracaoFinanceiraRepository
+                .findTopByOrderByIdAsc()
+                .map(ConfiguracaoFinanceira::getMetaMensal)
+                .filter(meta -> Double.isFinite(meta) && meta > 0)
+                .orElse(META_MENSAL_PADRAO);
+    }
 
     private LocalDateTime periodStart(LocalDateTime base, String periodo) {
         return switch (periodo) {
