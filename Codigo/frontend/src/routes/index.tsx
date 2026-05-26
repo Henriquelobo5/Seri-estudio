@@ -18,6 +18,7 @@ import AdminCustos from '../pages/admin/AdminCustos'
 import AdminEstoque from '../pages/admin/AdminEstoque'
 import AdminPedidos from '../pages/admin/AdminPedidos'
 import AdminFinanceiroDashboard from '../pages/admin/AdminFinanceiroDashboard'
+import AdminPortfolio from '../pages/admin/AdminPortfolio'
 import MeuPerfil from '../pages/cliente/MeuPerfil'
 import ConstrutorFichaTecnica from '../pages/public/ConstrutorFichaTecnica'
 import DetalhesProduto from '../pages/public/DetalhesProduto'
@@ -68,6 +69,7 @@ export default function RoutesApp() {
         <Route path={ROUTES.ADMIN_CUSTOS} element={<AdminCustos />} />
         <Route path={ROUTES.ADMIN_ESTOQUE} element={<AdminEstoque />} />
         <Route path={ROUTES.ADMIN_FINANCEIRO_DASHBOARD} element={<AdminFinanceiroDashboard />} />
+        <Route path={ROUTES.ADMIN_PORTFOLIO} element={<AdminPortfolio />} />
       </Route>
 
       <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
