@@ -67,6 +67,8 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: 'RELATÓRIOS', section: 'title' },
   { label: 'Custos e lucro', route: ROUTES.ADMIN_CUSTOS },
   { label: 'Dashboard financeiro', route: ROUTES.ADMIN_FINANCEIRO_DASHBOARD },
+  { label: 'VITRINE', section: 'title' },
+  { label: 'Portfólio', route: ROUTES.ADMIN_PORTFOLIO },
 ]
 
 const CATEGORIAS: { value: Categoria; label: string }[] = [
