@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import PageTransition from '../../components/PageTransition'
 import AuthNavCta from '../../components/ui/AuthNavCta'
@@ -14,6 +14,16 @@ import seri6 from '../../assets/images/produtos/seri6.jpg'
 import ecobag from '../../assets/images/produtos/ecobag.png'
 import './Home.css'
 import './Catalogo.css'
+
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
+
+type PortfolioItem = {
+  idItem: number
+  titulo: string
+  descricaoTecnica: string | null
+  urlImagem: string | null
+  categoria: string
+}
 
 type Produto = {
   id: string
@@ -331,6 +341,26 @@ export default function Catalogo() {
   const [tecidosAtivos, setTecidosAtivos] = useState<string[]>([])
   const [gramaturasAtivas, setGramaturasAtivas] = useState<string[]>([])
   const [filtroAberto, setFiltroAberto] = useState(false)
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([])
+  const [portfolioLoading, setPortfolioLoading] = useState(true)
+
+  const fetchPortfolio = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/portfolio`)
+      if (res.ok) {
+        const data: PortfolioItem[] = await res.json()
+        setPortfolioItems(data)
+      }
+    } catch {
+      // fallback: mantém array vazio, mostra produtos estáticos
+    } finally {
+      setPortfolioLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchPortfolio()
+  }, [fetchPortfolio])
 
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -369,7 +399,7 @@ export default function Catalogo() {
       .forEach((element) => observer.observe(element))
 
     return () => observer.disconnect()
-  }, [])
+  }, [portfolioLoading, portfolioItems])
 
   const toggleCategoria = (categoria: string) => {
     setCategoriasAtivas((atual) =>
@@ -604,55 +634,40 @@ export default function Catalogo() {
               </div>
             </div>
 
-            <div className="catalog-status-bar reveal">
-              <span>
-                {produtosFiltrados.length} produto
-                {produtosFiltrados.length !== 1 ? 's' : ''}
-              </span>
-
-              {filtrosAtivos.length > 0 && (
-                <button
-                  type="button"
-                  className="catalog-clear-inline"
-                  onClick={limparFiltros}
-                >
-                  Limpar filtros
-                </button>
-              )}
-            </div>
-
-            {produtosFiltrados.length === 0 ? (
-              <div className="catalog-empty-state">
-                <h3>Nenhum produto encontrado</h3>
-                <p>Remova alguns filtros para voltar a ver as peças disponíveis.</p>
+            {portfolioItems.length > 0 && (
+              <div className="catalog-status-bar reveal">
+                <span>
+                  {portfolioItems.length} trabalho
+                  {portfolioItems.length !== 1 ? 's' : ''} no portfólio
+                </span>
               </div>
-            ) : (
+            )}
+
+            {portfolioItems.length > 0 ? (
               <div className="catalog-grid">
-                {produtosFiltrados.map((produto, index) => (
+                {portfolioItems.map((item, index) => (
                   <Link
-                    key={produto.id}
+                    key={item.idItem}
                     to={ROUTES.CRIAR_FICHA}
                     className="catalog-product-card reveal"
                     style={{ transitionDelay: `${Math.min(index, 7) * 55}ms` }}
                   >
                     <div className="catalog-product-media">
-                      {produto.imagem ? (
-                        <img src={produto.imagem} alt={produto.nome} />
+                      {item.urlImagem ? (
+                        <img src={item.urlImagem} alt={item.titulo} />
                       ) : (
                         <div className="catalog-product-icon">
-                          <IconeProduto categoria={produto.categoria} />
+                          <IconeProduto categoria={item.categoria} />
                         </div>
                       )}
-
-                      {produto.badge && (
-                        <span className="catalog-product-badge">{produto.badge}</span>
-                      )}
+                      <span className="catalog-product-badge catalog-portfolio-cat">{item.categoria}</span>
                     </div>
 
                     <div className="catalog-product-body">
-                      <h3 className="catalog-product-name">
-                        {formatarNomeProduto(produto.nome)}
-                      </h3>
+                      <h3 className="catalog-product-name">{formatarNomeProduto(item.titulo)}</h3>
+                      {item.descricaoTecnica && (
+                        <span className="catalog-product-desc">{item.descricaoTecnica}</span>
+                      )}
                       <span className="catalog-product-action">
                         -&gt; Montar ficha técnica &lt;-
                       </span>
@@ -660,6 +675,70 @@ export default function Catalogo() {
                   </Link>
                 ))}
               </div>
+            ) : portfolioLoading ? (
+              <div className="catalog-empty-state">
+                <p>Carregando portfólio...</p>
+              </div>
+            ) : (
+              <>
+                <div className="catalog-status-bar reveal">
+                  <span>
+                    {produtosFiltrados.length} produto
+                    {produtosFiltrados.length !== 1 ? 's' : ''}
+                  </span>
+
+                  {filtrosAtivos.length > 0 && (
+                    <button
+                      type="button"
+                      className="catalog-clear-inline"
+                      onClick={limparFiltros}
+                    >
+                      Limpar filtros
+                    </button>
+                  )}
+                </div>
+
+                {produtosFiltrados.length === 0 ? (
+                  <div className="catalog-empty-state">
+                    <h3>Nenhum produto encontrado</h3>
+                    <p>Remova alguns filtros para voltar a ver as peças disponíveis.</p>
+                  </div>
+                ) : (
+                  <div className="catalog-grid">
+                    {produtosFiltrados.map((produto, index) => (
+                      <Link
+                        key={produto.id}
+                        to={ROUTES.CRIAR_FICHA}
+                        className="catalog-product-card reveal"
+                        style={{ transitionDelay: `${Math.min(index, 7) * 55}ms` }}
+                      >
+                        <div className="catalog-product-media">
+                          {produto.imagem ? (
+                            <img src={produto.imagem} alt={produto.nome} />
+                          ) : (
+                            <div className="catalog-product-icon">
+                              <IconeProduto categoria={produto.categoria} />
+                            </div>
+                          )}
+
+                          {produto.badge && (
+                            <span className="catalog-product-badge">{produto.badge}</span>
+                          )}
+                        </div>
+
+                        <div className="catalog-product-body">
+                          <h3 className="catalog-product-name">
+                            {formatarNomeProduto(produto.nome)}
+                          </h3>
+                          <span className="catalog-product-action">
+                            -&gt; Montar ficha técnica &lt;-
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </section>
         </main>
