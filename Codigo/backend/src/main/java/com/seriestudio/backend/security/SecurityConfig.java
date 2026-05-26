@@ -33,6 +33,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/auth/login", "/auth/register").permitAll()
+                .requestMatchers(HttpMethod.GET, "/portfolio", "/portfolio/imagens/**").permitAll()
                 .requestMatchers(new RegexRequestMatcher("/admin/.*", null)).hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
