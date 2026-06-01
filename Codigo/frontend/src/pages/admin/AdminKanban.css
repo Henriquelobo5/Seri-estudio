@@ -962,21 +962,43 @@
 
 .ak-card-info {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 6px;
   margin-top: 10px;
+  min-width: 0;
 }
 
 .ak-card-info span {
-  display: inline-flex;
-  align-items: center;
+  display: block;
+  box-sizing: border-box;
+  max-width: 100%;
   min-height: 22px;
-  padding: 0 8px;
+  padding: 4px 8px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.035);
   color: var(--ak-text-dim);
   font-size: 0.67rem;
   font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.ak-card-date {
+  width: max-content;
+}
+
+.ak-card-modelagens {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ak-card-modelagens span {
+  width: 100%;
 }
 
 .ak-chip-row {

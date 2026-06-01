@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import AuthNavCta from '../../components/ui/AuthNavCta'
@@ -6,6 +6,11 @@ import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import ThreeViewer from '../../components/ui/ThreeViewer'
 import logo from '../../assets/images/logo.png'
 import { apiRequest } from '../../services/api'
+import {
+  buildEspecificacoesFicha,
+  getTiposSelecionadosFromDetails,
+  resolveModelagemGramaturaFromDetails,
+} from '../../utils/fichaEspecificacoes'
 import './DetalhesProduto.css'
 
 // ── Dados ─────────────────────────────────────────────────────────────────────
@@ -20,6 +25,7 @@ type PosKey = 'fc' | 'fe' | 'fd' | 'cc' | 'me' | 'md'
 
 type UploadedArt = {
   id: string
+  produtoTipo: string
   file: File
   previewUrl: string
   isObjectUrl: boolean
@@ -133,12 +139,31 @@ const PRODUCT_CONFIG: Record<string, ProductConfig> = {
 
 // ── Componente ────────────────────────────────────────────────────────────────
 
+const PREVIEW_MODEL_TYPES = ['Camiseta', 'Moletom', 'Regata', 'Polo', 'Ecobag']
+
+function getProductConfig(tipoProduto: string) {
+  return PRODUCT_CONFIG[tipoProduto] ?? PRODUCT_CONFIG['Camiseta']
+}
+
 export default function DetalhesProduto() {
   const navigate = useNavigate()
   const location = useLocation()
   const locState = (location.state ?? {}) as { fichaId?: number; fichaData?: any }
-  const tipo     = locState.fichaData?.tipo ?? 'Camiseta'
-  const config   = PRODUCT_CONFIG[tipo] ?? PRODUCT_CONFIG['Camiseta']
+  const tipo = locState.fichaData?.tipo ?? 'Camiseta'
+  const tiposSelecionados = useMemo(
+    () => getTiposSelecionadosFromDetails(locState.fichaData, tipo),
+    [locState.fichaData, tipo],
+  )
+  const previewOptions = useMemo(
+    () => tiposSelecionados.filter((option) => PREVIEW_MODEL_TYPES.includes(option)),
+    [tiposSelecionados],
+  )
+  const fallbackPreviewTipo = previewOptions[0] ?? (PREVIEW_MODEL_TYPES.includes(tipo) ? tipo : 'Camiseta')
+  const canSwitchPreview = previewOptions.length > 0
+  const [previewTipo, setPreviewTipo] = useState(fallbackPreviewTipo)
+  const previewProduto = canSwitchPreview ? previewTipo : (tiposSelecionados[0] ?? tipo)
+  const previewLabel = previewProduto
+  const config = getProductConfig(previewProduto)
 
   const artObjUrlRef = useRef<string[]>([])
 
@@ -154,9 +179,12 @@ export default function DetalhesProduto() {
   const [submitting, setSubmitting] = useState(false)
   const [erro, setErro] = useState('')
 
-  const activeArt = files.find(art => art.id === activeArtId) ?? files[0] ?? null
+  const visibleFiles = files.filter(art => art.produtoTipo === previewProduto)
+  const activeArt = visibleFiles.find(art => art.id === activeArtId) ?? visibleFiles[0] ?? null
   const artUrl = activeArt?.previewUrl ?? null
-  const activePos = activeArt?.pos ?? config.posicoes[0]?.key ?? 'fc'
+  const activePos = activeArt && config.posicoes.some(pos => pos.key === activeArt.pos)
+    ? activeArt.pos
+    : config.posicoes[0]?.key ?? 'fc'
   const activeRotation = activeArt?.rotation ?? 0
   const activeScale = activeArt?.scale ?? 1
   const activeFlipH = activeArt?.flipH ?? false
@@ -164,7 +192,29 @@ export default function DetalhesProduto() {
   const btnNextOn = files.length > 0
   const selectedColor = CORES.find(item => item.nome === cor) ?? CORES[0]
 
+  useEffect(() => {
+    if (!canSwitchPreview || previewOptions.includes(previewTipo)) return
+
+    setPreviewTipo(fallbackPreviewTipo)
+    setModelLoaded(false)
+  }, [canSwitchPreview, fallbackPreviewTipo, previewOptions, previewTipo])
+
+  useEffect(() => {
+    if (visibleFiles.length > 0) return
+
+    setActiveArtId(null)
+    setMoveMode(false)
+  }, [previewProduto, visibleFiles.length])
+
   const handleModelLoad = useCallback(() => setModelLoaded(true), [])
+
+  function handlePreviewTypeChange(nextTipo: string) {
+    if (nextTipo === previewTipo || !previewOptions.includes(nextTipo)) return
+
+    setPreviewTipo(nextTipo)
+    setModelLoaded(false)
+    setActiveArtId(files.find(art => art.produtoTipo === nextTipo)?.id ?? null)
+  }
 
   function onlyDigits(value: string) {
     return value.replace(/\D/g, '')
@@ -184,6 +234,7 @@ export default function DetalhesProduto() {
     const id = `${f.name}-${f.size}-${f.lastModified}-${crypto.randomUUID()}`
     const baseArt = {
       id,
+      produtoTipo: previewProduto,
       file: f,
       pos: config.posicoes[0]?.key ?? 'fc',
       rotation: 0,
@@ -208,7 +259,7 @@ export default function DetalhesProduto() {
     setFiles(prev => [...prev, ...nextArts])
     setActiveArtId(nextArts[0].id)
     if (!hintGone) setHintGone(true)
-    showToast(nextArts.length > 1 ? `${nextArts.length} artes adicionadas` : 'Arte aplicada! Gire para ver.')
+    showToast(nextArts.length > 1 ? `${nextArts.length} artes adicionadas em ${previewLabel.toLowerCase()}` : `Arte aplicada em ${previewLabel.toLowerCase()}!`)
   }
 
   function removeFile(id: string) {
@@ -220,7 +271,9 @@ export default function DetalhesProduto() {
 
     const remaining = files.filter(art => art.id !== id)
     setFiles(remaining)
-    if (activeArtId === id) setActiveArtId(remaining[0]?.id ?? null)
+    if (activeArtId === id) {
+      setActiveArtId(remaining.find(art => art.produtoTipo === removed?.produtoTipo)?.id ?? null)
+    }
 
     if (!remaining.length) {
       setMoveMode(false)
@@ -255,7 +308,7 @@ export default function DetalhesProduto() {
       document.removeEventListener('drop', onDrop)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [config, hintGone, previewLabel, previewProduto])
 
   // ── Toast ──────────────────────────────────────────────────────────────────
   function showToast(msg: string) {
@@ -304,11 +357,20 @@ export default function DetalhesProduto() {
   }
 
   const posLabel = config.posicoes.find(p => p.key === activePos)?.label ?? ''
+  function getArtPosLabel(art: UploadedArt) {
+    const artConfig = getProductConfig(art.produtoTipo)
+    return artConfig.posicoes.find(p => p.key === art.pos)?.label ?? ''
+  }
+
   const posSummary = files.length
-    ? Array.from(new Set(files.map(art => config.posicoes.find(p => p.key === art.pos)?.label ?? '').filter(Boolean))).join(', ')
+    ? Array.from(new Set(files.map(art => {
+        const label = getArtPosLabel(art)
+        return label ? `${art.produtoTipo}: ${label}` : ''
+      }).filter(Boolean))).join(', ')
     : ''
   const medidasEstampas = files.map((art, index) => ({
     indice: index + 1,
+    produtoTipo: art.produtoTipo,
     arquivo: art.file.name,
     largura: art.largura,
     altura: art.altura,
@@ -339,12 +401,13 @@ export default function DetalhesProduto() {
     const fichaDataAtualizada = {
       ...locState.fichaData,
       cor,
+      modelagemGramatura: resolveModelagemGramaturaFromDetails(locState.fichaData, tipo),
       posicao: posSummary || posLabel,
       arquivos: files.length,
       larguraEstampa: primeiraMedida?.largura ?? '',
       alturaEstampa: primeiraMedida?.altura ?? '',
       obsEstampa: medidasEstampas
-        .map(item => `${item.arquivo}: ${item.largura || '0'}x${item.altura || '0'}cm${item.observacoes ? ` - ${item.observacoes}` : ''}`)
+        .map(item => `${item.produtoTipo} - ${item.arquivo}: ${item.largura || '0'}x${item.altura || '0'}cm${item.observacoes ? ` - ${item.observacoes}` : ''}`)
         .join('\n'),
       medidasEstampas,
     }
@@ -355,7 +418,11 @@ export default function DetalhesProduto() {
       let fichaId = locState.fichaId
 
       if (!fichaId) {
-        const especificacoes = `${fichaDataAtualizada.tecido}, ${fichaDataAtualizada.gramatura}, ${cor}, ${(fichaDataAtualizada.tamanhos ?? []).join(', ')}`
+        const especificacoes = buildEspecificacoesFicha({
+          modelagemGramatura: fichaDataAtualizada.modelagemGramatura,
+          cor,
+          tamanhos: fichaDataAtualizada.tamanhos ?? [],
+        })
         const ficha = await apiRequest<{ codUnico: number; codigoDisplay: string }>('/ficha-tecnica', {
           method: 'POST',
           body: JSON.stringify({
@@ -473,14 +540,14 @@ export default function DetalhesProduto() {
                   </svg>
                   Selecionar arquivo
                 </label>
-                {files.map(art => <ExtChip key={art.id} art={art} />)}
+                {visibleFiles.map(art => <ExtChip key={art.id} art={art} />)}
                 <div className="dp-aviso">
                   <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
                     <line x1="12" y1="9" x2="12" y2="13"/>
                     <line x1="12" y1="17" x2="12.01" y2="17"/>
                   </svg>
-                  <p>PDF e AI não exibem fundo. Use <strong>PNG transparente</strong> para melhor resultado.</p>
+                  <p>PDF e JPEG não exibem fundo. Use <strong>PNG transparente</strong> para melhor resultado.</p>
                 </div>
               </div>
             </div>
@@ -574,11 +641,11 @@ export default function DetalhesProduto() {
               </div>
             )}
 
-            {files.length > 0 && (
+            {visibleFiles.length > 0 && (
               <div className="dp-blk">
                 <div className="dp-bh">Medidas da estampa</div>
                 <div className="dp-bb dp-measures-list">
-                  {files.map((art, index) => (
+                  {visibleFiles.map((art, index) => (
                     <div
                       key={art.id}
                       className={`dp-measure-card ${activeArt?.id === art.id ? 'active' : ''}`}
@@ -676,19 +743,38 @@ export default function DetalhesProduto() {
 
         {/* VIEWER */}
         <div className="dp-viewer" id="dp-vw">
+          {canSwitchPreview && (
+            <div className="dp-preview-switch" aria-label="Selecionar preview 3D">
+              <span>Preview 3D</span>
+              <div className="dp-preview-options">
+                {previewOptions.map(option => (
+                  <button
+                    key={option}
+                    type="button"
+                    className={previewTipo === option ? 'active' : ''}
+                    onClick={() => handlePreviewTypeChange(option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {config.modelUrl ? (
             <>
               {!modelLoaded && (
                 <div className="dp-v-loading">
                   <div className="dp-spinner" />
-                  <p>Carregando {tipo.toLowerCase()} 3D...</p>
+                  <p>Carregando {previewLabel.toLowerCase()} 3D...</p>
                 </div>
               )}
               <ThreeViewer
+                key={previewLabel}
                 modelUrl={config.modelUrl}
                 artUrl={artUrl}
                 activeArtId={activeArt?.id ?? null}
-                arts={files.map(art => ({
+                arts={visibleFiles.map(art => ({
                   id: art.id,
                   url: art.previewUrl,
                   pos: art.pos,
@@ -718,7 +804,7 @@ export default function DetalhesProduto() {
             </div>
           )}
 
-          {config.modelUrl && !files.length && (
+          {config.modelUrl && !visibleFiles.length && (
             <div className="dp-noart">
               <div className="dp-noart-ring">
                 <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -727,11 +813,11 @@ export default function DetalhesProduto() {
                   <line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
               </div>
-              <p>Envie uma arte para<br />visualizar no {tipo.toLowerCase()}</p>
+              <p>Envie uma arte para<br />visualizar no {previewLabel.toLowerCase()}</p>
             </div>
           )}
 
-          {config.modelUrl && files.length > 0 && (
+          {config.modelUrl && visibleFiles.length > 0 && (
             <div className="dp-art-badge">
               <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="20 6 9 17 4 12"/>
@@ -772,7 +858,13 @@ export default function DetalhesProduto() {
                   <div className="dp-pidot active">2</div>
                   <div>
                     <div className="dp-pname active">Detalhes do produto</div>
-                    <div className="dp-pdet">{files.length ? `${files.length} arquivo${files.length !== 1 ? 's' : ''} · ${posLabel}` : 'Aguardando arquivo...'}</div>
+                    <div className="dp-pdet">
+                      {visibleFiles.length
+                        ? `${visibleFiles.length} arquivo${visibleFiles.length !== 1 ? 's' : ''} em ${previewLabel} · ${posLabel}`
+                        : files.length
+                        ? `Sem arte em ${previewLabel}`
+                        : 'Aguardando arquivo...'}
+                    </div>
                   </div>
                 </div>
                 <div className="dp-pi">

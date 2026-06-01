@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import logo from '../../assets/images/logo.png'
 import { ROUTES } from '../../routes/routePaths'
 import { apiRequest } from '../../services/api'
+import { parseEspecificacoesFicha } from '../../utils/fichaEspecificacoes'
 import './AdminKanban.css'
 import './AdminFichas.css'
 
@@ -112,12 +113,14 @@ function getStatusClass(status: string | null | undefined) {
 }
 
 function parseEspecificacoes(value?: string | null) {
-  const parts = (value ?? '').split(',').map((item) => item.trim()).filter(Boolean)
+  const specs = parseEspecificacoesFicha(value)
   return {
-    tecido: parts[0] ?? 'Sem tecido',
-    gramatura: parts[1] ?? 'Sem gramatura',
-    cor: parts[2] ?? 'Sem cor',
-    tamanhos: parts.slice(3).join(', ') || 'Sem tamanhos',
+    ...specs,
+    modelagemGramatura: specs.modelagemGramatura === '—' ? 'Sem modelagem' : specs.modelagemGramatura,
+    tecido: specs.tecido === '—' ? 'Sem modelagem' : specs.tecido,
+    gramatura: specs.gramatura || '—',
+    cor: specs.cor === '—' ? 'Sem cor' : specs.cor,
+    tamanhos: specs.tamanhos === '—' ? 'Sem tamanhos' : specs.tamanhos,
   }
 }
 
@@ -634,7 +637,7 @@ export default function AdminFichas() {
                   const totalPecas = getTotalPecas(pedido.quantidades)
                   const title = pedido.fichaTecnica?.identificacao || 'Pedido sem nome'
                   const productLabel = `${pedido.fichaTecnica?.produtoTipo || 'Produto'} · ${specs.cor}`
-                  const detailsLabel = `${specs.tecido} · ${getTamanhos(pedido.quantidades, specs.tamanhos)}`
+                  const detailsLabel = `${specs.modelagemGramatura} · ${getTamanhos(pedido.quantidades, specs.tamanhos)}`
 
                   return (
                     <tr key={pedido.id} className={selectedPedidoId === pedido.id ? 'is-selected' : ''}>
@@ -705,9 +708,9 @@ export default function AdminFichas() {
               <h3>Produto</h3>
               <div className="af-drawer-grid">
                 <div className="af-info-card">
-                  <span>Tipo / tecido / cor</span>
+                  <span>Tipo / modelagem / cor</span>
                   <strong>
-                    {(selectedPedido.fichaTecnica?.produtoTipo || 'Produto')}, {parseEspecificacoes(selectedPedido.fichaTecnica?.especificacoes).tecido}, {parseEspecificacoes(selectedPedido.fichaTecnica?.especificacoes).cor}
+                    {(selectedPedido.fichaTecnica?.produtoTipo || 'Produto')}, {parseEspecificacoes(selectedPedido.fichaTecnica?.especificacoes).modelagemGramatura}, {parseEspecificacoes(selectedPedido.fichaTecnica?.especificacoes).cor}
                   </strong>
                 </div>
 
@@ -727,8 +730,8 @@ export default function AdminFichas() {
                 </div>
 
                 <div className="af-info-card">
-                  <span>Gramatura</span>
-                  <strong>{parseEspecificacoes(selectedPedido.fichaTecnica?.especificacoes).gramatura}</strong>
+                  <span>Gramatura e Modelagem</span>
+                  <strong>{parseEspecificacoes(selectedPedido.fichaTecnica?.especificacoes).modelagemGramatura}</strong>
                 </div>
 
                 <div className="af-info-card">

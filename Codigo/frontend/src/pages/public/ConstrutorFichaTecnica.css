@@ -192,6 +192,51 @@
 
 /* ── SPECS ──────────────────────────────────────────────────────────────────── */
 .cf-spec-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.cf-spec-list {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.cf-spec-item {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.cf-spec-item + .cf-spec-item {
+  padding-top: 22px;
+  border-top: 1px solid rgba(255,255,255,.07);
+}
+.cf-spec-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cf-spec-item-head strong {
+  display: block;
+  color: #FAFAF8;
+  font-size: 14px;
+  font-weight: 700;
+}
+.cf-spec-item-head span {
+  display: block;
+  color: rgba(250,250,248,.42);
+  font-size: 12px;
+  margin-top: 2px;
+}
+.cf-tam-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cf-empty-selection {
+  padding: 14px;
+  border: 1px dashed rgba(126,200,154,.26);
+  border-radius: 8px;
+  color: rgba(250,250,248,.5);
+  font-size: 13px;
+  line-height: 1.5;
+}
 .cf-fld { display: flex; flex-direction: column; gap: 6px; }
 .cf-fld label {
   font-size: 11px; font-weight: 500;
@@ -246,22 +291,96 @@
   font-size: 10px; color: rgba(250,250,248,.22);
   margin-bottom: 6px; text-transform: uppercase; letter-spacing: .06em;
 }
-.cf-tam-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.cf-tam-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.cf-tam-item {
+  width: calc(48px + .5cm);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.cf-tam-item.sel {
+  width: calc(48px + .5cm);
+}
+.cf-tam-item.wide,
+.cf-tam-item.wide.sel {
+  width: 112px;
+}
 .cf-tam-btn {
-  min-width: 48px; height: 42px; padding: 0 14px;
+  width: 100%; min-height: 42px; padding: 10px 8px;
   background: #1c1f1a;
   border: 1px solid rgba(255,255,255,.09);
   border-radius: 8px;
   font-family: inherit; font-size: 13.5px;
   color: rgba(250,250,248,.48);
   cursor: pointer; transition: all .2s;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
+}
+.cf-tam-main,
+.cf-tam-measure {
+  display: block;
+}
+.cf-tam-measure {
+  color: inherit;
 }
 .cf-tam-btn:hover { border-color: rgba(126,200,154,.35); color: #FAFAF8; }
 .cf-tam-btn.sel {
   background: rgba(126,200,154,.1);
   border-color: #7EC89A;
   color: #7EC89A; font-weight: 500;
+}
+.cf-tam-qty {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 7px;
+  background: rgba(126,200,154,.05);
+  border: 1px solid rgba(126,200,154,.22);
+  border-radius: 8px;
+}
+.cf-tam-qty span {
+  font-size: 10px;
+  color: rgba(126,200,154,.7);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  text-align: center;
+}
+.cf-tam-qty input {
+  width: 100%;
+  height: 28px;
+  background: #141612;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 6px;
+  color: #FAFAF8;
+  font-family: inherit;
+  font-size: 13px;
+  text-align: center;
+  outline: none;
+}
+.cf-tam-qty input:focus {
+  border-color: rgba(126,200,154,.55);
+}
+.cf-qtd-total {
+  width: fit-content;
+  margin-left: auto;
+  margin-right: 28px;
+  margin-top: 0;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(250,250,248,.6);
+  font-size: 12.5px;
+}
+.cf-qtd-total strong {
+  color: rgba(126,200,154,.78);
+  font-size: 14px;
 }
 
 /* ── INPUT IDENTIFICAÇÃO ────────────────────────────────────────────────────── */

@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
 import AuthNavCta from '../../components/ui/AuthNavCta'
 import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
 import { apiRequest } from '../../services/api'
+import { resolveModelagemGramaturaFromDetails } from '../../utils/fichaEspecificacoes'
 import './DetalhesPedido.css'
 
 const STEPS = [
@@ -12,6 +13,23 @@ const STEPS = [
   { id: 2, label: 'Detalhes do produto' },
   { id: 3, label: 'Detalhes do pedido' },
 ]
+
+const MESES = [
+  'janeiro',
+  'fevereiro',
+  'março',
+  'abril',
+  'maio',
+  'junho',
+  'julho',
+  'agosto',
+  'setembro',
+  'outubro',
+  'novembro',
+  'dezembro',
+]
+
+const DIAS_SEMANA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
 
 function formatDateInput(value: string) {
   if (!value) return ''
@@ -22,6 +40,45 @@ function formatDateInput(value: string) {
   return `${day}/${month}/${year}`
 }
 
+function toDateInputValue(date: Date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-')
+}
+
+function parseDateInputValue(value: string) {
+  if (!value) return null
+
+  const [year, month, day] = value.split('-').map(Number)
+  if (!year || !month || !day) return null
+
+  const date = new Date(year, month - 1, day)
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null
+  }
+
+  return date
+}
+
+function sameDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  )
+}
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
 export default function DetalhesPedido() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -30,6 +87,7 @@ export default function DetalhesPedido() {
   const fichaData = locState.fichaData ?? {
     identificacao: '',
     tipo: '',
+    modelagemGramatura: '',
     tecido: '',
     gramatura: '',
     cor: '',
@@ -39,24 +97,79 @@ export default function DetalhesPedido() {
   }
 
   const tamanhos: string[] = fichaData.tamanhos ?? []
+  const modelagemGramatura = resolveModelagemGramaturaFromDetails(fichaData, fichaData.tipo)
+  const quantidadesIniciais = fichaData.quantidadesPorTamanho ?? {}
 
-  const [qtds, setQtds] = useState<Record<string, number>>(
-    Object.fromEntries(tamanhos.map(t => [t, 0]))
+  const qtds = useMemo<Record<string, number>>(
+    () => Object.fromEntries(tamanhos.map(t => [t, Number(quantidadesIniciais[t]) || 0])),
+    [quantidadesIniciais, tamanhos],
   )
   const [obs, setObs] = useState('')
   const [dataNecessidade, setDataNecessidade] = useState('')
+  const [calendarOpen, setCalendarOpen] = useState(false)
+  const datePickerRef = useRef<HTMLDivElement>(null)
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const today = new Date()
+    return new Date(today.getFullYear(), today.getMonth(), 1)
+  })
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
 
   const total = Object.values(qtds).reduce((s, v) => s + (v || 0), 0)
+  const selectedDate = parseDateInputValue(dataNecessidade)
+  const today = useMemo(() => new Date(), [])
+  const minDeliveryDate = useMemo(() => {
+    const date = startOfDay(new Date())
+    date.setDate(date.getDate() + 21)
+    return date
+  }, [])
+  const calendarDays = useMemo(() => {
+    const year = calendarMonth.getFullYear()
+    const month = calendarMonth.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const start = new Date(year, month, 1 - firstDay.getDay())
 
-  function setQtd(tam: string, val: number) {
-    setQtds(prev => ({ ...prev, [tam]: Math.max(0, val) }))
+    return Array.from({ length: 42 }, (_, index) => {
+      const date = new Date(start)
+      date.setDate(start.getDate() + index)
+      return date
+    })
+  }, [calendarMonth])
+
+  function selectDate(date: Date) {
+    setDataNecessidade(toDateInputValue(date))
+    setCalendarMonth(new Date(date.getFullYear(), date.getMonth(), 1))
+    setCalendarOpen(false)
   }
 
-  function onlyDigits(value: string) {
-    return value.replace(/\D/g, '')
+  function changeCalendarMonth(delta: number) {
+    setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + delta, 1))
   }
+
+  useEffect(() => {
+    if (!calendarOpen) return
+
+    function handleClickOutside(event: MouseEvent) {
+      if (!datePickerRef.current?.contains(event.target as Node)) {
+        setCalendarOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [calendarOpen])
+
+  useEffect(() => {
+    if (!calendarOpen) return
+
+    window.setTimeout(() => {
+      const targetDay = datePickerRef.current?.querySelector('.dpd-cal-grid button.selected, .dpd-cal-grid button.today')
+      targetDay?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    }, 0)
+  }, [calendarOpen])
 
   async function handleConfirmar() {
     if (!locState.fichaId) {
@@ -65,6 +178,10 @@ export default function DetalhesPedido() {
     }
     if (total < 1) {
       setErro('Informe pelo menos 1 peça em pelo menos um tamanho.')
+      return
+    }
+    if (selectedDate && startOfDay(selectedDate) < minDeliveryDate) {
+      setErro('Selecione uma data desejada com pelo menos 3 semanas de prazo.')
       return
     }
     setLoading(true)
@@ -78,7 +195,7 @@ export default function DetalhesPedido() {
         body: JSON.stringify({ fichaId: locState.fichaId, quantidades: quantidadesStr, observacoes: observacoesComPrazo }),
       })
       const codigoDisplay = pedido.fichaTecnica?.codigoDisplay ?? ''
-      navigate(ROUTES.CONFIRMACAO, { state: { total, codigoDisplay, fichaData } })
+      navigate(ROUTES.CONFIRMACAO, { state: { total, codigoDisplay, fichaData: { ...fichaData, quantidadesPorTamanho: qtds } } })
     } catch (e: any) {
       setErro(e.message ?? 'Erro ao salvar pedido. Tente novamente.')
     } finally {
@@ -167,69 +284,13 @@ export default function DetalhesPedido() {
                     <td>Tipo de peça</td>
                     <td><span className="dpd-res-tag">{fichaData.tipo || '—'}</span></td>
                   </tr>
-                  <tr><td>Tecido</td><td>{fichaData.tecido || '—'}</td></tr>
-                  <tr><td>Gramatura</td><td>{fichaData.gramatura || '—'}</td></tr>
+                  <tr><td>Gramatura e Modelagem</td><td>{modelagemGramatura || '—'}</td></tr>
                   <tr><td>Cor da peça</td><td>{fichaData.cor || '—'}</td></tr>
                   <tr><td>Tamanhos</td><td>{tamanhos.join(', ') || '—'}</td></tr>
                   <tr><td>Posição da estampa</td><td>{fichaData.posicao || '—'}</td></tr>
                   <tr><td>Arquivos enviados</td><td>{fichaData.arquivos ?? 0} arquivo</td></tr>
                 </tbody>
               </table>
-            </div>
-          </div>
-
-          {/* Quantidade por tamanho */}
-          <div className="dpd-sec-title">Quantidade por tamanho</div>
-          <div className="dpd-card" style={{ marginBottom: 20 }}>
-            <div className="dpd-card-head">
-              <div className="dpd-ch-icon">
-                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
-                  <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
-                  <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-                </svg>
-              </div>
-              <div>
-                <div className="dpd-ch-title">Quantidades</div>
-                <div className="dpd-ch-sub">Informe quantas peças por tamanho</div>
-              </div>
-            </div>
-            <div className="dpd-card-body">
-              <div className="dpd-qtd-grid">
-                {tamanhos.map(tam => (
-                  <div key={tam} className="dpd-qtd-card">
-                    <div className="dpd-qtd-size">{tam}</div>
-                    <input
-                      type="text"
-                      className="dpd-qtd-inp"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      placeholder="0"
-                      value={qtds[tam] || ''}
-                      onKeyDown={e => {
-                        const controlKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End']
-                        if (e.ctrlKey || e.metaKey || controlKeys.includes(e.key)) return
-                        if (!/^\d$/.test(e.key)) e.preventDefault()
-                      }}
-                      onPaste={e => {
-                        e.preventDefault()
-                        const digits = onlyDigits(e.clipboardData.getData('text'))
-                        setQtd(tam, digits ? parseInt(digits, 10) : 0)
-                      }}
-                      onChange={e => {
-                        const digits = onlyDigits(e.target.value)
-                        setQtd(tam, digits ? parseInt(digits, 10) : 0)
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="dpd-qtd-total">
-                <span className="dpd-qtd-total-label">Total de peças</span>
-                <span className="dpd-qtd-total-val">
-                  {total} peça{total !== 1 ? 's' : ''}
-                </span>
-              </div>
             </div>
           </div>
 
@@ -248,14 +309,74 @@ export default function DetalhesPedido() {
               </div>
             </div>
             <div className="dpd-card-body">
-              <label className="dpd-date-field">
-                <span>Data desejada</span>
-                <input
-                  type="date"
-                  value={dataNecessidade}
-                  onChange={e => setDataNecessidade(e.target.value)}
-                />
-              </label>
+              <div className="dpd-date-field">
+                <span>Data de entrega (Mínimo 3 semanas)</span>
+                <div className="dpd-date-picker" ref={datePickerRef}>
+                  <button
+                    type="button"
+                    className={`dpd-date-trigger ${dataNecessidade ? 'has-value' : ''}`}
+                    onClick={() => setCalendarOpen(open => !open)}
+                  >
+                    <span>{dataNecessidade ? formatDateInput(dataNecessidade) : 'Selecionar data'}</span>
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="4" width="18" height="18" rx="2" />
+                      <path d="M16 2v4M8 2v4M3 10h18" />
+                    </svg>
+                  </button>
+
+                  {calendarOpen ? (
+                    <div className="dpd-calendar" role="dialog" aria-label="Selecionar data desejada">
+                      <div className="dpd-cal-head">
+                        <button type="button" onClick={() => changeCalendarMonth(-1)} aria-label="Mês anterior">
+                          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M15 18l-6-6 6-6" />
+                          </svg>
+                        </button>
+                        <strong>{MESES[calendarMonth.getMonth()]} de {calendarMonth.getFullYear()}</strong>
+                        <button type="button" onClick={() => changeCalendarMonth(1)} aria-label="Próximo mês">
+                          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M9 18l6-6-6-6" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      <div className="dpd-cal-week">
+                        {DIAS_SEMANA.map((dia, index) => <span key={`${dia}-${index}`}>{dia}</span>)}
+                      </div>
+
+                      <div className="dpd-cal-grid">
+                        {calendarDays.map(date => {
+                          const isCurrentMonth = date.getMonth() === calendarMonth.getMonth()
+                          const isSelected = selectedDate ? sameDay(date, selectedDate) : false
+                          const isToday = sameDay(date, today)
+                          const isBlocked = startOfDay(date) < minDeliveryDate
+
+                          return (
+                            <button
+                              key={date.toISOString()}
+                              type="button"
+                              className={[
+                                !isCurrentMonth ? 'muted' : '',
+                                isBlocked ? 'blocked' : '',
+                                isToday ? 'today' : '',
+                                isSelected ? 'selected' : '',
+                              ].filter(Boolean).join(' ')}
+                              disabled={isBlocked}
+                              title={isBlocked ? 'Prazo mínimo de 3 semanas' : undefined}
+                              onClick={() => {
+                                if (!isBlocked) selectDate(date)
+                              }}
+                            >
+                              {date.getDate()}
+                            </button>
+                          )
+                        })}
+                      </div>
+
+                    </div>
+                  ) : null}
+                </div>
+              </div>
               <textarea
                 className="dpd-obs-ta"
                 placeholder="Ex: manter proporção da arte, enviar amostra antes, referências ou detalhes finais..."

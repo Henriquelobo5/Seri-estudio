@@ -4,6 +4,7 @@ import { ROUTES } from '../../routes/routePaths'
 import AuthNavCta from '../../components/ui/AuthNavCta'
 import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
+import { resolveModelagemGramaturaFromDetails } from '../../utils/fichaEspecificacoes'
 import './Confirmacao.css'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -56,6 +57,7 @@ export default function Confirmacao() {
   const state = (location.state ?? {}) as { total?: number; codigoDisplay?: string; fichaData?: any }
   const totalPecas: number = state.total ?? 0
   const fichaData = state.fichaData ?? {}
+  const modelagemGramatura = resolveModelagemGramaturaFromDetails(fichaData, fichaData.tipo)
 
   const fallbackCode = useMemo(() => String(Math.floor(1000 + Math.random() * 9000)), [])
   // Usa o código real do backend se disponível, senão gera localmente
@@ -71,11 +73,7 @@ export default function Confirmacao() {
   if (totalPecas > 0) campos.push(`Total de peças: ${totalPecas}`)
   if (fichaData.tipo) campos.push(`Tipo de peça: ${fichaData.tipo}`)
   if (fichaData.cor) campos.push(`Cor: ${fichaData.cor}`)
-  if (fichaData.tecido) {
-    let tecidoStr = fichaData.tecido
-    if (fichaData.gramatura) tecidoStr += ` · ${fichaData.gramatura}`
-    campos.push(`Tecido: ${tecidoStr}`)
-  }
+  if (modelagemGramatura) campos.push(`Gramatura e Modelagem: ${modelagemGramatura}`)
   if (Array.isArray(fichaData.tamanhos) && fichaData.tamanhos.length > 0) {
     campos.push(`Tamanhos: ${fichaData.tamanhos.join(', ')}`)
   } else if (typeof fichaData.tamanhos === 'string' && fichaData.tamanhos) {
@@ -283,7 +281,7 @@ export default function Confirmacao() {
           <div className="conf-gcard-body">
             <div className="conf-ri"><span className="conf-rk">Identificação</span><span className="conf-rv">{fichaData.identificacao || '—'}</span></div>
             <div className="conf-ri"><span className="conf-rk">Tipo de peça</span><span className="conf-rv">{fichaData.tipo || '—'}</span></div>
-            <div className="conf-ri"><span className="conf-rk">Tecido</span><span className="conf-rv">{fichaData.tecido ? `${fichaData.tecido} · ${fichaData.gramatura}` : '—'}</span></div>
+            <div className="conf-ri"><span className="conf-rk">Gramatura e Modelagem</span><span className="conf-rv">{modelagemGramatura || '—'}</span></div>
             <div className="conf-ri"><span className="conf-rk">Cor</span><span className="conf-rv">{fichaData.cor || '—'}</span></div>
             <div className="conf-ri"><span className="conf-rk">Tamanhos</span><span className="conf-rv">{Array.isArray(fichaData.tamanhos) ? fichaData.tamanhos.join(', ') : fichaData.tamanhos || '—'}</span></div>
             <div className="conf-ri"><span className="conf-rk">Posição da estampa</span><span className="conf-rv">{fichaData.posicao || '—'}</span></div>

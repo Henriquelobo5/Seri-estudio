@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import logo from '../../assets/images/logo.png'
 import { ROUTES } from '../../routes/routePaths'
 import { apiRequest } from '../../services/api'
+import { parseEspecificacoesFicha } from '../../utils/fichaEspecificacoes'
 import EtapaLabelEditModal from './EtapaLabelEditModal'
 import './AdminKanban.css'
 
@@ -92,11 +93,13 @@ function getStageConfig(etapa: EtapaProducao, stages: StageConfig[]): StageConfi
 }
 
 function parseEspecificacoes(value?: string | null) {
-  const parts = (value ?? '').split(',').map((item) => item.trim()).filter(Boolean)
+  const specs = parseEspecificacoesFicha(value)
   return {
-    tecido: parts[0] ?? 'Sem tecido',
-    gramatura: parts[1] ?? 'Sem gramatura',
-    cor: parts[2] ?? 'Natural',
+    ...specs,
+    modelagemGramatura: specs.modelagemGramatura === '—' ? 'Sem modelagem' : specs.modelagemGramatura,
+    tecido: specs.tecido === '—' ? 'Sem modelagem' : specs.tecido,
+    gramatura: specs.gramatura || '',
+    cor: specs.cor === '—' ? 'Natural' : specs.cor,
   }
 }
 
@@ -215,6 +218,15 @@ function formatPedidosLabel(value: number) {
   return `${formatNumber(value)} ${value === 1 ? 'pedido' : 'pedidos'}`
 }
 
+function getModelagemItems(value: string) {
+  const items = value
+    .split(/\s*\|\s*/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+
+  return items.length > 0 ? items : [value]
+}
+
 function getSearchText(pedido: AdminPedido) {
   const specs = parseEspecificacoes(pedido.fichaTecnica?.especificacoes)
 
@@ -226,7 +238,7 @@ function getSearchText(pedido: AdminPedido) {
     pedido.fichaTecnica?.codigoDisplay,
     pedido.fichaTecnica?.identificacao,
     pedido.fichaTecnica?.produtoTipo,
-    specs.tecido,
+    specs.modelagemGramatura,
     specs.gramatura,
     specs.cor,
   ]
@@ -593,6 +605,7 @@ export default function AdminKanban() {
     const cardCode = pedido.fichaTecnica?.codigoDisplay || `SERI-${pedido.id}`
     const title = pedido.fichaTecnica?.identificacao || 'Pedido em produção'
     const subtitle = pedido.clienteNome || 'Cliente Seri.'
+    const modelagemItems = getModelagemItems(specs.modelagemGramatura)
 
     return (
       <button
@@ -620,8 +633,12 @@ export default function AdminKanban() {
         <p className="ak-card-subtitle">{subtitle}</p>
 
         <div className="ak-card-info">
-          <span>Aberto em {formatDate(pedido.dataAbertura)}</span>
-          <span>{specs.tecido}</span>
+          <span className="ak-card-date">Aberto em {formatDate(pedido.dataAbertura)}</span>
+          <div className="ak-card-modelagens" aria-label="Modelagem e gramatura">
+            {modelagemItems.map((item, index) => (
+              <span key={`${item}-${index}`}>{item}</span>
+            ))}
+          </div>
         </div>
 
         <div className="ak-chip-row">

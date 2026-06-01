@@ -4,6 +4,18 @@ import { ROUTES } from '../../routes/routePaths'
 import AuthNavCta from '../../components/ui/AuthNavCta'
 import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
+import {
+  buildModelagemResumoPorTipo,
+  buildQuantidadesPorTipo,
+  buildTamanhosPorTipo,
+  getDefaultModelagemGramatura,
+  getItensFichaSelecionados,
+  getModelagensPorTipo,
+  getTotalPecasPorTipo,
+  resolveModelagemGramaturaFromDetails,
+  type ItemFichaPorTipo,
+  type ItensPorTipo,
+} from '../../utils/fichaEspecificacoes'
 import './ConstrutorFichaTecnica.css'
 
 // ── Dados ────────────────────────────────────────────────────────────────────
@@ -15,36 +27,11 @@ const STEPS = [
 ]
 
 const TIPOS = [
-  { nome: 'Camiseta', emoji: '👕', desc: 'Careca / V' },
-  { nome: 'Moletom',  emoji: '🧥', desc: 'Canguru / Raglan' },
-  { nome: 'Regata',   emoji: '🎽', desc: 'Básica / Dry Fit' },
-  { nome: 'Polo',     emoji: '👔', desc: 'Piquê / Malha' },
-  { nome: 'Ecobag',   emoji: '👜', desc: 'Algodão reforçado' },
-]
-
-const TECIDOS = [
-  '100% Algodão',
-  'Algodão + Poliéster (50/50)',
-  'Dry-fit / Poliéster',
-  'Piquet / Malha',
-  'Moletom Fleece',
-  'Moletom Plush',
-  'Ribana',
-  'TNT (ecobag)',
-  'Lona (ecobag)',
-]
-
-const GRAMATURAS = [
-  '100g/m² — Levíssima',
-  '120g/m² — Leve',
-  '140g/m² — Intermediária',
-  '160g/m² — Standard',
-  '180g/m² — Pesada (recomendada)',
-  '200g/m² — Extra pesada',
-  '220g/m² — Premium',
-  '280g/m² — Moletom leve',
-  '300g/m² — Moletom standard',
-  '350g/m² — Moletom pesado',
+  { nome: 'Camiseta', emoji: '👕' },
+  { nome: 'Moletom',  emoji: '🧥' },
+  { nome: 'Regata',   emoji: '🎽' },
+  { nome: 'Polo',     emoji: '👔' },
+  { nome: 'Ecobag',   emoji: '👜' },
 ]
 
 const CORES = [
@@ -66,14 +53,119 @@ const CORES = [
   { nome: 'Marrom',       hex: '#78350F' },
 ]
 
-const TAM_ADULTO    = ['PP', 'P', 'M', 'G', 'GG', 'XG', 'XXG']
-const TAM_BABYLOOK  = ['Babylook P', 'Babylook M', 'Babylook G', 'Inf. 2', 'Inf. 4', 'Inf. 6', 'Inf. 8', 'Inf. 10', 'Inf. 12']
-const TAM_OUTROS    = ['Único', 'Over P', 'Over M', 'Over G']
+type GrupoTamanho = {
+  label: string
+  itens: string[]
+}
+
+const TAMANHOS_VESTUARIO: GrupoTamanho[] = [
+  { label: 'Adulto', itens: ['P', 'M', 'GG', '2G', '3G', '4G'] },
+  { label: 'Infantil / Babylook', itens: ['PBL', 'MBL', 'GBL', 'GGBL'] },
+]
+
+const TAMANHOS_POR_TIPO: Record<string, GrupoTamanho[]> = {
+  Camiseta: TAMANHOS_VESTUARIO,
+  Regata: TAMANHOS_VESTUARIO,
+  Polo: TAMANHOS_VESTUARIO,
+  Moletom: [
+    { label: 'Adulto', itens: ['P', 'M', 'GG', '2G', '3G', '4G'] },
+  ],
+  Ecobag: [
+    { label: 'Tamanho da ecobag', itens: ['Pequena (20cm x 30cm)', 'Media (30cm x 40cm)', 'Grande (40cm x 50cm)'] },
+  ],
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function gramShort(gram: string) {
-  return gram.split(' ')[0]
+function getGruposTamanhoPorTipo(tipo: string): GrupoTamanho[] {
+  return TAMANHOS_POR_TIPO[tipo] ?? TAMANHOS_POR_TIPO.Camiseta
+}
+
+function getTamanhosDisponiveis(tipo: string): string[] {
+  return getGruposTamanhoPorTipo(tipo).flatMap(grupo => grupo.itens)
+}
+
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, '')
+}
+
+function formatTamanhoLabel(tamanho: string) {
+  const match = tamanho.match(/^(.+?)\s+(\(.+\))$/)
+  if (!match) return tamanho
+
+  return (
+    <>
+      <span className="cf-tam-main">{match[1]}</span>
+      <span className="cf-tam-measure">{match[2]}</span>
+    </>
+  )
+}
+
+function resolveTamanhos(tam: string | string[]): string[] {
+  if (Array.isArray(tam)) return tam
+  return !tam || tam === '\u2014'
+    ? []
+    : tam.split(',').map((t: string) => t.trim()).filter(Boolean)
+}
+
+function normalizeTipo(value?: string) {
+  if (!value) return ''
+  const firstTipo = value.split(',')[0]?.trim()
+  return TIPOS.find((tipo) => tipo.nome === firstTipo)?.nome ?? ''
+}
+
+function createItemFicha(tipo: string): ItemFichaPorTipo {
+  return {
+    tipo,
+    modelagemGramatura: getDefaultModelagemGramatura(tipo),
+    tamanhos: [],
+    quantidadesPorTamanho: {},
+  }
+}
+
+function normalizeItemFicha(tipo: string, item: Partial<ItemFichaPorTipo>): ItemFichaPorTipo {
+  const opcoesModelagem = getModelagensPorTipo(tipo)
+  const modelagem = item.modelagemGramatura && opcoesModelagem.includes(item.modelagemGramatura)
+    ? item.modelagemGramatura
+    : opcoesModelagem[0] ?? ''
+  const tamanhos = resolveTamanhos(item.tamanhos ?? [])
+    .filter((tamanho) => getTamanhosDisponiveis(tipo).includes(tamanho))
+  const quantidades = item.quantidadesPorTamanho ?? {}
+
+  return {
+    tipo,
+    modelagemGramatura: modelagem,
+    tamanhos,
+    quantidadesPorTamanho: Object.fromEntries(
+      tamanhos.map((tamanho) => {
+        const quantidade = Number(quantidades[tamanho])
+        return [tamanho, Number.isFinite(quantidade) && quantidade > 0 ? quantidade : 0]
+      }),
+    ),
+  }
+}
+
+function resolveItensIniciais(detalhes: any): ItensPorTipo {
+  const explicit = detalhes?.itensPorTipo
+  if (explicit && typeof explicit === 'object') {
+    const itens = Object.fromEntries(
+      TIPOS
+        .filter(({ nome }) => explicit[nome])
+        .map(({ nome }) => [nome, normalizeItemFicha(nome, explicit[nome])]),
+    )
+
+    if (Object.keys(itens).length > 0) return itens
+  }
+
+  const tipoInicial = normalizeTipo(detalhes?.tipo) || 'Camiseta'
+  return {
+    [tipoInicial]: normalizeItemFicha(tipoInicial, {
+      tipo: tipoInicial,
+      modelagemGramatura: resolveModelagemGramaturaFromDetails(detalhes, tipoInicial),
+      tamanhos: detalhes?.tamanhos ?? [],
+      quantidadesPorTamanho: detalhes?.quantidadesPorTamanho ?? {},
+    }),
+  }
 }
 
 // ── Componente ───────────────────────────────────────────────────────────────
@@ -82,26 +174,113 @@ export default function ConstrutorFichaTecnica() {
   const navigate = useNavigate()
   const location = useLocation()
   const prefill = (location.state as any)?.prefill
-
-  function resolveGramatura(curta: string): string {
-    return GRAMATURAS.find(g => g.startsWith(curta)) ?? '180g/m² — Pesada (recomendada)'
-  }
-
-  function resolveTamanhos(tam: string | string[]): string[] {
-    if (Array.isArray(tam)) return tam
-    return tam === '—' || !tam ? ['M', 'G'] : tam.split(',').map((t: string) => t.trim()).filter(Boolean)
-  }
+  const initialItensPorTipo = resolveItensIniciais(prefill?.detalhes)
 
   const [currentStep, setCurrentStep] = useState(1)
-  const [tipo,        setTipo]        = useState(prefill?.detalhes?.tipo ?? 'Camiseta')
-  const [tecido,      setTecido]      = useState(prefill?.detalhes?.tecido ?? '100% Algodão')
-  const [gramatura,   setGramatura]   = useState(resolveGramatura(prefill?.detalhes?.gramatura ?? ''))
+  const [itensPorTipo, setItensPorTipo] = useState<ItensPorTipo>(initialItensPorTipo)
   const initialCor = prefill?.detalhes?.cor ?? CORES[0].nome
-  const [tamanhos,    setTamanhos]    = useState<string[]>(resolveTamanhos(prefill?.detalhes?.tamanhos ?? []))
   const [identificacao, setIdentificacao] = useState(prefill?.nome ?? '')
 
-  const toggleTam = (tam: string) =>
-    setTamanhos(prev => prev.includes(tam) ? prev.filter(t => t !== tam) : [...prev, tam])
+  const tiposSelecionados = TIPOS.map(({ nome }) => nome).filter((nome) => Boolean(itensPorTipo[nome]))
+  const itensSelecionados = getItensFichaSelecionados(itensPorTipo, tiposSelecionados)
+  const tipoResumo = tiposSelecionados.join(', ')
+  const modelagemResumo = buildModelagemResumoPorTipo(itensSelecionados)
+  const tamanhosResumo = buildTamanhosPorTipo(itensSelecionados)
+  const quantidadesResumo = buildQuantidadesPorTipo(itensSelecionados)
+  const totalPecas = getTotalPecasPorTipo(itensSelecionados)
+
+  function toggleTipo(nextTipo: string) {
+    setItensPorTipo(prev => {
+      if (prev[nextTipo]) {
+        const next = { ...prev }
+        delete next[nextTipo]
+        return next
+      }
+
+      return { ...prev, [nextTipo]: createItemFicha(nextTipo) }
+    })
+  }
+
+  function setModelagemTipo(tipo: string, value: string) {
+    setItensPorTipo(prev => ({
+      ...prev,
+      [tipo]: {
+        ...(prev[tipo] ?? createItemFicha(tipo)),
+        modelagemGramatura: value,
+      },
+    }))
+  }
+
+  function toggleTam(tipo: string, tam: string) {
+    setItensPorTipo(prev => {
+      const item = prev[tipo] ?? createItemFicha(tipo)
+      if (item.tamanhos.includes(tam)) {
+        const nextQuantidades = { ...item.quantidadesPorTamanho }
+        delete nextQuantidades[tam]
+
+        return {
+          ...prev,
+          [tipo]: {
+            ...item,
+            tamanhos: item.tamanhos.filter(t => t !== tam),
+            quantidadesPorTamanho: nextQuantidades,
+          },
+        }
+      }
+
+      return {
+        ...prev,
+        [tipo]: {
+          ...item,
+          tamanhos: [...item.tamanhos, tam],
+          quantidadesPorTamanho: {
+            ...item.quantidadesPorTamanho,
+            [tam]: item.quantidadesPorTamanho[tam] ?? 0,
+          },
+        },
+      }
+    })
+  }
+
+  function setQuantidadeTam(tipo: string, tam: string, value: string) {
+    const digits = onlyDigits(value)
+    const quantidade = digits ? parseInt(digits, 10) : 0
+
+    setItensPorTipo(prev => {
+      const item = prev[tipo] ?? createItemFicha(tipo)
+      return {
+        ...prev,
+        [tipo]: {
+          ...item,
+          tamanhos: item.tamanhos.includes(tam) ? item.tamanhos : [...item.tamanhos, tam],
+          quantidadesPorTamanho: {
+            ...item.quantidadesPorTamanho,
+            [tam]: quantidade,
+          },
+        },
+      }
+    })
+  }
+
+  function getItemTotal(item: ItemFichaPorTipo) {
+    return Object.values(item.quantidadesPorTamanho).reduce((sum, value) => sum + (Number(value) || 0), 0)
+  }
+
+  function buildFichaData() {
+    return {
+      identificacao,
+      tipo: tipoResumo,
+      tiposSelecionados,
+      itensPorTipo,
+      modelagemGramatura: modelagemResumo,
+      tecido: modelagemResumo,
+      gramatura: '',
+      cor: initialCor,
+      tamanhos: tamanhosResumo,
+      quantidadesPorTamanho: quantidadesResumo,
+      posicao: '',
+    }
+  }
 
   function handleBack() {
     if (currentStep > 1) {
@@ -119,16 +298,16 @@ export default function ConstrutorFichaTecnica() {
 
   // progresso
   const score = [
-    true,                        // tipo sempre selecionado
-    tamanhos.length > 0,
+    tiposSelecionados.length > 0,
+    totalPecas > 0,
     identificacao.length > 2,
   ].filter(Boolean).length
   const progressPct = Math.max(15, Math.round((score / 3) * 75))
 
-  const btnNextOn = tamanhos.length > 0 && identificacao.length > 2
+  const btnNextOn = tiposSelecionados.length > 0 && totalPecas > 0 && identificacao.length > 2
 
   // step detail no sidebar
-  const stepDetail = `${tipo}` + (tamanhos.length ? ` · ${tamanhos.join(', ')}` : '')
+  const stepDetail = `${tipoResumo || 'Selecione uma peça'}` + (totalPecas ? ` · ${totalPecas} peça${totalPecas !== 1 ? 's' : ''}` : '')
 
   return (
     <div className="cf-page">
@@ -202,22 +381,26 @@ export default function ConstrutorFichaTecnica() {
                 </div>
                 <div className="cf-card-body">
                   <div className="cf-tipo-grid">
-                    {TIPOS.map(({ nome, emoji, desc }) => (
-                      <button
-                        key={nome}
-                        className={`cf-tipo-btn ${tipo === nome ? 'sel' : ''}`}
-                        onClick={() => setTipo(nome)}
-                      >
-                        <div className="cf-tipo-check">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                            <polyline points="20 6 9 17 4 12"/>
-                          </svg>
-                        </div>
-                        <span className="cf-tipo-emoji">{emoji}</span>
-                        <span className="cf-tipo-nome">{nome}</span>
-                        <span className="cf-tipo-desc">{desc}</span>
-                      </button>
-                    ))}
+                    {TIPOS.map(({ nome, emoji }) => {
+                      const selecionado = tiposSelecionados.includes(nome)
+                      return (
+                        <button
+                          key={nome}
+                          type="button"
+                          aria-pressed={selecionado}
+                          className={`cf-tipo-btn ${selecionado ? 'sel' : ''}`}
+                          onClick={() => toggleTipo(nome)}
+                        >
+                          <div className="cf-tipo-check">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          </div>
+                          <span className="cf-tipo-emoji">{emoji}</span>
+                          <span className="cf-tipo-nome">{nome}</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
               </div>
@@ -231,76 +414,106 @@ export default function ConstrutorFichaTecnica() {
                     </svg>
                   </div>
                   <div>
-                    <div className="cf-ch-title">Especificações do tecido</div>
-                    <div className="cf-ch-sub">Composição, gramatura e tamanhos</div>
+                    <div className="cf-ch-title">Gramatura e Modelagem</div>
+                    <div className="cf-ch-sub">Escolha a base do produto e os tamanhos</div>
                   </div>
+                  {totalPecas > 0 ? (
+                    <div className="cf-qtd-total">
+                      <span>Total de peças</span>
+                      <strong>{totalPecas}</strong>
+                    </div>
+                  ) : null}
                 </div>
-                <div className="cf-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+                <div className="cf-card-body">
+                  {itensSelecionados.length === 0 ? (
+                    <div className="cf-empty-selection">Selecione pelo menos um tipo de peça para informar gramatura, tamanhos e quantidades.</div>
+                  ) : (
+                    <div className="cf-spec-list">
+                      {itensSelecionados.map(item => {
+                        const opcoesModelagem = getModelagensPorTipo(item.tipo)
+                        const gruposTamanho = getGruposTamanhoPorTipo(item.tipo)
+                        const modelagemSelecionada = opcoesModelagem.includes(item.modelagemGramatura)
+                          ? item.modelagemGramatura
+                          : opcoesModelagem[0] ?? ''
+                        const itemTotal = getItemTotal(item)
 
-                  {/* Tecido + Gramatura */}
-                  <div className="cf-spec-row">
-                    <div className="cf-fld">
-                      <label>Tecido</label>
-                      <select className="cf-select" value={tecido} onChange={e => setTecido(e.target.value)}>
-                        {TECIDOS.map(t => <option key={t}>{t}</option>)}
-                      </select>
-                    </div>
-                    <div className="cf-fld">
-                      <label>Gramatura</label>
-                      <select className="cf-select" value={gramatura} onChange={e => setGramatura(e.target.value)}>
-                        {GRAMATURAS.map(g => <option key={g}>{g}</option>)}
-                      </select>
-                    </div>
-                  </div>
+                        return (
+                          <section key={item.tipo} className="cf-spec-item">
+                            <div className="cf-spec-item-head">
+                              <div>
+                                <strong>{item.tipo}</strong>
+                                <span>{itemTotal > 0 ? `${itemTotal} peça${itemTotal !== 1 ? 's' : ''}` : 'Aguardando quantidade'}</span>
+                              </div>
+                            </div>
 
-                  {/* Tamanhos */}
-                  <div className="cf-fld">
-                    <label>
-                      Tamanhos{' '}
-                      <span style={{ fontSize: 10, color: 'rgba(250,250,248,.22)', textTransform: 'none', letterSpacing: 0 }}>
-                        (selecione um ou mais)
-                      </span>
-                    </label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      <div>
-                        <div className="cf-tam-group-label">Adulto</div>
-                        <div className="cf-tam-row">
-                          {TAM_ADULTO.map(t => (
-                            <button
-                              key={t}
-                              className={`cf-tam-btn ${tamanhos.includes(t) ? 'sel' : ''}`}
-                              onClick={() => toggleTam(t)}
-                            >{t}</button>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="cf-tam-group-label">Infantil / Babylook</div>
-                        <div className="cf-tam-row">
-                          {TAM_BABYLOOK.map(t => (
-                            <button
-                              key={t}
-                              className={`cf-tam-btn ${tamanhos.includes(t) ? 'sel' : ''}`}
-                              onClick={() => toggleTam(t)}
-                            >{t}</button>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="cf-tam-group-label">Outros</div>
-                        <div className="cf-tam-row">
-                          {TAM_OUTROS.map(t => (
-                            <button
-                              key={t}
-                              className={`cf-tam-btn ${tamanhos.includes(t) ? 'sel' : ''}`}
-                              onClick={() => toggleTam(t)}
-                            >{t}</button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                            <div className="cf-spec-row">
+                              <div className="cf-fld">
+                                <label>Gramatura e Modelagem</label>
+                                <select
+                                  className="cf-select"
+                                  value={modelagemSelecionada}
+                                  onChange={e => setModelagemTipo(item.tipo, e.target.value)}
+                                >
+                                  {opcoesModelagem.map(opcao => <option key={opcao}>{opcao}</option>)}
+                                </select>
+                              </div>
+                            </div>
 
+                            <div className="cf-fld">
+                              <label>
+                                Tamanhos{' '}
+                                <span style={{ fontSize: 10, color: 'rgba(250,250,248,.22)', textTransform: 'none', letterSpacing: 0 }}>
+                                  (selecione um ou mais)
+                                </span>
+                              </label>
+                              <div className="cf-tam-groups">
+                                {gruposTamanho.map(grupo => (
+                                  <div key={grupo.label}>
+                                    <div className="cf-tam-group-label">{grupo.label}</div>
+                                    <div className="cf-tam-row">
+                                      {grupo.itens.map(t => {
+                                        const selecionado = item.tamanhos.includes(t)
+                                        return (
+                                          <div key={t} className={`cf-tam-item ${t.length > 12 ? 'wide' : ''} ${selecionado ? 'sel' : ''}`}>
+                                            <button
+                                              type="button"
+                                              className={`cf-tam-btn ${selecionado ? 'sel' : ''}`}
+                                              onClick={() => toggleTam(item.tipo, t)}
+                                            >{formatTamanhoLabel(t)}</button>
+                                            {selecionado ? (
+                                              <label className="cf-tam-qty">
+                                                <span>Qtd.</span>
+                                                <input
+                                                  type="text"
+                                                  inputMode="numeric"
+                                                  pattern="[0-9]*"
+                                                  value={item.quantidadesPorTamanho[t] ?? 0}
+                                                  onKeyDown={e => {
+                                                    const controlKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End']
+                                                    if (e.ctrlKey || e.metaKey || controlKeys.includes(e.key)) return
+                                                    if (!/^\d$/.test(e.key)) e.preventDefault()
+                                                  }}
+                                                  onPaste={e => {
+                                                    e.preventDefault()
+                                                    setQuantidadeTam(item.tipo, t, e.clipboardData.getData('text'))
+                                                  }}
+                                                  onChange={e => setQuantidadeTam(item.tipo, t, e.target.value)}
+                                                />
+                                              </label>
+                                            ) : null}
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </section>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -391,7 +604,7 @@ export default function ConstrutorFichaTecnica() {
                       if (!btnNextOn) return
                       navigate(ROUTES.DETALHES_PRODUTO, {
                         state: {
-                          fichaData: { identificacao, tipo, tecido, gramatura: gramShort(gramatura), cor: initialCor, tamanhos, posicao: '' },
+                          fichaData: buildFichaData(),
                         },
                       })
                     } else {
@@ -452,20 +665,22 @@ export default function ConstrutorFichaTecnica() {
             <div className="cf-sb-lbl">Resumo</div>
             <div className="cf-ri">
               <span className="cf-rk">Peça</span>
-              <span className="cf-rv">{tipo}</span>
+              <span className={`cf-rv ${!tipoResumo ? 'empty' : ''}`}>{tipoResumo || '—'}</span>
             </div>
             <div className="cf-ri">
-              <span className="cf-rk">Tecido</span>
-              <span className="cf-rv">{tecido.split(' (')[0]}</span>
-            </div>
-            <div className="cf-ri">
-              <span className="cf-rk">Gramatura</span>
-              <span className="cf-rv">{gramShort(gramatura)}</span>
+              <span className="cf-rk">Gramatura e Modelagem</span>
+              <span className={`cf-rv ${!modelagemResumo ? 'empty' : ''}`}>{modelagemResumo || '—'}</span>
             </div>
             <div className="cf-ri">
               <span className="cf-rk">Tamanhos</span>
-              <span className={`cf-rv ${tamanhos.length === 0 ? 'empty' : ''}`}>
-                {tamanhos.length ? tamanhos.join(', ') : '—'}
+              <span className={`cf-rv ${tamanhosResumo.length === 0 ? 'empty' : ''}`}>
+                {tamanhosResumo.length ? tamanhosResumo.join(', ') : '—'}
+              </span>
+            </div>
+            <div className="cf-ri">
+              <span className="cf-rk">Qtd. total</span>
+              <span className={`cf-rv ${totalPecas === 0 ? 'empty' : ''}`}>
+                {totalPecas || '—'}
               </span>
             </div>
             <div className="cf-ri">
@@ -480,7 +695,7 @@ export default function ConstrutorFichaTecnica() {
           <div className="cf-dica">
             <div className="cf-dica-t">💡 Dica do estúdio</div>
             <div className="cf-dica-b">
-              Para estampas em silk, preferimos algodão 180g/m² — melhor absorção de tinta e acabamento duradouro.
+              Caso a modelagem ou gramatura desejada seja diferente, selecione outra opção e especifique no atendimento final.
             </div>
           </div>
 

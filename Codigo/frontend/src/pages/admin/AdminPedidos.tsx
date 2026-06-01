@@ -65,7 +65,7 @@ const FILTER_OPTIONS: Array<{ value: PedidoFilter; label: string }> = [
   { value: 'TODOS', label: 'Todos' },
   { value: 'AGUARDANDO', label: 'Aguardando' },
   { value: 'EM_PRODUCAO', label: 'Em produção' },
-  { value: 'ENTREGUE', label: 'Entregues' },
+  { value: 'ENTREGUE', label: 'Concluídos' },
 ]
 
 const STATUS_OPTIONS: Array<{ value: AdminStatus; label: string }> = [
@@ -446,7 +446,7 @@ export default function AdminPedidos() {
       </aside>
 
       {/* ── Main ──────────────────────────────────────────────────── */}
-      <main className="ak-main">
+      <main className="ak-main ap-main">
         <header className="ak-header">
           <div>
             <span className="ak-header-kicker">Principal</span>
@@ -461,7 +461,7 @@ export default function AdminPedidos() {
         <section className="ap-overview" aria-label="Resumo dos pedidos">
           <button
             type="button"
-            className="ak-metric-card"
+            className={`ak-metric-card ak-metric-button ${filter === 'TODOS' ? 'is-active' : ''}`}
             onClick={() => setFilter('TODOS')}
           >
             <span>Total de pedidos</span>
@@ -471,7 +471,7 @@ export default function AdminPedidos() {
 
           <button
             type="button"
-            className="ak-metric-card ak-metric-card-green"
+            className={`ak-metric-card ak-metric-button ak-metric-card-green ${filter === 'EM_PRODUCAO' ? 'is-active' : ''}`}
             onClick={() => setFilter('EM_PRODUCAO')}
           >
             <span>Em produção</span>
@@ -481,7 +481,7 @@ export default function AdminPedidos() {
 
           <button
             type="button"
-            className="ak-metric-card"
+            className={`ak-metric-card ak-metric-button ${filter === 'AGUARDANDO' ? 'is-active' : ''}`}
             onClick={() => setFilter('AGUARDANDO')}
           >
             <span>Aguardando</span>
@@ -491,7 +491,7 @@ export default function AdminPedidos() {
 
           <button
             type="button"
-            className="ak-metric-card"
+            className={`ak-metric-card ak-metric-button ${filter === 'ENTREGUE' ? 'is-active' : ''}`}
             onClick={() => setFilter('ENTREGUE')}
           >
             <span>Entregues</span>

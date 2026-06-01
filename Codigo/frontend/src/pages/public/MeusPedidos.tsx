@@ -6,6 +6,7 @@ import AuthNavCta from '../../components/ui/AuthNavCta'
 import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
 import { apiRequest } from '../../services/api'
+import { parseEspecificacoesFicha } from '../../utils/fichaEspecificacoes'
 import './MeusPedidos.css'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -21,8 +22,7 @@ interface Pedido {
   emoji: string
   detalhes: {
     tipo: string
-    tecido: string
-    gramatura: string
+    modelagemGramatura: string
     cor: string
     tamanhos: string
     posicao: string
@@ -57,9 +57,8 @@ function parseDateShort(iso: string): string {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
 }
 
-function parseEspecificacoes(esp: string): { tecido: string; gramatura: string; cor: string; tamanhos: string } {
-  const parts = esp.split(',').map(s => s.trim())
-  return { tecido: parts[0] ?? '—', gramatura: parts[1] ?? '—', cor: parts[2] ?? '—', tamanhos: parts.slice(3).join(', ') || '—' }
+function parseEspecificacoes(esp: string) {
+  return parseEspecificacoesFicha(esp)
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -116,7 +115,7 @@ function PedidoCard({ pedido, isOpen, onToggle, onCancelar, onRefazer }: {
   }[pedido.status]
   const isEntregue = pedido.status === 'e'
   const isCancelado = pedido.status === 'c'
-  const { tipo, tecido, gramatura, cor, tamanhos, posicao } = pedido.detalhes
+  const { tipo, modelagemGramatura, cor, tamanhos, posicao } = pedido.detalhes
   const whatsappHref = buildStudioWhatsappHref(
     `Olá, equipe Seri! Quero falar sobre o pedido ${pedido.id}.`,
   )
@@ -146,7 +145,7 @@ function PedidoCard({ pedido, isOpen, onToggle, onCancelar, onRefazer }: {
         <div className="mp-pdetail">
           <div className="mp-dgrid">
             {[
-              ['Tipo', tipo], ['Tecido', tecido], ['Gramatura', gramatura],
+              ['Tipo', tipo], ['Gramatura e Modelagem', modelagemGramatura],
               ['Cor', cor],   ['Tamanhos', tamanhos], ['Posição', posicao],
             ].map(([label, val]) => (
               <div key={label} className="mp-di">
@@ -243,8 +242,7 @@ export default function MeusPedidos() {
           emoji: EMOJI_MAP[ficha.produtoTipo ?? ''] ?? '👕',
           detalhes: {
             tipo: ficha.produtoTipo ?? '—',
-            tecido: esp.tecido,
-            gramatura: esp.gramatura,
+            modelagemGramatura: esp.modelagemGramatura,
             cor: esp.cor,
             tamanhos: esp.tamanhos,
             posicao: '—',

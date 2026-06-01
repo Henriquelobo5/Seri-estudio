@@ -591,6 +591,71 @@
   display: block;
 }
 
+.dp-preview-switch {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 7px 9px;
+  border: 1px solid rgba(255,255,255,.11);
+  border-radius: 8px;
+  background: rgba(13,15,12,.78);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 12px 28px rgba(0,0,0,.18);
+  width: max-content;
+  max-width: calc(100% - 24px);
+}
+
+.dp-preview-switch span {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--dp-muted);
+  white-space: nowrap;
+}
+
+.dp-preview-options {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+}
+
+.dp-preview-options button {
+  min-width: 64px;
+  height: 28px;
+  border: 1px solid var(--dp-border);
+  border-radius: 6px;
+  background: rgba(255,255,255,.035);
+  color: var(--dp-muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color var(--dp-t), background var(--dp-t), color var(--dp-t);
+}
+
+.dp-preview-options button:hover {
+  border-color: rgba(126,200,154,.28);
+  color: var(--dp-white);
+}
+
+.dp-preview-options button.active {
+  border-color: rgba(126,200,154,.6);
+  background: rgba(126,200,154,.15);
+  color: var(--dp-lime);
+}
+
 /* Loading */
 .dp-v-loading {
   position: absolute; inset: 0; z-index: 20;
@@ -637,7 +702,7 @@
 
 /* Badge arte aplicada */
 .dp-art-badge {
-  position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+  position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
   display: flex; align-items: center; gap: 7px;
   background: rgba(42,94,64,.85); backdrop-filter: blur(8px);
   border: 1px solid rgba(126,200,154,.3);
