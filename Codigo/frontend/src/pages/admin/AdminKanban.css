@@ -1242,6 +1242,73 @@
   color: #ecfff2;
 }
 
+.ak-confirm-modal {
+  width: min(520px, calc(100vw - 28px));
+  margin: auto;
+  padding: 22px;
+  border: 1px solid rgba(126, 200, 154, 0.18);
+  border-radius: 18px;
+  background: #11170f;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.ak-confirm-head span {
+  display: block;
+  margin-bottom: 6px;
+  color: #9ead98;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ak-confirm-head h2 {
+  margin: 0;
+  color: #f7faf4;
+  font-size: 1.35rem;
+}
+
+.ak-confirm-modal p {
+  margin: 16px 0 0;
+  color: #cdd7c9;
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.ak-confirm-modal strong {
+  color: #f7faf4;
+}
+
+.ak-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.ak-confirm-secondary,
+.ak-confirm-primary {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ak-confirm-secondary {
+  border: 1px solid rgba(138, 153, 130, 0.18);
+  background: rgba(20, 26, 20, 0.88);
+  color: #e9ede7;
+}
+
+.ak-confirm-primary {
+  border: 1px solid rgba(126, 200, 154, 0.34);
+  background: #2a5e40;
+  color: #f4fff7;
+}
+
 @media (max-width: 1120px) {
   .ak-page {
     grid-template-columns: 196px minmax(0, 1fr);

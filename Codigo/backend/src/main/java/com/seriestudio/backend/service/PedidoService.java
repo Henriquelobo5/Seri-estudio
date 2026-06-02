@@ -49,6 +49,9 @@ public class PedidoService {
     @Autowired
     private ClienteRepository clienteRepository;
 
+    @Autowired
+    private WhatsappNotificationService whatsappNotificationService;
+
     public Pedido criar(PedidoRequest req, String email) {
         Cliente cliente = clienteRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Cliente nao encontrado"));
@@ -65,7 +68,9 @@ public class PedidoService {
         pedido.setQuantidades(req.quantidades);
         pedido.setObservacoes(req.observacoes);
 
-        return pedidoRepository.save(pedido);
+        Pedido salvo = pedidoRepository.save(pedido);
+        whatsappNotificationService.notificarNovoOrcamentoParaEmpresa(salvo);
+        return salvo;
     }
 
     public List<Pedido> listarTodosParaAdmin() {
@@ -97,6 +102,10 @@ public class PedidoService {
     }
 
     public Pedido atualizarEtapaProducao(Long id, String etapaProducao) {
+        return atualizarEtapaProducao(id, etapaProducao, false);
+    }
+
+    public Pedido atualizarEtapaProducao(Long id, String etapaProducao, boolean notificarCliente) {
         String etapaNormalizada = normalizarEtapa(etapaProducao);
         if (!ETAPAS_VALIDAS.contains(etapaNormalizada)) {
             throw new RuntimeException("Etapa de producao invalida");
@@ -105,8 +114,11 @@ public class PedidoService {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pedido nao encontrado"));
 
+        String etapaAnterior = garantirEtapaProducao(pedido).getEtapaProducao();
         pedido.setEtapaProducao(etapaNormalizada);
-        return pedidoRepository.save(pedido);
+        Pedido salvo = pedidoRepository.save(pedido);
+        whatsappNotificationService.notificarEtapaClienteSePermitido(salvo, etapaAnterior, etapaNormalizada, notificarCliente);
+        return salvo;
     }
 
     public Pedido atualizarStatusAtual(Long id, String statusAtual) {

@@ -398,6 +398,10 @@ export default function AdminKanban() {
     labelId: number
     labelAtual: string
   } | null>(null)
+  const [pendingStageMove, setPendingStageMove] = useState<{
+    pedidoId: number
+    nextStage: EtapaProducao
+  } | null>(null)
 
   const STAGES = useMemo<StageConfig[]>(
     () => STAGE_VISUALS.map((visual) => ({ ...visual, label: etapaLabels[visual.key] })),
@@ -558,7 +562,18 @@ export default function AdminKanban() {
     navigate(ROUTES.LOGIN, { replace: true })
   }
 
-  async function movePedidoToStage(pedidoId: number, nextStage: EtapaProducao) {
+  function requestMovePedidoToStage(pedidoId: number, nextStage: EtapaProducao) {
+    const currentPedido = pedidos.find((pedido) => pedido.id === pedidoId)
+    const currentStage = normalizeEtapa(currentPedido?.etapaProducao)
+
+    if (!currentPedido || currentStage === nextStage) {
+      return
+    }
+
+    setPendingStageMove({ pedidoId, nextStage })
+  }
+
+  async function movePedidoToStage(pedidoId: number, nextStage: EtapaProducao, notificarCliente: boolean) {
     const currentPedido = pedidos.find((pedido) => pedido.id === pedidoId)
     const currentStage = normalizeEtapa(currentPedido?.etapaProducao)
 
@@ -577,7 +592,7 @@ export default function AdminKanban() {
     try {
       const updated = await apiRequest<AdminPedido>(`/admin/pedidos/${pedidoId}/etapa`, {
         method: 'PATCH',
-        body: JSON.stringify({ etapaProducao: nextStage }),
+        body: JSON.stringify({ etapaProducao: nextStage, notificarCliente }),
       })
 
       setPedidos((prev) =>
@@ -833,7 +848,7 @@ export default function AdminKanban() {
                     setDraggedPedidoId(null)
 
                     if (!Number.isNaN(pedidoId)) {
-                      void movePedidoToStage(pedidoId, stage.key)
+                      requestMovePedidoToStage(pedidoId, stage.key)
                     }
                   }}
                 >
@@ -938,7 +953,7 @@ export default function AdminKanban() {
                     key={stage.key}
                     type="button"
                     className={`ak-stage-chip ${normalizeEtapa(selectedPedido.etapaProducao) === stage.key ? 'is-active' : ''}`}
-                    onClick={() => void movePedidoToStage(selectedPedido.id, stage.key)}
+                    onClick={() => requestMovePedidoToStage(selectedPedido.id, stage.key)}
                   >
                     {stage.label}
                   </button>
@@ -1010,6 +1025,55 @@ export default function AdminKanban() {
         onClose={() => setEditingEtapa(null)}
         onSaved={handleEtapaSaved}
       />
+
+      {pendingStageMove ? (() => {
+        const pedido = pedidos.find((item) => item.id === pendingStageMove.pedidoId)
+        const currentStage = normalizeEtapa(pedido?.etapaProducao)
+        const fromStage = getStageConfig(currentStage, STAGES)
+        const toStage = getStageConfig(pendingStageMove.nextStage, STAGES)
+        const code = pedido?.fichaTecnica?.codigoDisplay || `SERI-${pendingStageMove.pedidoId}`
+
+        return (
+          <div className="ak-drawer-backdrop" onClick={() => setPendingStageMove(null)}>
+            <aside className="ak-confirm-modal" onClick={(event) => event.stopPropagation()}>
+              <div className="ak-confirm-head">
+                <span>Atualizar etapa</span>
+                <h2>{code}</h2>
+              </div>
+              <p>
+                Mover de <strong>{fromStage.label}</strong> para <strong>{toStage.label}</strong>.
+              </p>
+              <div className="ak-confirm-actions">
+                <button type="button" className="ak-confirm-secondary" onClick={() => setPendingStageMove(null)}>
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="ak-confirm-secondary"
+                  onClick={() => {
+                    const move = pendingStageMove
+                    setPendingStageMove(null)
+                    void movePedidoToStage(move.pedidoId, move.nextStage, false)
+                  }}
+                >
+                  Mover sem notificar
+                </button>
+                <button
+                  type="button"
+                  className="ak-confirm-primary"
+                  onClick={() => {
+                    const move = pendingStageMove
+                    setPendingStageMove(null)
+                    void movePedidoToStage(move.pedidoId, move.nextStage, true)
+                  }}
+                >
+                  Mover e notificar
+                </button>
+              </div>
+            </aside>
+          </div>
+        )
+      })() : null}
     </div>
   )
 }

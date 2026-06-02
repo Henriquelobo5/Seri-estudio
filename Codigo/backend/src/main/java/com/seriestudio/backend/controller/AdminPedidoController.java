@@ -33,7 +33,7 @@ public class AdminPedidoController {
     @PatchMapping("/{id}/etapa")
     public ResponseEntity<?> atualizarEtapa(@PathVariable Long id, @RequestBody UpdatePedidoEtapaRequest req) {
         try {
-            Pedido pedido = pedidoService.atualizarEtapaProducao(id, req.etapaProducao);
+            Pedido pedido = pedidoService.atualizarEtapaProducao(id, req.etapaProducao, Boolean.TRUE.equals(req.notificarCliente));
             return ResponseEntity.ok(toResponse(pedido));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
