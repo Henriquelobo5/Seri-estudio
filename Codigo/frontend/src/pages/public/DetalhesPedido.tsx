@@ -105,6 +105,7 @@ export default function DetalhesPedido() {
     [quantidadesIniciais, tamanhos],
   )
   const [obs, setObs] = useState('')
+  const [enderecoEntrega, setEnderecoEntrega] = useState('')
   const [dataNecessidade, setDataNecessidade] = useState('')
   const [calendarOpen, setCalendarOpen] = useState(false)
   const datePickerRef = useRef<HTMLDivElement>(null)
@@ -195,7 +196,7 @@ export default function DetalhesPedido() {
         body: JSON.stringify({ fichaId: locState.fichaId, quantidades: quantidadesStr, observacoes: observacoesComPrazo }),
       })
       const codigoDisplay = pedido.fichaTecnica?.codigoDisplay ?? ''
-      navigate(ROUTES.CONFIRMACAO, { state: { total, codigoDisplay, fichaData: { ...fichaData, quantidadesPorTamanho: qtds } } })
+      navigate(ROUTES.CONFIRMACAO, { state: { total, codigoDisplay, fichaData: { ...fichaData, quantidadesPorTamanho: qtds, enderecoEntrega } } })
     } catch (e: any) {
       setErro(e.message ?? 'Erro ao salvar pedido. Tente novamente.')
     } finally {
@@ -309,6 +310,17 @@ export default function DetalhesPedido() {
               </div>
             </div>
             <div className="dpd-card-body">
+              <div className="dpd-date-field">
+                <span>Endereço de entrega</span>
+                <input
+                  type="text"
+                  className="dpd-obs-ta"
+                  style={{ height: 'auto', padding: '11px 13px' }}
+                  placeholder="Ex: Rua das Flores, 123 - Bairro, Cidade - SP"
+                  value={enderecoEntrega}
+                  onChange={e => setEnderecoEntrega(e.target.value)}
+                />
+              </div>
               <div className="dpd-date-field">
                 <span>Data de entrega (Mínimo 3 semanas)</span>
                 <div className="dpd-date-picker" ref={datePickerRef}>

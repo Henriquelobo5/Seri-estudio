@@ -67,30 +67,88 @@ export default function Confirmacao() {
   const now    = useMemo(() => new Date(), [])
   const ts     = `${now.getDate()} ${MESES[now.getMonth()]} ${now.getFullYear()} · ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`
   const fullCode = code
-  // Monta campos apenas se preenchidos
-  const campos: string[] = []
-  if (fullCode) campos.push(`Código da ficha: ${fullCode}`)
-  if (totalPecas > 0) campos.push(`Total de peças: ${totalPecas}`)
-  if (fichaData.tipo) campos.push(`Tipo de peça: ${fichaData.tipo}`)
-  if (fichaData.cor) campos.push(`Cor: ${fichaData.cor}`)
-  if (modelagemGramatura) campos.push(`Gramatura e Modelagem: ${modelagemGramatura}`)
-  if (Array.isArray(fichaData.tamanhos) && fichaData.tamanhos.length > 0) {
-    campos.push(`Tamanhos: ${fichaData.tamanhos.join(', ')}`)
-  } else if (typeof fichaData.tamanhos === 'string' && fichaData.tamanhos) {
-    campos.push(`Tamanhos: ${fichaData.tamanhos}`)
-  }
-  if (fichaData.posicao) campos.push(`Posição da estampa: ${fichaData.posicao}`)
-  if (fichaData.arquivos && fichaData.arquivos > 0) campos.push(`Arquivos enviados: ${fichaData.arquivos}`)
-
   // Link direto para o admin analisar a ficha
   const fichaLink = `${window.location.origin}/ficha/detalhes/${fullCode}`
-  campos.push(`Acesse a ficha: ${fichaLink}`)
 
-  const whatsappMessage = [
-    'Olá, equipe Seri! Acabei de enviar uma ficha técnica e quero continuar o atendimento.',
-    '',
-    ...campos,
-  ].join('\n')
+  // Monta mensagem WhatsApp com seções estruturadas
+  type ItemTipo = { tipo: string; modelagemGramatura: string; tamanhos: string[]; quantidadesPorTamanho: Record<string, number> }
+  const itensPorTipo = fichaData.itensPorTipo as Record<string, ItemTipo> | undefined
+  const tiposSelecionados = (fichaData.tiposSelecionados as string[] | undefined) ?? []
+  const hasPerTipo = !!itensPorTipo && tiposSelecionados.length > 0
+
+  function totalPorTipo(tipo: string): number {
+    if (!itensPorTipo?.[tipo]) return 0
+    return Object.values(itensPorTipo[tipo].quantidadesPorTamanho).reduce((s, v) => s + (Number(v) || 0), 0)
+  }
+
+  const linhas: string[] = []
+  linhas.push('Olá, equipe Seri! Acabei de enviar uma ficha técnica e quero continuar o atendimento. ')
+  linhas.push('')
+
+  if (fullCode) { linhas.push(`-Código da ficha: ${fullCode}`); linhas.push('') }
+  if (totalPecas > 0) { linhas.push(`-Total de peças: ${totalPecas}`); linhas.push('') }
+
+  if (hasPerTipo) {
+    linhas.push('-Tipo de peça-')
+    for (const tipo of tiposSelecionados) linhas.push(`${tipo}: ${totalPorTipo(tipo)}`)
+    linhas.push('')
+
+    if (fichaData.cor) {
+      linhas.push('-Cor-')
+      linhas.push(tiposSelecionados.map(tipo => {
+        const qtd = totalPorTipo(tipo)
+        return qtd > 1 ? `${tipo} ${fichaData.cor} (${qtd}x)` : `${tipo} ${fichaData.cor}`
+      }).join(', '))
+      linhas.push('')
+    }
+
+    const temGramatura = tiposSelecionados.some(t => itensPorTipo?.[t]?.modelagemGramatura)
+    if (temGramatura) {
+      linhas.push('-Gramatura e Modelagem-')
+      for (const tipo of tiposSelecionados) {
+        const mg = itensPorTipo?.[tipo]?.modelagemGramatura
+        if (mg) linhas.push(`${tipo}: ${mg} `)
+      }
+      linhas.push('')
+    }
+
+    const temTamanhos = tiposSelecionados.some(t => itensPorTipo?.[t]?.tamanhos?.length)
+    if (temTamanhos) {
+      linhas.push('-Tamanhos-')
+      for (const tipo of tiposSelecionados) {
+        const tams = itensPorTipo?.[tipo]?.tamanhos
+        if (tams?.length) linhas.push(`${tipo} - ${tams.join(', ')} `)
+      }
+      linhas.push('')
+    }
+  } else {
+    if (fichaData.tipo) { linhas.push(`-Tipo de peça: ${fichaData.tipo}`); linhas.push('') }
+    if (fichaData.cor) { linhas.push(`-Cor: ${fichaData.cor}`); linhas.push('') }
+    if (modelagemGramatura) { linhas.push(`-Gramatura e Modelagem: ${modelagemGramatura}`); linhas.push('') }
+    const tamanhoStr = Array.isArray(fichaData.tamanhos) ? fichaData.tamanhos.join(', ') : fichaData.tamanhos
+    if (tamanhoStr) { linhas.push(`-Tamanhos: ${tamanhoStr}`); linhas.push('') }
+  }
+
+  if (fichaData.posicao) {
+    linhas.push('-Posição da estampa-')
+    fichaData.posicao.split(', ').forEach((p: string) => linhas.push(`${p} `))
+    linhas.push('')
+  }
+
+  if (fichaData.arquivos && fichaData.arquivos > 0) {
+    linhas.push(`-Arquivos enviados: ${fichaData.arquivos} `)
+    linhas.push('')
+  }
+
+  if (fichaData.enderecoEntrega) {
+    linhas.push('-endereço de entrega-')
+    linhas.push(`${fichaData.enderecoEntrega} `)
+    linhas.push('')
+  }
+
+  linhas.push(`Acesse a ficha: ${fichaLink}`)
+
+  const whatsappMessage = linhas.join('\n')
   const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappMessage)}`
 
   function copyCode() {
