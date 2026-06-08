@@ -40,6 +40,7 @@ public class DashboardService {
             "ORCAMENTO_ENVIADO", "Orçamento enviado",
             "EM_PRODUCAO", "Em produção",
             "PRONTO_PARA_RETIRADA", "Pronto para retirada",
+            "EM_TRANSITO", "Em trânsito",
             "ENTREGUE", "Entregue",
             "CANCELADO", "Cancelado"
     );
@@ -88,7 +89,12 @@ public class DashboardService {
                 .count();
 
         int pedidosEmProducao = (int) todosPedidos.stream()
-                .filter(p -> "EM_PRODUCAO".equals(p.getStatusAtual()))
+                .filter(p -> {
+                    String status = p.getStatusAtual();
+                    return "EM_PRODUCAO".equals(status)
+                            || "PRONTO_PARA_RETIRADA".equals(status)
+                            || "EM_TRANSITO".equals(status);
+                })
                 .count();
 
         int insumosEmAlerta = (int) todosInsumos.stream()

@@ -11,7 +11,7 @@ import './MeusPedidos.css'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type StatusKey = 'p' | 'a' | 'o' | 'r' | 'e' | 'c'
+type StatusKey = 'p' | 'a' | 'o' | 'r' | 't' | 'e' | 'c'
 
 interface Pedido {
   pedidoId: number
@@ -47,6 +47,7 @@ function statusFromApi(s: string): StatusKey {
   if (s === 'EM_PRODUCAO') return 'p'
   if (s === 'ORCAMENTO_ENVIADO') return 'o'
   if (s === 'PRONTO_PARA_RETIRADA') return 'r'
+  if (s === 'EM_TRANSITO' || s === 'EM_TRANSPORTE' || s === 'ENVIADO') return 't'
   if (s === 'ENTREGUE') return 'e'
   if (s === 'CANCELADO') return 'c'
   return 'a'
@@ -81,6 +82,7 @@ function getFirstName(name?: string): string {
 const STATUS_LABEL: Partial<Record<StatusKey, string>> = {
   p: 'Em produção',
   o: 'Aguardando orçamento',
+  t: 'Em trânsito',
   e: 'Entregue',
   c: 'Cancelado',
 }
@@ -92,6 +94,7 @@ const STATUS_LABEL_MAP: Record<StatusKey, string> = {
   a: 'Aguardando análise',
   o: 'Orçamento enviado',
   r: 'Pronto p/ retirada',
+  t: 'Em trânsito',
   e: 'Entregue',
   c: 'Cancelado',
 }
@@ -110,6 +113,7 @@ function PedidoCard({ pedido, isOpen, onToggle, onCancelar, onRefazer }: {
     a: 'mp-badge-a',
     o: 'mp-badge-o',
     r: 'mp-badge-r',
+    t: 'mp-badge-t',
     e: 'mp-badge-e',
     c: 'mp-badge-c',
   }[pedido.status]
@@ -255,7 +259,7 @@ export default function MeusPedidos() {
 
   // Stats
   const total      = pedidos.length
-  const emProd     = pedidos.filter((p: Pedido) => p.status === 'p').length
+  const emProd     = pedidos.filter((p: Pedido) => p.status === 'p' || p.status === 'r' || p.status === 't').length
   const entregues  = pedidos.filter((p: Pedido) => p.status === 'e').length
 
   // Filtragem
@@ -372,6 +376,7 @@ export default function MeusPedidos() {
               ['o',     'Orçamento enviado'],
               ['p',     'Em produção'],
               ['r',     'Pronto para retirada'],
+              ['t',     'Em trânsito'],
               ['e',     'Entregue'],
               ['c',     'Cancelado'],
             ] as [Filtro, string][]).map(([key, label]) => (

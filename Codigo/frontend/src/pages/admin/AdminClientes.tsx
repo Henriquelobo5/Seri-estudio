@@ -12,6 +12,7 @@ type AdminStatus =
   | 'ORCAMENTO_ENVIADO'
   | 'EM_PRODUCAO'
   | 'PRONTO_PARA_RETIRADA'
+  | 'EM_TRANSITO'
   | 'ENTREGUE'
   | 'CANCELADO'
 
@@ -94,6 +95,7 @@ function normalizeStatus(status?: string | null): AdminStatus {
   if (normalized === 'ORCAMENTO_ENVIADO') return 'ORCAMENTO_ENVIADO'
   if (normalized === 'EM_PRODUCAO') return 'EM_PRODUCAO'
   if (normalized === 'PRONTO_PARA_RETIRADA') return 'PRONTO_PARA_RETIRADA'
+  if (normalized === 'EM_TRANSITO' || normalized === 'EM_TRANSPORTE' || normalized === 'ENVIADO') return 'EM_TRANSITO'
   if (normalized === 'ENTREGUE') return 'ENTREGUE'
   if (normalized === 'CANCELADO') return 'CANCELADO'
   return 'AGUARDANDO_ANALISE'
@@ -110,6 +112,7 @@ function getStatusLabel(status?: string | null) {
   if (normalized === 'ORCAMENTO_ENVIADO') return 'Orçamento enviado'
   if (normalized === 'EM_PRODUCAO') return 'Em produção'
   if (normalized === 'PRONTO_PARA_RETIRADA') return 'Pronto para retirada'
+  if (normalized === 'EM_TRANSITO') return 'Em trânsito'
   if (normalized === 'ENTREGUE') return 'Entregue'
   return 'Cancelado'
 }

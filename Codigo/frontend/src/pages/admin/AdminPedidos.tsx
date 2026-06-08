@@ -12,6 +12,7 @@ type AdminStatus =
   | 'ORCAMENTO_ENVIADO'
   | 'EM_PRODUCAO'
   | 'PRONTO_PARA_RETIRADA'
+  | 'EM_TRANSITO'
   | 'ENTREGUE'
   | 'CANCELADO'
 
@@ -73,6 +74,7 @@ const STATUS_OPTIONS: Array<{ value: AdminStatus; label: string }> = [
   { value: 'ORCAMENTO_ENVIADO', label: 'Orçamento enviado' },
   { value: 'EM_PRODUCAO', label: 'Em produção' },
   { value: 'PRONTO_PARA_RETIRADA', label: 'Pronto para retirada' },
+  { value: 'EM_TRANSITO', label: 'Em trânsito' },
   { value: 'ENTREGUE', label: 'Entregue' },
   { value: 'CANCELADO', label: 'Cancelado' },
 ]
@@ -97,10 +99,11 @@ function normalizeStatus(status?: string | null): AdminStatus {
   const s = status.trim().toUpperCase()
   const valid: AdminStatus[] = [
     'AGUARDANDO_ANALISE', 'ORCAMENTO_ENVIADO', 'EM_PRODUCAO',
-    'PRONTO_PARA_RETIRADA', 'ENTREGUE', 'CANCELADO',
+    'PRONTO_PARA_RETIRADA', 'EM_TRANSITO', 'ENTREGUE', 'CANCELADO',
   ]
   if (valid.includes(s as AdminStatus)) return s as AdminStatus
   if (s === 'AGUARDANDO_ORCAMENTO') return 'AGUARDANDO_ANALISE'
+  if (s === 'EM_TRANSPORTE' || s === 'ENVIADO') return 'EM_TRANSITO'
   return 'AGUARDANDO_ANALISE'
 }
 
@@ -110,6 +113,7 @@ function getStatusBadgeClass(status: AdminStatus) {
     case 'ORCAMENTO_ENVIADO':    return 'ap-badge ap-badge-pending'
     case 'EM_PRODUCAO':          return 'ap-badge ap-badge-active'
     case 'PRONTO_PARA_RETIRADA': return 'ap-badge ap-badge-ready'
+    case 'EM_TRANSITO':          return 'ap-badge ap-badge-ready'
     case 'ENTREGUE':             return 'ap-badge ap-badge-done'
     case 'CANCELADO':            return 'ap-badge ap-badge-cancel'
   }
@@ -121,6 +125,7 @@ function getStatusLabel(status: AdminStatus) {
     case 'ORCAMENTO_ENVIADO':    return 'Orçamento enviado'
     case 'EM_PRODUCAO':          return 'Em produção'
     case 'PRONTO_PARA_RETIRADA': return 'Pronto p/ retirada'
+    case 'EM_TRANSITO':          return 'Em trânsito'
     case 'ENTREGUE':             return 'Entregue'
     case 'CANCELADO':            return 'Cancelado'
   }
@@ -344,7 +349,7 @@ export default function AdminPedidos() {
     const matchesFilter =
       filter === 'TODOS' ||
       (filter === 'AGUARDANDO' && (status === 'AGUARDANDO_ANALISE' || status === 'ORCAMENTO_ENVIADO')) ||
-      (filter === 'EM_PRODUCAO' && (status === 'EM_PRODUCAO' || status === 'PRONTO_PARA_RETIRADA')) ||
+      (filter === 'EM_PRODUCAO' && (status === 'EM_PRODUCAO' || status === 'PRONTO_PARA_RETIRADA' || status === 'EM_TRANSITO')) ||
       (filter === 'ENTREGUE' && (status === 'ENTREGUE' || status === 'CANCELADO'))
 
     const matchesSearch =
@@ -360,7 +365,7 @@ export default function AdminPedidos() {
   const total = pedidos.length
   const emProducaoCount = pedidos.filter((p) => {
     const s = normalizeStatus(p.statusAtual)
-    return s === 'EM_PRODUCAO' || s === 'PRONTO_PARA_RETIRADA'
+    return s === 'EM_PRODUCAO' || s === 'PRONTO_PARA_RETIRADA' || s === 'EM_TRANSITO'
   }).length
   const aguardandoCount = pedidos.filter((p) => {
     const s = normalizeStatus(p.statusAtual)

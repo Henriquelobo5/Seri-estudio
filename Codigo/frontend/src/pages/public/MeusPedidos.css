@@ -288,6 +288,10 @@
   background: rgba(126,200,154,.1); border: 1px solid rgba(126,200,154,.24); color: var(--mp-lime);
 }
 .mp-badge-r::before { background: var(--mp-lime); }
+.mp-badge-t {
+  background: rgba(14,165,233,.12); border: 1px solid rgba(14,165,233,.26); color: #7dd3fc;
+}
+.mp-badge-t::before { background: #7dd3fc; }
 .mp-badge-e {
   background: rgba(240,235,227,.1); border: 1px solid rgba(240,235,227,.18); color: #f5efe5;
 }

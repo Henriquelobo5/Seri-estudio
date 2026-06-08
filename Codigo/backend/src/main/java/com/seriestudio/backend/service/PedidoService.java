@@ -22,6 +22,7 @@ public class PedidoService {
     private static final String STATUS_ORCAMENTO_ENVIADO = "ORCAMENTO_ENVIADO";
     private static final String STATUS_EM_PRODUCAO = "EM_PRODUCAO";
     private static final String STATUS_PRONTO_PARA_RETIRADA = "PRONTO_PARA_RETIRADA";
+    private static final String STATUS_EM_TRANSITO = "EM_TRANSITO";
     private static final String STATUS_ENTREGUE = "ENTREGUE";
     private static final String STATUS_CANCELADO = "CANCELADO";
     private static final Set<String> ETAPAS_VALIDAS = Set.of(
@@ -36,6 +37,7 @@ public class PedidoService {
             STATUS_ORCAMENTO_ENVIADO,
             STATUS_EM_PRODUCAO,
             STATUS_PRONTO_PARA_RETIRADA,
+            STATUS_EM_TRANSITO,
             STATUS_ENTREGUE,
             STATUS_CANCELADO
     );
@@ -70,6 +72,7 @@ public class PedidoService {
 
         Pedido salvo = pedidoRepository.save(pedido);
         whatsappNotificationService.notificarNovoOrcamentoParaEmpresa(salvo);
+        whatsappNotificationService.notificarConfirmacaoPedidoCliente(salvo);
         return salvo;
     }
 
@@ -102,10 +105,6 @@ public class PedidoService {
     }
 
     public Pedido atualizarEtapaProducao(Long id, String etapaProducao) {
-        return atualizarEtapaProducao(id, etapaProducao, false);
-    }
-
-    public Pedido atualizarEtapaProducao(Long id, String etapaProducao, boolean notificarCliente) {
         String etapaNormalizada = normalizarEtapa(etapaProducao);
         if (!ETAPAS_VALIDAS.contains(etapaNormalizada)) {
             throw new RuntimeException("Etapa de producao invalida");
@@ -114,11 +113,8 @@ public class PedidoService {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pedido nao encontrado"));
 
-        String etapaAnterior = garantirEtapaProducao(pedido).getEtapaProducao();
         pedido.setEtapaProducao(etapaNormalizada);
-        Pedido salvo = pedidoRepository.save(pedido);
-        whatsappNotificationService.notificarEtapaClienteSePermitido(salvo, etapaAnterior, etapaNormalizada, notificarCliente);
-        return salvo;
+        return pedidoRepository.save(pedido);
     }
 
     public Pedido atualizarStatusAtual(Long id, String statusAtual) {
@@ -130,9 +126,16 @@ public class PedidoService {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pedido nao encontrado"));
 
+        String statusAnterior = normalizarStatusAtual(pedido.getStatusAtual());
         pedido.setStatusAtual(statusNormalizado);
         garantirEtapaCompativel(pedido, statusNormalizado);
-        return pedidoRepository.save(pedido);
+        Pedido salvo = pedidoRepository.save(pedido);
+
+        if (!statusNormalizado.equals(statusAnterior) && isStatusNotificavelAoCliente(statusNormalizado)) {
+            whatsappNotificationService.notificarStatusCliente(salvo, statusNormalizado);
+        }
+
+        return salvo;
     }
 
     public Pedido garantirEtapaProducao(Pedido pedido) {
@@ -168,6 +171,10 @@ public class PedidoService {
             return STATUS_PRONTO_PARA_RETIRADA;
         }
 
+        if ("EM_TRANSPORTE".equals(normalizado) || "ENVIADO".equals(normalizado)) {
+            return STATUS_EM_TRANSITO;
+        }
+
         return normalizado;
     }
 
@@ -182,8 +189,15 @@ public class PedidoService {
             return;
         }
 
-        if (STATUS_PRONTO_PARA_RETIRADA.equals(statusAtual) || STATUS_ENTREGUE.equals(statusAtual)) {
+        if (STATUS_PRONTO_PARA_RETIRADA.equals(statusAtual) || STATUS_EM_TRANSITO.equals(statusAtual) || STATUS_ENTREGUE.equals(statusAtual)) {
             pedido.setEtapaProducao(ETAPA_EXPEDICAO);
         }
+    }
+
+    private boolean isStatusNotificavelAoCliente(String statusAtual) {
+        return STATUS_EM_PRODUCAO.equals(statusAtual)
+                || STATUS_PRONTO_PARA_RETIRADA.equals(statusAtual)
+                || STATUS_EM_TRANSITO.equals(statusAtual)
+                || STATUS_ENTREGUE.equals(statusAtual);
     }
 }

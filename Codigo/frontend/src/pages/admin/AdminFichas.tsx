@@ -13,6 +13,7 @@ type AdminStatus =
   | 'ORCAMENTO_ENVIADO'
   | 'EM_PRODUCAO'
   | 'PRONTO_PARA_RETIRADA'
+  | 'EM_TRANSITO'
   | 'ENTREGUE'
   | 'CANCELADO'
 
@@ -55,6 +56,7 @@ const STATUS_OPTIONS: StatusOption[] = [
   { value: 'ORCAMENTO_ENVIADO', label: 'Orçamento enviado' },
   { value: 'EM_PRODUCAO', label: 'Em produção' },
   { value: 'PRONTO_PARA_RETIRADA', label: 'Pronto p/ retirada' },
+  { value: 'EM_TRANSITO', label: 'Em trânsito' },
   { value: 'ENTREGUE', label: 'Entregue' },
   { value: 'CANCELADO', label: 'Cancelado' },
 ]
@@ -65,6 +67,7 @@ const FILTER_OPTIONS: Array<{ value: FiltroStatus; label: string }> = [
   { value: 'ORCAMENTO_ENVIADO', label: 'Orçamento' },
   { value: 'EM_PRODUCAO', label: 'Em produção' },
   { value: 'PRONTO_PARA_RETIRADA', label: 'Prontos' },
+  { value: 'EM_TRANSITO', label: 'Em trânsito' },
 ]
 
 const SIDEBAR_ITEMS: SidebarItem[] = [
@@ -91,6 +94,7 @@ function normalizeStatus(status?: string | null): AdminStatus {
   if (normalized === 'ORCAMENTO_ENVIADO') return 'ORCAMENTO_ENVIADO'
   if (normalized === 'EM_PRODUCAO') return 'EM_PRODUCAO'
   if (normalized === 'PRONTO_PARA_RETIRADA') return 'PRONTO_PARA_RETIRADA'
+  if (normalized === 'EM_TRANSITO' || normalized === 'EM_TRANSPORTE' || normalized === 'ENVIADO') return 'EM_TRANSITO'
   if (normalized === 'ENTREGUE') return 'ENTREGUE'
   if (normalized === 'CANCELADO') return 'CANCELADO'
   return 'AGUARDANDO_ANALISE'
@@ -108,6 +112,7 @@ function getStatusClass(status: string | null | undefined) {
   if (normalized === 'ORCAMENTO_ENVIADO') return 'af-status af-status-orcamento'
   if (normalized === 'EM_PRODUCAO') return 'af-status af-status-producao'
   if (normalized === 'PRONTO_PARA_RETIRADA') return 'af-status af-status-pronto'
+  if (normalized === 'EM_TRANSITO') return 'af-status af-status-pronto'
   if (normalized === 'ENTREGUE') return 'af-status af-status-entregue'
   return 'af-status af-status-cancelado'
 }
@@ -361,7 +366,10 @@ export default function AdminFichas() {
   const totalFichas = pedidos.length
   const aguardandoAnalise = pedidos.filter((pedido) => normalizeStatus(pedido.statusAtual) === 'AGUARDANDO_ANALISE').length
   const orcamentoEnviado = pedidos.filter((pedido) => normalizeStatus(pedido.statusAtual) === 'ORCAMENTO_ENVIADO').length
-  const emProducao = pedidos.filter((pedido) => normalizeStatus(pedido.statusAtual) === 'EM_PRODUCAO').length
+  const emProducao = pedidos.filter((pedido) => {
+    const status = normalizeStatus(pedido.statusAtual)
+    return status === 'EM_PRODUCAO' || status === 'EM_TRANSITO'
+  }).length
   const concluidas = pedidos.filter((pedido) => {
     const status = normalizeStatus(pedido.statusAtual)
     return status === 'PRONTO_PARA_RETIRADA' || status === 'ENTREGUE'
@@ -397,7 +405,10 @@ export default function AdminFichas() {
       label: 'Em produção',
       value: emProducao,
       helper: 'em andamento',
-      pedidos: pedidos.filter((pedido) => normalizeStatus(pedido.statusAtual) === 'EM_PRODUCAO'),
+      pedidos: pedidos.filter((pedido) => {
+        const status = normalizeStatus(pedido.statusAtual)
+        return status === 'EM_PRODUCAO' || status === 'EM_TRANSITO'
+      }),
     },
     {
       key: 'CONCLUIDAS' as const,
