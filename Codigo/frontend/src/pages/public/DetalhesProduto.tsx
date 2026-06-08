@@ -805,7 +805,7 @@ export default function DetalhesProduto() {
           )}
 
           {config.modelUrl && !visibleFiles.length && (
-            <div className="dp-noart">
+            <div className="dp-noart" onClick={() => document.getElementById('dp-fi')?.click()}>
               <div className="dp-noart-ring">
                 <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -813,7 +813,7 @@ export default function DetalhesProduto() {
                   <line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
               </div>
-              <p>Envie uma arte para<br />visualizar no {previewLabel.toLowerCase()}</p>
+              <p>Clique ou arraste uma arte<br />para visualizar no {previewLabel.toLowerCase()}</p>
             </div>
           )}
 
@@ -878,12 +878,6 @@ export default function DetalhesProduto() {
             </div>
           </div>
 
-          <div className="dp-dica">
-            <div className="dp-dica-t">💡 Dica do estúdio</div>
-            <div className="dp-dica-b">
-              Prefira AI ou PDF vetorial para estampas nítidas em qualquer tamanho.
-            </div>
-          </div>
 
           <div className="dp-side-footer">
             {erro && <p className="dp-submit-error">{erro}</p>}

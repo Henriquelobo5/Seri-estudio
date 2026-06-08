@@ -4,6 +4,54 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js'
 
+// Builds a proxy mesh containing only triangles within `radiusWorld` of `hitWorld`.
+// Used to feed DecalGeometry with a small subset of triangles instead of the full mesh.
+function buildProxyMesh(sourceMesh: THREE.Mesh, hitWorld: THREE.Vector3, radiusWorld: number): THREE.Mesh {
+  const geo = sourceMesh.geometry
+  const pos = geo.attributes.position as THREE.BufferAttribute
+  const nor = geo.attributes.normal as THREE.BufferAttribute | undefined
+  const uv  = geo.attributes.uv  as THREE.BufferAttribute | undefined
+  const idx = geo.index
+
+  const worldScale = new THREE.Vector3().setFromMatrixScale(sourceMesh.matrixWorld).x || 1
+  const invMat = new THREE.Matrix4().copy(sourceMesh.matrixWorld).invert()
+  const hitLocal = hitWorld.clone().applyMatrix4(invMat)
+  const r2 = (radiusWorld / worldScale) ** 2
+
+  const newPos: number[] = []
+  const newNor: number[] = []
+  const newUV:  number[] = []
+
+  const triCount = idx ? idx.count / 3 : pos.count / 3
+  for (let t = 0; t < triCount; t++) {
+    const a = idx ? idx.getX(t * 3)     : t * 3
+    const b = idx ? idx.getX(t * 3 + 1) : t * 3 + 1
+    const c = idx ? idx.getX(t * 3 + 2) : t * 3 + 2
+
+    const dax = pos.getX(a) - hitLocal.x, day = pos.getY(a) - hitLocal.y, daz = pos.getZ(a) - hitLocal.z
+    const dbx = pos.getX(b) - hitLocal.x, dby = pos.getY(b) - hitLocal.y, dbz = pos.getZ(b) - hitLocal.z
+    const dcx = pos.getX(c) - hitLocal.x, dcy = pos.getY(c) - hitLocal.y, dcz = pos.getZ(c) - hitLocal.z
+
+    if (dax*dax+day*day+daz*daz > r2 && dbx*dbx+dby*dby+dbz*dbz > r2 && dcx*dcx+dcy*dcy+dcz*dcz > r2) continue
+
+    for (const vi of [a, b, c]) {
+      newPos.push(pos.getX(vi), pos.getY(vi), pos.getZ(vi))
+      if (nor) newNor.push(nor.getX(vi), nor.getY(vi), nor.getZ(vi))
+      if (uv)  newUV.push(uv.getX(vi), uv.getY(vi))
+    }
+  }
+
+  const proxyGeo = new THREE.BufferGeometry()
+  proxyGeo.setAttribute('position', new THREE.Float32BufferAttribute(newPos, 3))
+  if (newNor.length) proxyGeo.setAttribute('normal', new THREE.Float32BufferAttribute(newNor, 3))
+  if (newUV.length)  proxyGeo.setAttribute('uv',     new THREE.Float32BufferAttribute(newUV,  2))
+
+  const proxy = new THREE.Mesh(proxyGeo)
+  proxy.matrixWorld.copy(sourceMesh.matrixWorld)
+  proxy.matrixAutoUpdate = false
+  return proxy
+}
+
 export type PosKey = 'fc' | 'fe' | 'fd' | 'cc' | 'me' | 'md'
 
 export type ViewerArt = {
@@ -104,13 +152,10 @@ function applyColorToScene(scene: THREE.Scene, color: string | undefined) {
         if (!mat?.color) continue
         mat.color.set(resolved)
         mat.map = null
-        mat.normalMap = null
-        mat.roughnessMap = null
         mat.metalnessMap = null
-        mat.aoMap = null
         mat.emissiveMap = null
         mat.metalness = 0
-        mat.roughness = 0.8
+        mat.roughness = mat.roughnessMap ? mat.roughness : 0.85
         mat.side = THREE.DoubleSide
         mat.needsUpdate = true
       }
@@ -175,6 +220,8 @@ export default function ThreeViewer({
   const isDraggingRef = useRef(false)
   const animRef = useRef<number>(0)
   const viewAnimRef = useRef<number>(0)
+  const moveRafRef = useRef<number>(0)
+  const pendingMoveRef = useRef<{ x: number; y: number } | null>(null)
   const [modelReady, setModelReady] = useState(false)
 
   useEffect(() => { artsRef.current = effectiveArts }, [effectiveArtsKey])
@@ -228,13 +275,11 @@ export default function ThreeViewer({
     }
   }, [])
 
-  const renderArt = useCallback((art: ViewerArt) => {
+  const renderArt = useCallback((art: ViewerArt, fastMode = false) => {
     const scene = sceneRef.current
     const texture = textureRef.current.get(art.id)
     const placement = placementRef.current.get(art.id)
     if (!scene || !texture || !placement) return
-
-    disposeDecal(art.id)
 
     texture.repeat.set(art.flipH ? -1 : 1, art.flipV ? -1 : 1)
     texture.offset.set(art.flipH ? 1 : 0, art.flipV ? 1 : 0)
@@ -249,22 +294,39 @@ export default function ThreeViewer({
     const orient = new THREE.Euler().setFromQuaternion(spinQuat.multiply(normalQuat))
     const size = new THREE.Vector3(DECAL_BASE * art.scale, DECAL_BASE * art.scale, DECAL_BASE)
 
-    const geom = new DecalGeometry(placement.mesh, placement.point, orient, size)
-    const mat = new THREE.MeshStandardMaterial({
-      map: texture,
-      transparent: true,
-      depthTest: true,
-      depthWrite: false,
-      polygonOffset: true,
-      polygonOffsetFactor: -1,
-      polygonOffsetUnits: -20,
-    })
-    const decal = new THREE.Mesh(geom, mat)
-    decal.userData.isArtDecal = true
-    decal.userData.artId = art.id
-    scene.add(decal)
-    decalsRef.current.set(art.id, decal)
-  }, [disposeDecal])
+    // fastMode: filter only nearby triangles before feeding DecalGeometry
+    // reduces input from O(n_mesh) to O(k_local) — ~150x fewer triangles during drag
+    const targetMesh = fastMode
+      ? buildProxyMesh(placement.mesh, placement.point, DECAL_BASE * art.scale * 2)
+      : placement.mesh
+
+    const newGeom = new DecalGeometry(targetMesh, placement.point, orient, size)
+    if (fastMode) targetMesh.geometry.dispose()
+
+    const existing = decalsRef.current.get(art.id)
+    if (existing) {
+      // Reuse mesh + material — only swap geometry to avoid GPU re-alloc
+      existing.geometry.dispose()
+      existing.geometry = newGeom
+      const mat = existing.material as THREE.MeshStandardMaterial
+      if (mat.map !== texture) { mat.map = texture; mat.needsUpdate = true }
+    } else {
+      const mat = new THREE.MeshStandardMaterial({
+        map: texture,
+        transparent: true,
+        depthTest: true,
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -20,
+      })
+      const decal = new THREE.Mesh(newGeom, mat)
+      decal.userData.isArtDecal = true
+      decal.userData.artId = art.id
+      scene.add(decal)
+      decalsRef.current.set(art.id, decal)
+    }
+  }, [])
 
   const renderAllArts = useCallback(() => {
     artsRef.current.forEach(renderArt)
@@ -278,20 +340,36 @@ export default function ThreeViewer({
     cancelAnimationFrame(viewAnimRef.current)
 
     const target = controls.target.clone()
-    const start = camera.position.clone()
-    const currentDistance = start.distanceTo(target)
-    const distance = THREE.MathUtils.clamp(currentDistance || 3, 2.5, 4.2)
-    const dir = new THREE.Vector3(...VIEW_DIRECTION[targetPos]).normalize()
-    const end = target.clone().add(dir.multiplyScalar(distance))
-    end.y = Math.max(end.y, 0.15)
+    const startOffset = camera.position.clone().sub(target)
+    const currentDistance = startOffset.length()
+    const distance = THREE.MathUtils.clamp(currentDistance || 3, 2.5, 3.2)
 
-    const duration = 1050
+    const dir = new THREE.Vector3(...VIEW_DIRECTION[targetPos]).normalize()
+    const endOffset = dir.multiplyScalar(distance)
+
+    // Interpolate in spherical space so camera orbits around model
+    const startSph = new THREE.Spherical().setFromVector3(startOffset)
+    const endSph = new THREE.Spherical().setFromVector3(endOffset)
+
+    // Shortest-path theta interpolation
+    let dTheta = endSph.theta - startSph.theta
+    if (dTheta > Math.PI) dTheta -= 2 * Math.PI
+    if (dTheta < -Math.PI) dTheta += 2 * Math.PI
+
+    const duration = 850
     const startedAt = performance.now()
 
     const tick = (now: number) => {
       const rawT = Math.min(1, (now - startedAt) / duration)
-      const t = 1 - Math.pow(1 - rawT, 3)
-      camera.position.lerpVectors(start, end, t)
+      // Ease in-out quad
+      const t = rawT < 0.5 ? 2 * rawT * rawT : 1 - Math.pow(-2 * rawT + 2, 2) / 2
+
+      const sph = new THREE.Spherical(
+        THREE.MathUtils.lerp(startSph.radius, endSph.radius, t),
+        THREE.MathUtils.lerp(startSph.phi, endSph.phi, t),
+        startSph.theta + dTheta * t,
+      )
+      camera.position.setFromSpherical(sph).add(target)
       camera.lookAt(target)
       controls.update()
       if (rawT < 1) viewAnimRef.current = requestAnimationFrame(tick)
@@ -319,18 +397,18 @@ export default function ThreeViewer({
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
-    renderer.toneMappingExposure = 0.9
+    renderer.toneMappingExposure = 1.4
     mount.appendChild(renderer.domElement)
     rendererRef.current = renderer
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xffffff, 2.5))
-    const key = new THREE.DirectionalLight(0xffffff, 0.8)
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x888888, 2.5))
+    const key = new THREE.DirectionalLight(0xffffff, 1.2)
     key.position.set(2, 4, 5)
     scene.add(key)
-    const fill = new THREE.DirectionalLight(0xffffff, 0.6)
+    const fill = new THREE.DirectionalLight(0xffffff, 0.5)
     fill.position.set(-3, 1, -5)
     scene.add(fill)
-    const back = new THREE.DirectionalLight(0xffffff, 0.6)
+    const back = new THREE.DirectionalLight(0xffffff, 0.4)
     back.position.set(0, 2, -6)
     scene.add(back)
 
@@ -467,10 +545,23 @@ export default function ThreeViewer({
       }
       isDraggingRef.current = true
     }
-    const onUp = () => { isDraggingRef.current = false }
-    const onMove = (e: PointerEvent) => {
-      if (!isDraggingRef.current || !moveMode) return
-      const hit = rayCastFromScreen(e.clientX, e.clientY)
+    const onUp = () => {
+      isDraggingRef.current = false
+      cancelAnimationFrame(moveRafRef.current)
+      moveRafRef.current = 0
+      pendingMoveRef.current = null
+      // Re-render final decal at full quality
+      const activeId = activeArtIdRef.current ?? artsRef.current[0]?.id
+      const art = artsRef.current.find(a => a.id === activeId)
+      if (art && placementRef.current.has(art.id)) renderArt(art, false)
+    }
+    const flushMove = () => {
+      moveRafRef.current = 0
+      const pending = pendingMoveRef.current
+      pendingMoveRef.current = null
+      if (!pending || !isDraggingRef.current) return
+
+      const hit = rayCastFromScreen(pending.x, pending.y)
       if (!hit?.face) return
 
       const activeId = activeArtIdRef.current ?? artsRef.current[0]?.id
@@ -479,12 +570,13 @@ export default function ThreeViewer({
 
       const hitMesh = hit.object as THREE.Mesh
       const normal = hit.face.normal.clone().transformDirection(hitMesh.matrixWorld)
-      placementRef.current.set(activeArt.id, {
-        point: hit.point.clone(),
-        normal,
-        mesh: hitMesh,
-      })
-      renderArt(activeArt)
+      placementRef.current.set(activeArt.id, { point: hit.point.clone(), normal, mesh: hitMesh })
+      renderArt(activeArt, true)
+    }
+    const onMove = (e: PointerEvent) => {
+      if (!isDraggingRef.current || !moveMode) return
+      pendingMoveRef.current = { x: e.clientX, y: e.clientY }
+      if (!moveRafRef.current) moveRafRef.current = requestAnimationFrame(flushMove)
     }
 
     canvas.addEventListener('pointerdown', onDown)
@@ -497,6 +589,8 @@ export default function ThreeViewer({
       canvas.removeEventListener('pointerup', onUp)
       canvas.removeEventListener('pointerleave', onUp)
       canvas.removeEventListener('pointermove', onMove)
+      cancelAnimationFrame(moveRafRef.current)
+      moveRafRef.current = 0
     }
   }, [moveMode, rayCastDecalFromScreen, rayCastFromScreen, renderArt])
 
