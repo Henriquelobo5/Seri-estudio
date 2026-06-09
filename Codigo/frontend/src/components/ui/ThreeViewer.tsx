@@ -133,6 +133,7 @@ interface Props {
   onActiveArtChange?: (id: string) => void
   hideMeshMaterials?: string[]
   posRayOriginOffset?: Partial<Record<PosKey, [number, number, number]>>
+  captureRef?: React.MutableRefObject<(() => string | null) | null>
 }
 
 function resolveColor(c: string | undefined): THREE.Color {
@@ -180,6 +181,7 @@ export default function ThreeViewer({
   onActiveArtChange,
   hideMeshMaterials = [],
   posRayOriginOffset = {},
+  captureRef,
 }: Props) {
   const effectiveArts = useMemo<ViewerArt[]>(() => {
     if (arts?.length) return arts
@@ -392,7 +394,7 @@ export default function ThreeViewer({
     camera.position.set(0, 0.2, 3)
     cameraRef.current = camera
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true })
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true })
     renderer.setSize(mount.clientWidth, mount.clientHeight)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.outputColorSpace = THREE.SRGBColorSpace
@@ -400,6 +402,9 @@ export default function ThreeViewer({
     renderer.toneMappingExposure = 1.4
     mount.appendChild(renderer.domElement)
     rendererRef.current = renderer
+    if (captureRef) {
+      captureRef.current = () => renderer.domElement.toDataURL('image/png')
+    }
 
     scene.add(new THREE.HemisphereLight(0xffffff, 0x888888, 2.5))
     const key = new THREE.DirectionalLight(0xffffff, 1.2)
@@ -637,6 +642,7 @@ export default function ThreeViewer({
 
     let cancelled = false
     const loader = new THREE.TextureLoader()
+    loader.setCrossOrigin('anonymous')
     const texturesToLoad = currentArts.filter(art => textureUrlRef.current.get(art.id) !== art.url)
 
     Promise.all(texturesToLoad.map(art => new Promise<{ art: ViewerArt; texture: THREE.Texture }>((resolve) => {

@@ -4,8 +4,18 @@ import { useAuth } from '../../context/AuthContext'
 import logo from '../../assets/images/logo.png'
 import { ROUTES } from '../../routes/routePaths'
 import { apiRequest } from '../../services/api'
+import { parseEspecificacoesFicha } from '../../utils/fichaEspecificacoes'
+import ThreeViewer from '../../components/ui/ThreeViewer'
 import './AdminKanban.css'
 import './AdminPedidos.css'
+
+const TIPO_MODEL_URL: Record<string, string> = {
+  Camiseta: '/models/tshirt.glb',
+  Moletom:  '/models/hoodie.glb',
+  Regata:   '/models/regata.glb',
+  Polo:     '/models/polo.glb',
+  Ecobag:   '/models/ecobag.glb',
+}
 
 type AdminStatus =
   | 'AGUARDANDO_ANALISE'
@@ -35,6 +45,8 @@ type AdminPedido = {
     produtoTipo?: string | null
     especificacoes?: string | null
     dataAbertura?: string
+    urlArte?: string | null
+    urlPreview?: string | null
   } | null
 }
 
@@ -647,6 +659,21 @@ export default function AdminPedidos() {
             </div>
 
             <div className="ap-dw-body">
+              {/* Preview 3D */}
+              <div className="af-drawer-preview">
+                <ThreeViewer
+                  modelUrl={TIPO_MODEL_URL[(drawerPedido.fichaTecnica?.produtoTipo ?? '').split(',')[0].trim()] ?? TIPO_MODEL_URL['Camiseta']}
+                  artUrl={drawerPedido.fichaTecnica?.urlArte ?? null}
+                  pos="fc"
+                  moveMode={false}
+                  color={parseEspecificacoesFicha(drawerPedido.fichaTecnica?.especificacoes).cor}
+                  artRotation={0}
+                  artScale={1}
+                  flipH={false}
+                  flipV={false}
+                />
+              </div>
+
               {/* Info grid */}
               <div className="ap-dw-section">
                 <div className="ap-dw-section-label">Informações do pedido</div>

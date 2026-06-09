@@ -93,11 +93,16 @@ export default function Confirmacao() {
     for (const tipo of tiposSelecionados) linhas.push(`${tipo}: ${totalPorTipo(tipo)}`)
     linhas.push('')
 
-    if (fichaData.cor) {
+    const corPorTipoMap = fichaData.corPorTipo as Record<string, string> | undefined
+    const temCor = corPorTipoMap
+      ? tiposSelecionados.some(t => corPorTipoMap[t])
+      : !!fichaData.cor
+    if (temCor) {
       linhas.push('-Cor-')
       linhas.push(tiposSelecionados.map(tipo => {
+        const corTipo = corPorTipoMap?.[tipo] ?? fichaData.cor
         const qtd = totalPorTipo(tipo)
-        return qtd > 1 ? `${tipo} ${fichaData.cor} (${qtd}x)` : `${tipo} ${fichaData.cor}`
+        return qtd > 1 ? `${tipo} ${corTipo} (${qtd}x)` : `${tipo} ${corTipo}`
       }).join(', '))
       linhas.push('')
     }
@@ -340,7 +345,13 @@ export default function Confirmacao() {
             <div className="conf-ri"><span className="conf-rk">Identificação</span><span className="conf-rv">{fichaData.identificacao || '—'}</span></div>
             <div className="conf-ri"><span className="conf-rk">Tipo de peça</span><span className="conf-rv">{fichaData.tipo || '—'}</span></div>
             <div className="conf-ri"><span className="conf-rk">Gramatura e Modelagem</span><span className="conf-rv">{modelagemGramatura || '—'}</span></div>
-            <div className="conf-ri"><span className="conf-rk">Cor</span><span className="conf-rv">{fichaData.cor || '—'}</span></div>
+            <div className="conf-ri"><span className="conf-rk">Cor</span><span className="conf-rv">{(() => {
+              const m = fichaData.corPorTipo as Record<string, string> | undefined
+              if (!m || Object.keys(m).length === 0) return fichaData.cor || '—'
+              const entries = Object.entries(m)
+              if (entries.length === 1) return entries[0][1] || '—'
+              return entries.map(([t, c]) => `${t}: ${c}`).join(' · ')
+            })()}</span></div>
             <div className="conf-ri"><span className="conf-rk">Tamanhos</span><span className="conf-rv">{Array.isArray(fichaData.tamanhos) ? fichaData.tamanhos.join(', ') : fichaData.tamanhos || '—'}</span></div>
             <div className="conf-ri"><span className="conf-rk">Posição da estampa</span><span className="conf-rv">{fichaData.posicao || '—'}</span></div>
             <div className="conf-ri"><span className="conf-rk">Total de peças</span><span className="conf-rv hi">{totalPecas} peça{totalPecas !== 1 ? 's' : ''}</span></div>

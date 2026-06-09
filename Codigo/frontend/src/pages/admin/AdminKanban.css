@@ -1122,6 +1122,16 @@
   font-weight: 700;
 }
 
+.af-drawer-preview {
+  position: relative;
+  height: 280px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(132, 148, 124, 0.12);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(22, 28, 22, 0.9);
+}
+
 .ak-drawer-backdrop {
   position: fixed;
   inset: 0;

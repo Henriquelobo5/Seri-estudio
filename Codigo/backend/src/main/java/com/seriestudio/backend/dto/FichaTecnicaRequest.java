@@ -5,4 +5,5 @@ public class FichaTecnicaRequest {
     public String produtoTipo;
     public String especificacoes;
     public String urlArte;
+    public String cor;
 }

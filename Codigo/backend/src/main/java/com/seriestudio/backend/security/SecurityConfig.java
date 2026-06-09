@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/auth/login", "/auth/register").permitAll()
                 .requestMatchers(HttpMethod.GET, "/portfolio", "/portfolio/imagens/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/ficha-tecnica/preview/**").permitAll()
                 .requestMatchers(new RegexRequestMatcher("/admin/.*", null)).hasRole("ADMIN")
                 .anyRequest().authenticated()
             )

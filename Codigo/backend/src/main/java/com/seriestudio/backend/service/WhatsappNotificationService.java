@@ -10,6 +10,7 @@ import com.seriestudio.backend.service.whatsapp.ZApiProperties;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -139,31 +140,96 @@ public class WhatsappNotificationService {
 
     private String buildMensagemOrcamentoEmpresa(Pedido pedido) {
         FichaTecnica ficha = pedido.getFichaTecnica();
-        return String.join("\n",
-                "\uD83E\uDDF5 *Novo orçamento recebido!*",
-                "",
-                "\uD83D\uDCCB *Código:* " + codigoPedido(pedido),
-                "\uD83D\uDC64 *Cliente:* " + valorOuTraco(pedido.getCliente() != null ? pedido.getCliente().getNome() : null),
-                "\uD83D\uDCF1 *WhatsApp:* " + valorOuTraco(pedido.getCliente() != null ? pedido.getCliente().getWhatsapp() : null),
-                "\uD83D\uDC55 *Produto:* " + valorOuTraco(ficha != null ? ficha.getProdutoTipo() : null),
-                "\uD83D\uDCE6 *Qtd:* " + valorOuTraco(pedido.getQuantidades()),
-                "\u270F\uFE0F *Obs:* " + valorOuTraco(pedido.getObservacoes()),
-                "",
-                "Acesse o painel para analisar o pedido."
-        );
+        List<String> linhas = new ArrayList<>();
+
+        linhas.add("\uD83E\uDDFE *NOVO PEDIDO RECEBIDO*");
+        linhas.add("");
+        linhas.add("\uD83D\uDCCC *CÓDIGO DO PEDIDO:* " + codigoPedido(pedido));
+        linhas.add("");
+        linhas.add("\uD83D\uDC64 *NOME DO CLIENTE:* " + valorOuTraco(pedido.getCliente() != null ? pedido.getCliente().getNome() : null));
+        linhas.add("\uD83D\uDCF2 *WHATSAPP DO CLIENTE:* " + valorOuTraco(pedido.getCliente() != null ? pedido.getCliente().getWhatsapp() : null));
+
+        if (ficha != null && ficha.getProdutoTipo() != null && !ficha.getProdutoTipo().isBlank()) {
+            linhas.add("");
+            linhas.add("\uD83D\uDC55 *TIPO(S) DE PEÇA:*");
+            for (String tipo : ficha.getProdutoTipo().split(",\\s*")) {
+                linhas.add("• " + tipo.trim());
+            }
+        }
+
+        String cor = ficha != null ? ficha.getCor() : null;
+        if (cor != null && !cor.isBlank()) {
+            linhas.add("");
+            linhas.add("\uD83C\uDFA8 *COR POR TIPO:*");
+            for (String entry : cor.split(",\\s*")) {
+                linhas.add("• " + entry.trim());
+            }
+        }
+
+        String qtd = pedido.getQuantidades();
+        if (qtd != null && !qtd.isBlank()) {
+            linhas.add("");
+            linhas.add("\uD83D\uDCE6 *QUANTIDADES POR TIPO E TAMANHO:*");
+            for (String entry : qtd.split(",")) {
+                linhas.add("• " + entry.trim().replaceAll(":(\\d)", ": $1"));
+            }
+        }
+
+        String obs = pedido.getObservacoes();
+        if (obs != null && !obs.isBlank()) {
+            linhas.add("");
+            linhas.add("\uD83D\uDCDD *OBSERVAÇÕES DO CLIENTE:*");
+            linhas.add(obs);
+        }
+
+        linhas.add("");
+        linhas.add("⚠️ Acesse o painel para analisar o pedido, conferir os detalhes e dar andamento no orçamento.");
+
+        return String.join("\n", linhas);
     }
 
     private String buildMensagemConfirmacaoCliente(Pedido pedido) {
         FichaTecnica ficha = pedido.getFichaTecnica();
-        return String.join("\n",
-                "\u2705 *Orçamento recebido!*",
-                "",
-                "\uD83D\uDCCB *Pedido:* " + codigoPedido(pedido),
-                "\uD83D\uDC55 *Produto:* " + valorOuTraco(ficha != null ? ficha.getProdutoTipo() : null),
-                "\uD83D\uDCE6 *Qtd:* " + valorOuTraco(pedido.getQuantidades()),
-                "",
-                "Em breve nossa equipe entrará em contato. \uD83E\uDDF5"
-        );
+        String nomeCliente = pedido.getCliente() != null ? pedido.getCliente().getNome() : null;
+        String primeiroNome = (nomeCliente != null && !nomeCliente.isBlank()) ? nomeCliente.split("\\s+")[0] : "cliente";
+        List<String> linhas = new ArrayList<>();
+
+        linhas.add("Oi, " + primeiroNome + " \uD83D\uDC4B");
+        linhas.add("");
+        linhas.add("Recebemos seu pedido de orçamento com sucesso \u2705");
+        linhas.add("");
+        linhas.add("\uD83D\uDCCC *CÓDIGO DO PEDIDO:* " + codigoPedido(pedido));
+
+        if (ficha != null && ficha.getProdutoTipo() != null && !ficha.getProdutoTipo().isBlank()) {
+            linhas.add("");
+            linhas.add("\uD83D\uDC55 *TIPO(S) DE PEÇA:*");
+            for (String tipo : ficha.getProdutoTipo().split(",\\s*")) {
+                linhas.add("• " + tipo.trim());
+            }
+        }
+
+        String cor = ficha != null ? ficha.getCor() : null;
+        if (cor != null && !cor.isBlank()) {
+            linhas.add("");
+            linhas.add("\uD83C\uDFA8 *COR POR TIPO:*");
+            for (String entry : cor.split(",\\s*")) {
+                linhas.add("• " + entry.trim());
+            }
+        }
+
+        String qtd = pedido.getQuantidades();
+        if (qtd != null && !qtd.isBlank()) {
+            linhas.add("");
+            linhas.add("\uD83D\uDCE6 *QUANTIDADES:*");
+            for (String entry : qtd.split(",")) {
+                linhas.add("• " + entry.trim().replaceAll(":(\\d)", ": $1"));
+            }
+        }
+
+        linhas.add("");
+        linhas.add("Nossa equipe vai analisar tudo certinho e entrar em contato com você em breve pelo WhatsApp \uD83D\uDCAC");
+
+        return String.join("\n", linhas);
     }
 
     private String buildMensagemStatusCliente(Pedido pedido, String status) {
@@ -175,18 +241,18 @@ public class WhatsappNotificationService {
             default -> "\uD83D\uDCEB";
         };
         String titulo = switch (status) {
-            case "EM_PRODUCAO" -> "Seu pedido entrou em produção!";
-            case "PRONTO_PARA_RETIRADA" -> "Seu pedido está pronto!";
-            case "EM_TRANSITO" -> "Seu pedido está em trânsito!";
-            case "ENTREGUE" -> "Pedido entregue!";
-            default -> "Atualização do pedido";
+            case "EM_PRODUCAO" -> "SEU PEDIDO ENTROU EM PRODUÇÃO";
+            case "PRONTO_PARA_RETIRADA" -> "SEU PEDIDO ESTÁ PRONTO";
+            case "EM_TRANSITO" -> "SEU PEDIDO ESTÁ EM TRÂNSITO";
+            case "ENTREGUE" -> "PEDIDO ENTREGUE";
+            default -> "ATUALIZAÇÃO DO PEDIDO";
         };
         String detalhe = switch (status) {
-            case "EM_PRODUCAO" -> "Nossa equipe já está trabalhando nas suas peças. \uD83E\uDDF5";
-            case "PRONTO_PARA_RETIRADA" -> "Seu pedido está pronto para retirada. Entre em contato para combinar a entrega.";
-            case "EM_TRANSITO" -> "Seu pedido saiu para entrega. Em breve ele chega até você.";
-            case "ENTREGUE" -> "Seu pedido foi entregue. Obrigado pela preferência! \uD83D\uDE4F";
-            default -> "Acompanhe seu pedido pelo painel da Seri.";
+            case "EM_PRODUCAO" -> "suas peças já começaram a ser produzidas \uD83E\uDDF5";
+            case "PRONTO_PARA_RETIRADA" -> "seu pedido já está pronto para retirada \u2705";
+            case "EM_TRANSITO" -> "seu pedido saiu para entrega \uD83D\uDCE6";
+            case "ENTREGUE" -> "seu pedido foi entregue com sucesso\nobrigado pela preferência \uD83D\uDE4F";
+            default -> "acompanhe seu pedido pelo painel da Seri.";
         };
 
         return String.join("\n",

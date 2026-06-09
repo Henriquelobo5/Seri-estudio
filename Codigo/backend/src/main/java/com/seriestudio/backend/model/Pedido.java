@@ -19,6 +19,7 @@ public class Pedido {
     private LocalDateTime dataAbertura;
     private String statusAtual;
     private String etapaProducao;
+    @Column(columnDefinition = "TEXT")
     private String quantidades;
     @Column(columnDefinition = "TEXT")
     private String observacoes;

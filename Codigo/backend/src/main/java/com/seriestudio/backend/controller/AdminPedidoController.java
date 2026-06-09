@@ -61,6 +61,7 @@ public class AdminPedidoController {
                     ficha.getProdutoTipo(),
                     ficha.getEspecificacoes(),
                     ficha.getUrlArte(),
+                    ficha.getUrlPreview(),
                     ficha.getDataAbertura()
             );
         }

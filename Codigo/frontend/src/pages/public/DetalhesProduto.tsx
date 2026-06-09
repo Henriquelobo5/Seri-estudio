@@ -166,6 +166,7 @@ export default function DetalhesProduto() {
   const config = getProductConfig(previewProduto)
 
   const artObjUrlRef = useRef<string[]>([])
+  const captureRef = useRef<(() => string | null) | null>(null)
 
   const [modelLoaded, setModelLoaded] = useState(false)
   const [files,   setFiles]   = useState<UploadedArt[]>([])
@@ -175,7 +176,13 @@ export default function DetalhesProduto() {
   const [hintGone,    setHintGone]    = useState(false)
   const [moveMode,    setMoveMode]    = useState(false)
   const [measureConfirmOpen, setMeasureConfirmOpen] = useState(false)
-  const [cor, setCor] = useState(locState.fichaData?.cor ?? CORES[0].nome)
+  const [corPorTipo, setCorPorTipo] = useState<Record<string, string>>(() => {
+    const fromState = locState.fichaData?.corPorTipo as Record<string, string> | undefined
+    if (fromState && Object.keys(fromState).length > 0) return fromState
+    const defaultCor = locState.fichaData?.cor ?? CORES[0].nome
+    const tipos = getTiposSelecionadosFromDetails(locState.fichaData, locState.fichaData?.tipo ?? 'Camiseta')
+    return Object.fromEntries(tipos.map((t: string) => [t, defaultCor]))
+  })
   const [submitting, setSubmitting] = useState(false)
   const [erro, setErro] = useState('')
 
@@ -190,7 +197,8 @@ export default function DetalhesProduto() {
   const activeFlipH = activeArt?.flipH ?? false
   const activeFlipV = activeArt?.flipV ?? false
   const btnNextOn = files.length > 0
-  const selectedColor = CORES.find(item => item.nome === cor) ?? CORES[0]
+  const currentCor = corPorTipo[previewProduto] ?? CORES[0].nome
+  const selectedColor = CORES.find(item => item.nome === currentCor) ?? CORES[0]
 
   useEffect(() => {
     if (!canSwitchPreview || previewOptions.includes(previewTipo)) return
@@ -400,7 +408,8 @@ export default function DetalhesProduto() {
 
     const fichaDataAtualizada = {
       ...locState.fichaData,
-      cor,
+      cor: corPorTipo[tiposSelecionados[0] ?? tipo] ?? CORES[0].nome,
+      corPorTipo,
       modelagemGramatura: resolveModelagemGramaturaFromDetails(locState.fichaData, tipo),
       posicao: posSummary || posLabel,
       arquivos: files.length,
@@ -420,9 +429,16 @@ export default function DetalhesProduto() {
       if (!fichaId) {
         const especificacoes = buildEspecificacoesFicha({
           modelagemGramatura: fichaDataAtualizada.modelagemGramatura,
-          cor,
+          cor: fichaDataAtualizada.cor,
           tamanhos: fichaDataAtualizada.tamanhos ?? [],
         })
+        const corEntries = Object.entries(corPorTipo)
+        const corStr = corEntries.length === 0
+          ? (fichaDataAtualizada.cor ?? '')
+          : corEntries.length === 1
+            ? (corEntries[0][1] ?? '')
+            : corEntries.map(([t, c]) => `${t}: ${c}`).join(', ')
+
         const ficha = await apiRequest<{ codUnico: number; codigoDisplay: string }>('/ficha-tecnica', {
           method: 'POST',
           body: JSON.stringify({
@@ -430,9 +446,39 @@ export default function DetalhesProduto() {
             produtoTipo: tipo,
             especificacoes,
             urlArte: '',
+            cor: corStr,
           }),
         })
         fichaId = ficha.codUnico
+
+        const capturedFichaId = fichaId
+        const token = localStorage.getItem('auth_token')
+        const apiBase = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8080'
+        const authHeaders = token ? { Authorization: `Bearer ${token}` } : {}
+
+        // Captura os blobs ANTES de navegar — blob URLs são revogadas no unmount
+        const dataUrl = captureRef.current?.()
+        const primeiraArte = visibleFiles[0]
+        const [previewBlob, arteBlob] = await Promise.all([
+          dataUrl ? fetch(dataUrl).then(r => r.blob()).catch(() => null) : Promise.resolve(null),
+          primeiraArte?.previewUrl ? fetch(primeiraArte.previewUrl).then(r => r.blob()).catch(() => null) : Promise.resolve(null),
+        ])
+
+        // Faz uploads em background usando os Blobs já capturados
+        if (previewBlob) {
+          const form = new FormData()
+          form.append('file', previewBlob, 'preview.png')
+          fetch(`${apiBase}/ficha-tecnica/${capturedFichaId}/preview`, {
+            method: 'POST', headers: authHeaders, body: form,
+          }).catch(() => {})
+        }
+        if (arteBlob) {
+          const form = new FormData()
+          form.append('file', arteBlob, 'arte.png')
+          fetch(`${apiBase}/ficha-tecnica/${capturedFichaId}/arte`, {
+            method: 'POST', headers: authHeaders, body: form,
+          }).catch(() => {})
+        }
       }
 
       setMeasureConfirmOpen(false)
@@ -712,9 +758,9 @@ export default function DetalhesProduto() {
 
         <aside className="dp-color-rail" aria-label="Cor da peça">
           <div className="dp-color-head">
-            <div className="dp-color-title">Cor da peça</div>
+            <div className="dp-color-title">Cor da peça{canSwitchPreview ? ` — ${previewProduto}` : ''}</div>
             <div className="dp-color-selected">
-              Selecionado: <strong>{cor}</strong>
+              Selecionado: <strong>{currentCor}</strong>
             </div>
           </div>
           <div className="dp-color-grid">
@@ -724,14 +770,14 @@ export default function DetalhesProduto() {
                 type="button"
                 title={nome}
                 aria-label={`Selecionar cor ${nome}`}
-                className={`dp-color-dot ${cor === nome ? 'sel' : ''}`}
+                className={`dp-color-dot ${currentCor === nome ? 'sel' : ''}`}
                 style={{
                   background: hex,
                   borderColor: borda ? 'rgba(255,255,255,.34)' : undefined,
                 }}
-                onClick={() => setCor(nome)}
+                onClick={() => setCorPorTipo(prev => ({ ...prev, [previewProduto]: nome }))}
               >
-                {cor === nome && (
+                {currentCor === nome && (
                   <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
@@ -794,6 +840,7 @@ export default function DetalhesProduto() {
                 posRayOriginOffset={config.posRayOriginOffset}
                 onLoad={handleModelLoad}
                 onActiveArtChange={setActiveArtId}
+                captureRef={captureRef}
               />
             </>
           ) : (
@@ -851,7 +898,7 @@ export default function DetalhesProduto() {
                   </div>
                   <div>
                     <div className="dp-pname done">Produto</div>
-                    <div className="dp-pdet">{locState.fichaData ? `${locState.fichaData.tipo} · ${cor} · ${(locState.fichaData.tamanhos ?? []).join(', ')}` : 'Concluído'}</div>
+                    <div className="dp-pdet">{locState.fichaData ? `${locState.fichaData.tipo} · ${[...new Set(Object.values(corPorTipo))].join(', ')} · ${(locState.fichaData.tamanhos ?? []).join(', ')}` : 'Concluído'}</div>
                   </div>
                 </div>
                 <div className="dp-pi">

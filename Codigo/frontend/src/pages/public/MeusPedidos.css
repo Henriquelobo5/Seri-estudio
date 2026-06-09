@@ -239,8 +239,11 @@
   width: 44px; height: 44px; border-radius: 10px;
   background: var(--mp-ink3); border: 1px solid var(--mp-border);
   display: flex; align-items: center; justify-content: center;
-  font-size: 20px; flex-shrink: 0;
+  font-size: 20px; flex-shrink: 0; overflow: hidden;
   font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+}
+.mp-picon-img {
+  width: 100%; height: 100%; object-fit: cover; border-radius: 10px;
 }
 .mp-pinfo { flex: 1; min-width: 0; }
 .mp-pcode {
@@ -311,9 +314,19 @@
   from { opacity: 0; transform: translateY(-5px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+.mp-detail-layout {
+  display: flex; gap: 16px; align-items: stretch; margin-bottom: 16px;
+}
+.mp-dpreview {
+  flex: 0 0 300px; min-height: 300px;
+  position: relative;
+  background: var(--mp-ink3); border-radius: var(--mp-r-sm);
+  border: 1px solid var(--mp-border); overflow: hidden;
+}
+.mp-dleft { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 300px; }
 .mp-dgrid {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 8px; margin-bottom: 16px;
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 8px; margin-bottom: 12px; flex: 1;
 }
 .mp-di {
   background: var(--mp-ink3); border-radius: var(--mp-r-sm); padding: 11px 13px;

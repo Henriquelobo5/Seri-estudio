@@ -75,6 +75,7 @@ public class PedidoController {
                     f.getProdutoTipo(),
                     f.getEspecificacoes(),
                     f.getUrlArte(),
+                    f.getUrlPreview(),
                     f.getDataAbertura()
             );
         }

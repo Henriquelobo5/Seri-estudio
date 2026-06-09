@@ -272,6 +272,17 @@
   font-size: 13.5px;
 }
 
+/* ── Drawer preview ─────────────────────────────────────────────── */
+.af-drawer-preview {
+  position: relative;
+  height: 280px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(132, 148, 124, 0.12);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(22, 28, 22, 0.9);
+}
+
 /* ── Drawer ─────────────────────────────────────────────────────── */
 
 .ap-drawer-overlay {

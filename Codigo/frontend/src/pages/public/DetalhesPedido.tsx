@@ -190,7 +190,8 @@ export default function DetalhesPedido() {
     try {
       const quantidadesStr = tamanhos.map(t => `${t}:${qtds[t] ?? 0}`).join(',')
       const prazoTexto = dataNecessidade ? `Preciso para ${formatDateInput(dataNecessidade)}` : ''
-      const observacoesComPrazo = [prazoTexto, obs.trim()].filter(Boolean).join('\n')
+      const enderecoTexto = enderecoEntrega.trim() ? `Endereço de entrega: ${enderecoEntrega.trim()}` : ''
+      const observacoesComPrazo = [prazoTexto, enderecoTexto, obs.trim()].filter(Boolean).join('\n')
       const pedido = await apiRequest<{ id: number; fichaTecnica?: { codigoDisplay?: string } }>('/pedido', {
         method: 'POST',
         body: JSON.stringify({ fichaId: locState.fichaId, quantidades: quantidadesStr, observacoes: observacoesComPrazo }),
@@ -286,7 +287,13 @@ export default function DetalhesPedido() {
                     <td><span className="dpd-res-tag">{fichaData.tipo || '—'}</span></td>
                   </tr>
                   <tr><td>Gramatura e Modelagem</td><td>{modelagemGramatura || '—'}</td></tr>
-                  <tr><td>Cor da peça</td><td>{fichaData.cor || '—'}</td></tr>
+                  <tr><td>Cor da peça</td><td>{(() => {
+                    const m = fichaData.corPorTipo as Record<string, string> | undefined
+                    if (!m || Object.keys(m).length === 0) return fichaData.cor || '—'
+                    const entries = Object.entries(m)
+                    if (entries.length === 1) return entries[0][1] || '—'
+                    return entries.map(([t, c]) => `${t}: ${c}`).join(' · ')
+                  })()}</td></tr>
                   <tr><td>Tamanhos</td><td>{tamanhos.join(', ') || '—'}</td></tr>
                   <tr><td>Posição da estampa</td><td>{fichaData.posicao || '—'}</td></tr>
                   <tr><td>Arquivos enviados</td><td>{fichaData.arquivos ?? 0} arquivo</td></tr>

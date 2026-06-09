@@ -7,7 +7,16 @@ import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
 import { apiRequest } from '../../services/api'
 import { parseEspecificacoesFicha } from '../../utils/fichaEspecificacoes'
+import ThreeViewer from '../../components/ui/ThreeViewer'
 import './MeusPedidos.css'
+
+const TIPO_MODEL_URL: Record<string, string> = {
+  Camiseta: '/models/tshirt.glb',
+  Moletom:  '/models/hoodie.glb',
+  Regata:   '/models/regata.glb',
+  Polo:     '/models/polo.glb',
+  Ecobag:   '/models/ecobag.glb',
+}
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -20,11 +29,13 @@ interface Pedido {
   meta: string
   status: StatusKey
   emoji: string
+  urlArte?: string
+  urlPreview?: string
+  primeiroTipo: string
   detalhes: {
-    tipo: string
+    tipoTamanhos: string
     modelagemGramatura: string
     cor: string
-    tamanhos: string
     posicao: string
   }
 }
@@ -119,7 +130,8 @@ function PedidoCard({ pedido, isOpen, onToggle, onCancelar, onRefazer }: {
   }[pedido.status]
   const isEntregue = pedido.status === 'e'
   const isCancelado = pedido.status === 'c'
-  const { tipo, modelagemGramatura, cor, tamanhos, posicao } = pedido.detalhes
+  const { tipoTamanhos, modelagemGramatura, cor, posicao } = pedido.detalhes
+  const modelUrl = TIPO_MODEL_URL[pedido.primeiroTipo] ?? TIPO_MODEL_URL['Camiseta']
   const whatsappHref = buildStudioWhatsappHref(
     `Olá, equipe Seri! Quero falar sobre o pedido ${pedido.id}.`,
   )
@@ -127,7 +139,11 @@ function PedidoCard({ pedido, isOpen, onToggle, onCancelar, onRefazer }: {
   return (
     <div className={`mp-pcard ${isOpen ? 'open' : ''}`}>
       <div className="mp-pm-main" onClick={onToggle}>
-        <div className="mp-picon">{pedido.emoji}</div>
+        <div className="mp-picon">
+        {(pedido.urlPreview ?? pedido.urlArte)
+          ? <img src={pedido.urlPreview ?? pedido.urlArte} alt="preview" className="mp-picon-img" />
+          : pedido.emoji}
+      </div>
         <div className="mp-pinfo">
           <div className="mp-pcode"><b>SERI</b>{pedido.id.slice(4)}</div>
           <div className="mp-pname">{pedido.nome}</div>
@@ -147,50 +163,67 @@ function PedidoCard({ pedido, isOpen, onToggle, onCancelar, onRefazer }: {
 
       {isOpen && (
         <div className="mp-pdetail">
-          <div className="mp-dgrid">
-            {[
-              ['Tipo', tipo], ['Gramatura e Modelagem', modelagemGramatura],
-              ['Cor', cor],   ['Tamanhos', tamanhos], ['Posição', posicao],
-            ].map(([label, val]) => (
-              <div key={label} className="mp-di">
-                <div className="mp-dil">{label}</div>
-                <div className="mp-div">{val}</div>
+          <div className="mp-detail-layout">
+            {/* ── Preview 3D ───────────────────────────────────── */}
+            <div className="mp-dpreview">
+              <ThreeViewer
+                modelUrl={modelUrl}
+                artUrl={pedido.urlArte ?? null}
+                pos="fc"
+                moveMode={false}
+                color={cor}
+                artRotation={0}
+                artScale={1}
+                flipH={false}
+                flipV={false}
+              />
+            </div>
+
+            {/* ── Detalhes ─────────────────────────────────────── */}
+            <div className="mp-dleft">
+              <div className="mp-dgrid">
+                {[
+                  ['Tipo e Tamanhos', tipoTamanhos],
+                  ['Gramatura e Modelagem', modelagemGramatura],
+                  ['Cor', cor],
+                  ['Posição', posicao],
+                ].map(([label, val]) => (
+                  <div key={label} className="mp-di">
+                    <div className="mp-dil">{label}</div>
+                    <div className="mp-div">{val}</div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="mp-dacts">
-            {isEntregue || isCancelado ? (
-              <button className="mp-da mp-da-d" onClick={onRefazer}>
-                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <polyline points="1 4 1 10 7 10"/>
-                  <path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
-                </svg>
-                Refazer pedido
-              </button>
-            ) : (
-              <a
-                className="mp-da mp-da-d"
-                href={whatsappHref}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="rgba(37,211,102,.75)">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/>
-                </svg>
-                Falar com estúdio
-              </a>
-            )}
-            {!isCancelado && !isEntregue && pedido.status === 'o' && (
-              <button
-                className="mp-da mp-da-cancel"
-                onClick={e => { e.stopPropagation(); onCancelar(pedido.pedidoId) }}
-              >
-                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-                Cancelar pedido
-              </button>
-            )}
+              <div className="mp-dacts">
+                {isEntregue || isCancelado ? (
+                  <button className="mp-da mp-da-d" onClick={onRefazer}>
+                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <polyline points="1 4 1 10 7 10"/>
+                      <path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
+                    </svg>
+                    Refazer pedido
+                  </button>
+                ) : (
+                  <a className="mp-da mp-da-d" href={whatsappHref} target="_blank" rel="noopener noreferrer">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="rgba(37,211,102,.75)">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/>
+                    </svg>
+                    Falar com estúdio
+                  </a>
+                )}
+                {!isCancelado && !isEntregue && pedido.status === 'o' && (
+                  <button
+                    className="mp-da mp-da-cancel"
+                    onClick={e => { e.stopPropagation(); onCancelar(pedido.pedidoId) }}
+                  >
+                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                    Cancelar pedido
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -237,18 +270,27 @@ export default function MeusPedidos() {
           const n = parseInt(q.split(':')[1] ?? '0')
           return s + (isNaN(n) ? 0 : n)
         }, 0)
+        // "Camiseta - M:1, Moletom - G:2" → "Camiseta - M, Moletom - G"
+        const tipoTamanhos = (p.quantidades ?? '')
+          .split(',')
+          .map((s: string) => s.trim().replace(/:.*$/, '').trim())
+          .filter(Boolean)
+          .join(', ') || esp.tamanhos || '—'
+
         return {
           pedidoId: p.id,
           id: ficha.codigoDisplay ?? String(p.id),
           nome: ficha.identificacao ?? 'Pedido',
-          meta: `${qtdTotal} peças · ${esp.tamanhos} · ${data_}`,
+          meta: `${qtdTotal} peças · ${data_}`,
           status: statusFromApi(p.statusAtual ?? ''),
           emoji: EMOJI_MAP[ficha.produtoTipo ?? ''] ?? '👕',
+          urlArte: ficha.urlArte ?? undefined,
+          urlPreview: ficha.urlPreview ?? undefined,
+          primeiroTipo: (ficha.produtoTipo ?? 'Camiseta').split(',')[0].trim(),
           detalhes: {
-            tipo: ficha.produtoTipo ?? '—',
+            tipoTamanhos,
             modelagemGramatura: esp.modelagemGramatura,
             cor: esp.cor,
-            tamanhos: esp.tamanhos,
             posicao: '—',
           },
         }

@@ -20,6 +20,9 @@ public class FichaTecnica {
     private String produtoTipo;
     private String especificacoes;
     private String urlArte;
+    private String urlPreview;
+    @Column(columnDefinition = "TEXT")
+    private String cor;
     private LocalDateTime dataAbertura;
 
     @ManyToOne

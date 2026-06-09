@@ -6,8 +6,17 @@ import logo from '../../assets/images/logo.png'
 import { ROUTES } from '../../routes/routePaths'
 import { apiRequest } from '../../services/api'
 import { parseEspecificacoesFicha } from '../../utils/fichaEspecificacoes'
+import ThreeViewer from '../../components/ui/ThreeViewer'
 import EtapaLabelEditModal from './EtapaLabelEditModal'
 import './AdminKanban.css'
+
+const TIPO_MODEL_URL: Record<string, string> = {
+  Camiseta: '/models/tshirt.glb',
+  Moletom:  '/models/hoodie.glb',
+  Regata:   '/models/regata.glb',
+  Polo:     '/models/polo.glb',
+  Ecobag:   '/models/ecobag.glb',
+}
 
 type EtapaProducao = 'CORTE' | 'ESTAMPARIA' | 'COSTURA' | 'REVISAO' | 'EXPEDICAO'
 
@@ -26,6 +35,8 @@ type AdminPedido = {
     produtoTipo?: string | null
     especificacoes?: string | null
     dataAbertura?: string
+    urlArte?: string | null
+    urlPreview?: string | null
   } | null
 }
 
@@ -903,6 +914,20 @@ export default function AdminKanban() {
               <button type="button" className="ak-drawer-close" onClick={() => setSelectedPedidoId(null)}>
                 Fechar
               </button>
+            </div>
+
+            <div className="af-drawer-preview">
+              <ThreeViewer
+                modelUrl={TIPO_MODEL_URL[(selectedPedido.fichaTecnica?.produtoTipo ?? '').split(',')[0].trim()] ?? TIPO_MODEL_URL['Camiseta']}
+                artUrl={selectedPedido.fichaTecnica?.urlArte ?? null}
+                pos="fc"
+                moveMode={false}
+                color={parseEspecificacoes(selectedPedido.fichaTecnica?.especificacoes).cor}
+                artRotation={0}
+                artScale={1}
+                flipH={false}
+                flipV={false}
+              />
             </div>
 
             <div className="ak-drawer-section">
