@@ -5,7 +5,7 @@ import AuthNavCta from '../../components/ui/AuthNavCta'
 import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
 import { apiRequest } from '../../services/api'
-import { resolveModelagemGramaturaFromDetails } from '../../utils/fichaEspecificacoes'
+import { buildEspecificacoesFicha, resolveModelagemGramaturaFromDetails } from '../../utils/fichaEspecificacoes'
 import './DetalhesPedido.css'
 
 const STEPS = [
@@ -79,10 +79,56 @@ function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
 
+type FichaUploads = {
+  previewDataUrl?: string | null
+  arteDataUrl?: string | null
+}
+
+function getApiErrorMessage(error: any, fallback: string) {
+  const message = error?.message ?? fallback
+  if (String(message).includes('401')) {
+    return 'Sua sessao expirou. Entre novamente para enviar a ficha.'
+  }
+
+  return message
+}
+
+function getCorFicha(fichaData: any) {
+  const corPorTipo = fichaData?.corPorTipo as Record<string, string> | undefined
+  const entries = Object.entries(corPorTipo ?? {})
+
+  if (entries.length === 0) return fichaData?.cor ?? ''
+  if (entries.length === 1) return entries[0][1] ?? ''
+  return entries.map(([tipo, cor]) => `${tipo}: ${cor}`).join(', ')
+}
+
+async function uploadFichaAsset(fichaId: number, endpoint: 'preview' | 'arte', dataUrl?: string | null) {
+  if (!dataUrl) return
+
+  const token = localStorage.getItem('auth_token')
+  const apiBase = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8080'
+  const blob = await fetch(dataUrl).then(response => response.blob())
+  const form = new FormData()
+  form.append('file', blob, endpoint === 'preview' ? 'preview.png' : 'arte.png')
+
+  await fetch(`${apiBase}/ficha-tecnica/${fichaId}/${endpoint}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: form,
+  })
+}
+
+async function uploadFichaAssets(fichaId: number, uploads?: FichaUploads) {
+  await Promise.allSettled([
+    uploadFichaAsset(fichaId, 'preview', uploads?.previewDataUrl),
+    uploadFichaAsset(fichaId, 'arte', uploads?.arteDataUrl),
+  ])
+}
+
 export default function DetalhesPedido() {
   const navigate = useNavigate()
   const location = useLocation()
-  const locState = (location.state ?? {}) as { fichaId?: number; fichaData?: any }
+  const locState = (location.state ?? {}) as { fichaId?: number; fichaData?: any; fichaUploads?: FichaUploads }
 
   const fichaData = locState.fichaData ?? {
     identificacao: '',
@@ -173,10 +219,6 @@ export default function DetalhesPedido() {
   }, [calendarOpen])
 
   async function handleConfirmar() {
-    if (!locState.fichaId) {
-      setErro('Ficha técnica não encontrada. Volte e preencha novamente.')
-      return
-    }
     if (total < 1) {
       setErro('Informe pelo menos 1 peça em pelo menos um tamanho.')
       return
@@ -192,14 +234,43 @@ export default function DetalhesPedido() {
       const prazoTexto = dataNecessidade ? `Preciso para ${formatDateInput(dataNecessidade)}` : ''
       const enderecoTexto = enderecoEntrega.trim() ? `Endereço de entrega: ${enderecoEntrega.trim()}` : ''
       const observacoesComPrazo = [prazoTexto, enderecoTexto, obs.trim()].filter(Boolean).join('\n')
+      let fichaId = locState.fichaId
+      let codigoDisplayCriado = ''
+
+      if (!fichaId) {
+        const corFicha = getCorFicha(fichaData)
+        const especificacoes = buildEspecificacoesFicha({
+          modelagemGramatura,
+          cor: corFicha,
+          tamanhos,
+        })
+        const ficha = await apiRequest<{ codUnico: number; codigoDisplay: string }>('/ficha-tecnica', {
+          method: 'POST',
+          body: JSON.stringify({
+            identificacao: fichaData.identificacao,
+            produtoTipo: fichaData.tipo,
+            especificacoes,
+            urlArte: '',
+            cor: corFicha,
+          }),
+        })
+        fichaId = ficha.codUnico
+        codigoDisplayCriado = ficha.codigoDisplay ?? ''
+        await uploadFichaAssets(fichaId, locState.fichaUploads)
+      }
+
+      if (!fichaId) {
+        throw new Error('Ficha tecnica nao encontrada. Volte e preencha novamente.')
+      }
+
       const pedido = await apiRequest<{ id: number; fichaTecnica?: { codigoDisplay?: string } }>('/pedido', {
         method: 'POST',
-        body: JSON.stringify({ fichaId: locState.fichaId, quantidades: quantidadesStr, observacoes: observacoesComPrazo }),
+        body: JSON.stringify({ fichaId, quantidades: quantidadesStr, observacoes: observacoesComPrazo }),
       })
-      const codigoDisplay = pedido.fichaTecnica?.codigoDisplay ?? ''
+      const codigoDisplay = pedido.fichaTecnica?.codigoDisplay ?? codigoDisplayCriado
       navigate(ROUTES.CONFIRMACAO, { state: { total, codigoDisplay, fichaData: { ...fichaData, quantidadesPorTamanho: qtds, enderecoEntrega } } })
     } catch (e: any) {
-      setErro(e.message ?? 'Erro ao salvar pedido. Tente novamente.')
+      setErro(getApiErrorMessage(e, 'Erro ao salvar pedido. Tente novamente.'))
     } finally {
       setLoading(false)
     }

@@ -17,7 +17,9 @@ public class FichaTecnica {
 
     private String identificacao;
     private String codigoDisplay;
+    @Column(columnDefinition = "TEXT")
     private String produtoTipo;
+    @Column(columnDefinition = "TEXT")
     private String especificacoes;
     private String urlArte;
     private String urlPreview;

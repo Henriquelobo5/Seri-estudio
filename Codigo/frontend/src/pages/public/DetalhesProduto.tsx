@@ -5,9 +5,7 @@ import AuthNavCta from '../../components/ui/AuthNavCta'
 import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import ThreeViewer from '../../components/ui/ThreeViewer'
 import logo from '../../assets/images/logo.png'
-import { apiRequest } from '../../services/api'
 import {
-  buildEspecificacoesFicha,
   getTiposSelecionadosFromDetails,
   resolveModelagemGramaturaFromDetails,
 } from '../../utils/fichaEspecificacoes'
@@ -140,9 +138,31 @@ const PRODUCT_CONFIG: Record<string, ProductConfig> = {
 // ── Componente ────────────────────────────────────────────────────────────────
 
 const PREVIEW_MODEL_TYPES = ['Camiseta', 'Moletom', 'Regata', 'Polo', 'Ecobag']
+const MAX_MEASURE_DIGITS = 4
 
 function getProductConfig(tipoProduto: string) {
   return PRODUCT_CONFIG[tipoProduto] ?? PRODUCT_CONFIG['Camiseta']
+}
+
+function blobToDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result ?? ''))
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(blob)
+  })
+}
+
+async function urlToDataUrl(url: string | null | undefined) {
+  if (!url) return null
+
+  try {
+    const response = await fetch(url)
+    const blob = await response.blob()
+    return blobToDataUrl(blob)
+  } catch {
+    return null
+  }
 }
 
 export default function DetalhesProduto() {
@@ -224,8 +244,8 @@ export default function DetalhesProduto() {
     setActiveArtId(files.find(art => art.produtoTipo === nextTipo)?.id ?? null)
   }
 
-  function onlyDigits(value: string) {
-    return value.replace(/\D/g, '')
+  function sanitizeMeasure(value: string) {
+    return value.replace(/\D/g, '').slice(0, MAX_MEASURE_DIGITS)
   }
 
   useEffect(() => {
@@ -424,73 +444,26 @@ export default function DetalhesProduto() {
     setSubmitting(true)
     setErro('')
     try {
-      let fichaId = locState.fichaId
-
-      if (!fichaId) {
-        const especificacoes = buildEspecificacoesFicha({
-          modelagemGramatura: fichaDataAtualizada.modelagemGramatura,
-          cor: fichaDataAtualizada.cor,
-          tamanhos: fichaDataAtualizada.tamanhos ?? [],
-        })
-        const corEntries = Object.entries(corPorTipo)
-        const corStr = corEntries.length === 0
-          ? (fichaDataAtualizada.cor ?? '')
-          : corEntries.length === 1
-            ? (corEntries[0][1] ?? '')
-            : corEntries.map(([t, c]) => `${t}: ${c}`).join(', ')
-
-        const ficha = await apiRequest<{ codUnico: number; codigoDisplay: string }>('/ficha-tecnica', {
-          method: 'POST',
-          body: JSON.stringify({
-            identificacao: fichaDataAtualizada.identificacao,
-            produtoTipo: tipo,
-            especificacoes,
-            urlArte: '',
-            cor: corStr,
-          }),
-        })
-        fichaId = ficha.codUnico
-
-        const capturedFichaId = fichaId
-        const token = localStorage.getItem('auth_token')
-        const apiBase = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8080'
-        const authHeaders = token ? { Authorization: `Bearer ${token}` } : {}
-
-        // Captura os blobs ANTES de navegar — blob URLs são revogadas no unmount
-        const dataUrl = captureRef.current?.()
-        const primeiraArte = visibleFiles[0]
-        const [previewBlob, arteBlob] = await Promise.all([
-          dataUrl ? fetch(dataUrl).then(r => r.blob()).catch(() => null) : Promise.resolve(null),
-          primeiraArte?.previewUrl ? fetch(primeiraArte.previewUrl).then(r => r.blob()).catch(() => null) : Promise.resolve(null),
-        ])
-
-        // Faz uploads em background usando os Blobs já capturados
-        if (previewBlob) {
-          const form = new FormData()
-          form.append('file', previewBlob, 'preview.png')
-          fetch(`${apiBase}/ficha-tecnica/${capturedFichaId}/preview`, {
-            method: 'POST', headers: authHeaders, body: form,
-          }).catch(() => {})
-        }
-        if (arteBlob) {
-          const form = new FormData()
-          form.append('file', arteBlob, 'arte.png')
-          fetch(`${apiBase}/ficha-tecnica/${capturedFichaId}/arte`, {
-            method: 'POST', headers: authHeaders, body: form,
-          }).catch(() => {})
-        }
-      }
+      const primeiraArte = visibleFiles[0]
+      const [previewDataUrl, arteDataUrl] = await Promise.all([
+        Promise.resolve(captureRef.current?.() ?? null),
+        urlToDataUrl(primeiraArte?.previewUrl),
+      ])
 
       setMeasureConfirmOpen(false)
       navigate(ROUTES.DETALHES_PEDIDO, {
         state: {
-          fichaId,
+          fichaId: locState.fichaId,
           fichaData: fichaDataAtualizada,
+          fichaUploads: {
+            previewDataUrl,
+            arteDataUrl,
+          },
         },
       })
     } catch (e: any) {
       setMeasureConfirmOpen(false)
-      setErro(e.message ?? 'Erro ao salvar ficha. Tente novamente.')
+      setErro(e.message ?? 'Erro ao preparar ficha. Tente novamente.')
     } finally {
       setSubmitting(false)
     }
@@ -712,8 +685,9 @@ export default function DetalhesProduto() {
                               type="text"
                               inputMode="numeric"
                               pattern="[0-9]*"
+                              maxLength={MAX_MEASURE_DIGITS}
                               value={art.largura}
-                              onChange={e => updateArt(art.id, { largura: onlyDigits(e.target.value) })}
+                              onChange={e => updateArt(art.id, { largura: sanitizeMeasure(e.target.value) })}
                             />
                             <span>cm</span>
                           </div>
@@ -725,8 +699,9 @@ export default function DetalhesProduto() {
                               type="text"
                               inputMode="numeric"
                               pattern="[0-9]*"
+                              maxLength={MAX_MEASURE_DIGITS}
                               value={art.altura}
-                              onChange={e => updateArt(art.id, { altura: onlyDigits(e.target.value) })}
+                              onChange={e => updateArt(art.id, { altura: sanitizeMeasure(e.target.value) })}
                             />
                             <span>cm</span>
                           </div>

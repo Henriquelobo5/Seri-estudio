@@ -331,7 +331,7 @@ export default function ThreeViewer({
   }, [])
 
   const renderAllArts = useCallback(() => {
-    artsRef.current.forEach(renderArt)
+    artsRef.current.forEach(art => renderArt(art))
   }, [renderArt])
 
   const animateViewToPos = useCallback((targetPos: PosKey) => {

@@ -17,10 +17,15 @@ export async function apiRequest<T = any>(
 		headers.Authorization = `Bearer ${token}`
 	}
 
-	const response = await fetch(`${API_BASE_URL}${path}`, {
-		...options,
-		headers,
-	})
+	let response: Response
+	try {
+		response = await fetch(`${API_BASE_URL}${path}`, {
+			...options,
+			headers,
+		})
+	} catch {
+		throw new Error('Não foi possível conectar ao backend. Verifique se a API está rodando em http://localhost:8080.')
+	}
 
 	const contentType = response.headers.get('content-type')
 	const isJson = contentType?.includes('application/json')
