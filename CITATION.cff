@@ -1,31 +1,22 @@
 cff-version: 1.0.1
 message: Please cite this software using these metadata.
-title: 
+title: Seri.Estudio
 authors:
-  - family-names: 
-    given-names: 
-  - family-names: 
-    given-names: 
-  - family-names: 
-    given-names: 
-  - family-names: 
-    given-names: 
-  - family-names: 
-    given-names: 
-  - family-names: 
-    given-names:
-  - name-suffix: Professor
-    affiliation: PUC Minas
-    family-names: 
-    given-names: 
-  - name-suffix: Professor
-    affiliation: PUC Minas
-    family-names: 
-    given-names: 
+  - family-names: Goncalves Vieira
+    given-names: Arthur
+  - family-names: Lobo Leite Neves
+    given-names: Henrique
+  - family-names: Viana Pereira
+    given-names: Matheus Guilherme
+  - family-names: Costa Soares
+    given-names: Thiago
+  - family-names: Oliveira Ramos
+    given-names: Vinicius
 keywords:
-  - 
-  - 
-repository-code: 
+  - serigrafia
+  - sistema-web
+  - gestao-de-pedidos
+repository-code: https://github.com/ICEI-PUC-Minas-PMGES-TI/pmg-es-2026-1-ti4-3126100-seri-estudio
 license: CC-BY-4.0
 version: 1.0.0
 date-released: 2022-07-14
