@@ -925,9 +925,9 @@ export default function DetalhesProduto() {
               </svg>
             </div>
             <h2 id="dp-measure-confirm-title">
-              Você alterou as <span>medidas de largura e altura</span> da sua estampa?
+              Para ajudar o estúdio, você alterou as <span>medidas de largura e altura</span> das suas estampas?
             </h2>
-            <p>Se as medidas ainda estiverem no padrão, volte e ajuste antes de continuar.</p>
+            <p>Se as medidas ainda estiverem no padrão, volte e ajuste, se preferir.</p>
             <div className="dp-confirm-actions">
               <button type="button" className="dp-confirm-secondary" onClick={handleBackToMeasures} disabled={submitting}>
                 Voltar e alterar
