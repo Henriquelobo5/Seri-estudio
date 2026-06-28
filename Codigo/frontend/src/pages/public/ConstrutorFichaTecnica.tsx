@@ -180,6 +180,8 @@ export default function ConstrutorFichaTecnica() {
   const [itensPorTipo, setItensPorTipo] = useState<ItensPorTipo>(initialItensPorTipo)
   const initialCor = prefill?.detalhes?.cor ?? CORES[0].nome
   const [identificacao, setIdentificacao] = useState(prefill?.nome ?? '')
+  const [activeSpecIdx, setActiveSpecIdx] = useState(0)
+  const [specDir, setSpecDir] = useState(1)
 
   const tiposSelecionados = TIPOS.map(({ nome }) => nome).filter((nome) => Boolean(itensPorTipo[nome]))
   const itensSelecionados = getItensFichaSelecionados(itensPorTipo, tiposSelecionados)
@@ -188,6 +190,18 @@ export default function ConstrutorFichaTecnica() {
   const tamanhosResumo = buildTamanhosPorTipo(itensSelecionados)
   const quantidadesResumo = buildQuantidadesPorTipo(itensSelecionados)
   const totalPecas = getTotalPecasPorTipo(itensSelecionados)
+
+  const safeSpecIdx = Math.max(0, Math.min(activeSpecIdx, itensSelecionados.length - 1))
+
+  function goSpec(dir: number) {
+    setSpecDir(dir)
+    setActiveSpecIdx(Math.max(0, Math.min(safeSpecIdx + dir, itensSelecionados.length - 1)))
+  }
+
+  function jumpSpec(index: number) {
+    setSpecDir(index >= safeSpecIdx ? 1 : -1)
+    setActiveSpecIdx(index)
+  }
 
   function toggleTipo(nextTipo: string) {
     setItensPorTipo(prev => {
@@ -428,8 +442,37 @@ export default function ConstrutorFichaTecnica() {
                   {itensSelecionados.length === 0 ? (
                     <div className="cf-empty-selection">Selecione pelo menos um tipo de peça para informar gramatura, tamanhos e quantidades.</div>
                   ) : (
-                    <div className="cf-spec-list">
-                      {itensSelecionados.map(item => {
+                    <div className="cf-spec-carousel">
+                      {itensSelecionados.length > 1 ? (
+                        <div className="cf-spec-nav">
+                          <button
+                            type="button"
+                            className="cf-spec-arrow"
+                            onClick={() => goSpec(-1)}
+                            disabled={safeSpecIdx === 0}
+                            aria-label="Produto anterior"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                          </button>
+                          <div className="cf-spec-nav-center">
+                            <strong>{itensSelecionados[safeSpecIdx]?.tipo}</strong>
+                            <span>{safeSpecIdx + 1} de {itensSelecionados.length}</span>
+                          </div>
+                          <button
+                            type="button"
+                            className="cf-spec-arrow"
+                            onClick={() => goSpec(1)}
+                            disabled={safeSpecIdx === itensSelecionados.length - 1}
+                            aria-label="Próximo produto"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                          </button>
+                        </div>
+                      ) : null}
+
+                      {itensSelecionados.map((item, idx) => {
+                        if (idx !== safeSpecIdx) return null
+
                         const opcoesModelagem = getModelagensPorTipo(item.tipo)
                         const gruposTamanho = getGruposTamanhoPorTipo(item.tipo)
                         const modelagemSelecionada = opcoesModelagem.includes(item.modelagemGramatura)
@@ -438,7 +481,7 @@ export default function ConstrutorFichaTecnica() {
                         const itemTotal = getItemTotal(item)
 
                         return (
-                          <section key={item.tipo} className="cf-spec-item">
+                          <section key={item.tipo} className={`cf-spec-item cf-spec-slide ${specDir >= 0 ? 'dir-next' : 'dir-prev'}`}>
                             <div className="cf-spec-item-head">
                               <div>
                                 <strong>{item.tipo}</strong>
@@ -512,6 +555,20 @@ export default function ConstrutorFichaTecnica() {
                           </section>
                         )
                       })}
+
+                      {itensSelecionados.length > 1 ? (
+                        <div className="cf-spec-dots">
+                          {itensSelecionados.map((item, idx) => (
+                            <button
+                              key={item.tipo}
+                              type="button"
+                              className={`cf-spec-dot ${idx === safeSpecIdx ? 'on' : ''}`}
+                              onClick={() => jumpSpec(idx)}
+                              aria-label={`Ir para ${item.tipo}`}
+                            />
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   )}
                 </div>

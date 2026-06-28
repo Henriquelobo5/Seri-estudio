@@ -5,7 +5,7 @@ import AuthNavCta from '../../components/ui/AuthNavCta'
 import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
 import { apiRequest } from '../../services/api'
-import { buildEspecificacoesFicha, resolveModelagemGramaturaFromDetails } from '../../utils/fichaEspecificacoes'
+import { buildEspecificacoesFicha, formatTamanhosComQuantidade, resolveModelagemGramaturaFromDetails } from '../../utils/fichaEspecificacoes'
 import './DetalhesPedido.css'
 
 const STEPS = [
@@ -365,7 +365,7 @@ export default function DetalhesPedido() {
                     if (entries.length === 1) return entries[0][1] || '—'
                     return entries.map(([t, c]) => `${t}: ${c}`).join(' · ')
                   })()}</td></tr>
-                  <tr><td>Tamanhos</td><td>{tamanhos.join(', ') || '—'}</td></tr>
+                  <tr><td>Tamanhos</td><td>{formatTamanhosComQuantidade(tamanhos, qtds) || '—'}</td></tr>
                   <tr><td>Posição da estampa</td><td>{fichaData.posicao || '—'}</td></tr>
                   <tr><td>Arquivos enviados</td><td>{fichaData.arquivos ?? 0} arquivo</td></tr>
                 </tbody>

@@ -132,6 +132,18 @@ export function buildTamanhosPorTipo(itens: ItemFichaPorTipo[]) {
   return itens.flatMap((item) => item.tamanhos.map((tamanho) => formatTamanhoPorTipo(item.tipo, tamanho)))
 }
 
+export function formatTamanhosComQuantidade(
+  tamanhos: string[],
+  quantidades?: Record<string, number> | null,
+) {
+  return tamanhos
+    .map((tamanho) => {
+      const quantidade = Number(quantidades?.[tamanho]) || 0
+      return quantidade > 0 ? `${tamanho} ×${quantidade}` : tamanho
+    })
+    .join(', ')
+}
+
 export function buildQuantidadesPorTipo(itens: ItemFichaPorTipo[]) {
   return Object.fromEntries(
     itens.flatMap((item) =>

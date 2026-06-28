@@ -270,10 +270,17 @@ export default function MeusPedidos() {
           const n = parseInt(q.split(':')[1] ?? '0')
           return s + (isNaN(n) ? 0 : n)
         }, 0)
-        // "Camiseta - M:1, Moletom - G:2" → "Camiseta - M, Moletom - G"
+        // "Camiseta - M:1, Moletom - G:2" → "Camiseta - M ×1, Moletom - G ×2"
         const tipoTamanhos = (p.quantidades ?? '')
           .split(',')
-          .map((s: string) => s.trim().replace(/:.*$/, '').trim())
+          .map((s: string) => {
+            const idx = s.lastIndexOf(':')
+            const label = (idx === -1 ? s : s.slice(0, idx)).trim()
+            const qtd = idx === -1 ? '' : s.slice(idx + 1).trim()
+            if (!label) return ''
+            const n = Number.parseInt(qtd, 10)
+            return Number.isFinite(n) && n > 0 ? `${label} ×${n}` : label
+          })
           .filter(Boolean)
           .join(', ') || esp.tamanhos || '—'
 

@@ -4,7 +4,7 @@ import { ROUTES } from '../../routes/routePaths'
 import AuthNavCta from '../../components/ui/AuthNavCta'
 import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
-import { resolveModelagemGramaturaFromDetails } from '../../utils/fichaEspecificacoes'
+import { formatTamanhosComQuantidade, resolveModelagemGramaturaFromDetails } from '../../utils/fichaEspecificacoes'
 import './Confirmacao.css'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -58,6 +58,9 @@ export default function Confirmacao() {
   const totalPecas: number = state.total ?? 0
   const fichaData = state.fichaData ?? {}
   const modelagemGramatura = resolveModelagemGramaturaFromDetails(fichaData, fichaData.tipo)
+  const tamanhosArr: string[] = Array.isArray(fichaData.tamanhos) ? fichaData.tamanhos : []
+  const tamanhosComQtd = formatTamanhosComQuantidade(tamanhosArr, fichaData.quantidadesPorTamanho)
+  const tamanhosDisplay = tamanhosComQtd || (typeof fichaData.tamanhos === 'string' ? fichaData.tamanhos : '') || '—'
 
   const fallbackCode = useMemo(() => String(Math.floor(1000 + Math.random() * 9000)), [])
   // Usa o código real do backend se disponível, senão gera localmente
@@ -352,7 +355,7 @@ export default function Confirmacao() {
               if (entries.length === 1) return entries[0][1] || '—'
               return entries.map(([t, c]) => `${t}: ${c}`).join(' · ')
             })()}</span></div>
-            <div className="conf-ri"><span className="conf-rk">Tamanhos</span><span className="conf-rv">{Array.isArray(fichaData.tamanhos) ? fichaData.tamanhos.join(', ') : fichaData.tamanhos || '—'}</span></div>
+            <div className="conf-ri"><span className="conf-rk">Tamanhos</span><span className="conf-rv">{tamanhosDisplay}</span></div>
             <div className="conf-ri"><span className="conf-rk">Posição da estampa</span><span className="conf-rv">{fichaData.posicao || '—'}</span></div>
             <div className="conf-ri"><span className="conf-rk">Total de peças</span><span className="conf-rv hi">{totalPecas} peça{totalPecas !== 1 ? 's' : ''}</span></div>
             <div className="conf-ri"><span className="conf-rk">Arquivos</span><span className="conf-rv">{fichaData.arquivos ?? 0} arquivo{(fichaData.arquivos ?? 0) !== 1 ? 's' : ''} enviado{(fichaData.arquivos ?? 0) !== 1 ? 's' : ''}</span></div>
