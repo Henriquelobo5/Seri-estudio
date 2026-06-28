@@ -11,7 +11,18 @@ import seri3 from '../../assets/images/produtos/seri3.jpg'
 import seri4 from '../../assets/images/produtos/seri4.jpg'
 import seri5 from '../../assets/images/produtos/seri5.jpg'
 import seri6 from '../../assets/images/produtos/seri6.jpg'
-import ecobag from '../../assets/images/produtos/ecobag.png'
+import ecobag from '../../assets/images/produtos/ecobag-portfolio.jpg'
+import ecobagOriginal from '../../assets/images/produtos/ecobag.png'
+import crewneckCobra from '../../assets/images/produtos/crewneck-cobra.jpg'
+import camisetaDavid from '../../assets/images/produtos/camiseta-david.jpg'
+import crewneckTreinador from '../../assets/images/produtos/crewneck-treinador.jpg'
+import camisetaRqbt from '../../assets/images/produtos/camiseta-rqbt.jpg'
+import camisetaOlho from '../../assets/images/produtos/camiseta-olho.jpg'
+import camisetaScience from '../../assets/images/produtos/camiseta-science.jpg'
+import camisetaRqbtVerde from '../../assets/images/produtos/camiseta-rqbt-verde.jpg'
+import crewneckSeri from '../../assets/images/produtos/crewneck-seri.jpg'
+import regataBasquete from '../../assets/images/produtos/regata-basquete.jpg'
+import camisetaNoise from '../../assets/images/produtos/camiseta-noise.jpg'
 import './Home.css'
 import './Catalogo.css'
 
@@ -37,6 +48,16 @@ type Produto = {
 }
 
 const TODOS_PRODUTOS: Produto[] = [
+  // ── linha 1: branca · preta · verde ─────────────────────────────────────
+  {
+    id: 'ecobag-personalizada',
+    nome: 'ECOBAG PERSONALIZADA',
+    categoria: 'Ecobag',
+    tecido: '100% Algodao',
+    gramatura: '200g/m2',
+    preco: 'R$ 22,00',
+    imagem: ecobag,
+  },
   {
     id: 'camiseta-holloway',
     nome: 'CAMISETA HOLLOWAY',
@@ -45,11 +66,20 @@ const TODOS_PRODUTOS: Produto[] = [
     gramatura: '180g/m2',
     preco: 'R$ 119,00',
     imagem: seri1,
-    badge: 'Mais pedido',
   },
   {
-    id: 'camiseta-chorao',
-    nome: 'CAMISETA CHORAO',
+    id: 'camiseta-rqbt-verde',
+    nome: 'CAMISETA RYAN QUEIROZ BT',
+    categoria: 'Camiseta',
+    tecido: '100% Algodao',
+    gramatura: '180g/m2',
+    preco: 'R$ 119,00',
+    imagem: camisetaRqbtVerde,
+  },
+  // ── linha 2: preta · verde · preta ───────────────────────────────────────
+  {
+    id: 'camiseta-chorão',
+    nome: 'CAMISETA CHORÃO',
     categoria: 'Camiseta',
     tecido: '100% Algodao',
     gramatura: '180g/m2',
@@ -57,13 +87,32 @@ const TODOS_PRODUTOS: Produto[] = [
     imagem: seri2,
   },
   {
+    id: 'crewneck-seri',
+    nome: 'CREWNECK SERI ESTÚDIO',
+    categoria: 'Moletom',
+    tecido: 'Moletinho',
+    gramatura: '300g/m2',
+    preco: 'R$ 99,00',
+    imagem: crewneckSeri,
+  },
+  {
     id: 'camiseta-calamidade-publica',
-    nome: 'CAMISETA CALAMIDADE PUBLICA',
+    nome: 'CAMISETA CALAMIDADE PÚBLICA',
     categoria: 'Camiseta',
     tecido: '100% Algodao',
     gramatura: '180g/m2',
     preco: 'R$ 90,00',
     imagem: seri3,
+  },
+  // ── linha 3: preta · preta · preta ───────────────────────────────────────
+  {
+    id: 'camiseta-david',
+    nome: 'CAMISETA ARTE DAVID',
+    categoria: 'Camiseta',
+    tecido: '100% Algodao',
+    gramatura: '180g/m2',
+    preco: 'R$ 119,00',
+    imagem: camisetaDavid,
   },
   {
     id: 'camiseta-arrascaeta',
@@ -75,13 +124,32 @@ const TODOS_PRODUTOS: Produto[] = [
     imagem: seri4,
   },
   {
+    id: 'camiseta-seri-basketball',
+    nome: 'CAMISETA SERI BASKETBALL',
+    categoria: 'Camiseta',
+    tecido: '100% Algodao',
+    gramatura: '180g/m2',
+    preco: 'R$ 119,00',
+    imagem: crewneckCobra,
+  },
+  // ── linha 4 ──────────────────────────────────────────────────────────────
+  {
     id: 'camiseta-seri-memorias',
-    nome: 'CAMISETA SERI MEMORIAS',
+    nome: 'CAMISETA SERI MEMÓRIAS',
     categoria: 'Camiseta',
     tecido: '100% Algodao',
     gramatura: '160g/m2',
     preco: 'R$ 120,00',
     imagem: seri5,
+  },
+  {
+    id: 'camiseta-science-phd',
+    nome: 'CAMISETA SCIENCE PHD',
+    categoria: 'Camiseta',
+    tecido: '100% Algodao',
+    gramatura: '180g/m2',
+    preco: 'R$ 119,00',
+    imagem: camisetaScience,
   },
   {
     id: 'camiseta-anti-visagism-club',
@@ -93,86 +161,61 @@ const TODOS_PRODUTOS: Produto[] = [
     imagem: seri6,
     badge: 'Novo',
   },
+  // ── linha 5 ──────────────────────────────────────────────────────────────
   {
-    id: 'moletom-canguru',
-    nome: 'MOLETOM CANGURU',
-    categoria: 'Moletom',
-    tecido: 'Moletinho',
-    gramatura: '300g/m2',
-    preco: 'R$ 70,00',
+    id: 'camiseta-ar-treinador',
+    nome: 'CAMISETA AR TREINADOR',
+    categoria: 'Camiseta',
+    tecido: '100% Algodao',
+    gramatura: '180g/m2',
+    preco: 'R$ 119,00',
+    imagem: crewneckTreinador,
   },
   {
-    id: 'moletom-raglan',
-    nome: 'MOLETOM RAGLAN',
-    categoria: 'Moletom',
-    tecido: 'Moletinho',
-    gramatura: '300g/m2',
-    preco: 'R$ 120,00',
+    id: 'camiseta-rqbt-dark',
+    nome: 'CAMISETA RYAN QUEIROZ TEAM',
+    categoria: 'Camiseta',
+    tecido: '100% Algodao',
+    gramatura: '180g/m2',
+    preco: 'R$ 119,00',
+    imagem: camisetaRqbt,
   },
   {
-    id: 'moletom-crewneck',
-    nome: 'MOLETOM CREWNECK',
-    categoria: 'Moletom',
-    tecido: 'Moletinho',
-    gramatura: '300g/m2',
-    preco: 'R$ 99,00',
+    id: 'camiseta-olho',
+    nome: 'CAMISETA OLHO SERIGRAFIA',
+    categoria: 'Camiseta',
+    tecido: '100% Algodao',
+    gramatura: '180g/m2',
+    preco: 'R$ 119,00',
+    imagem: camisetaOlho,
   },
+  // ── linha 6 ──────────────────────────────────────────────────────────────
   {
-    id: 'moletom-aberto',
-    nome: 'MOLETOM ABERTO',
-    categoria: 'Moletom',
-    tecido: 'Moletinho',
-    gramatura: '300g/m2',
-    preco: 'R$ 109,00',
-  },
-  {
-    id: 'regata-basica',
-    nome: 'REGATA BASICA',
+    id: 'regata-nba',
+    nome: 'REGATA NBA SERIGRAFIA',
     categoria: 'Regata',
     tecido: 'Malha Fio 30',
     gramatura: '160g/m2',
     preco: 'R$ 70,00',
+    imagem: regataBasquete,
   },
   {
-    id: 'regata-cavada',
-    nome: 'REGATA CAVADA',
-    categoria: 'Regata',
-    tecido: 'Malha Fio 30',
-    gramatura: '160g/m2',
-    preco: 'R$ 104,00',
-  },
-  {
-    id: 'regata-dry-fit',
-    nome: 'REGATA DRY FIT',
-    categoria: 'Regata',
-    tecido: 'Dry Fit',
-    gramatura: '160g/m2',
-    preco: 'R$ 80,00',
-  },
-  {
-    id: 'polo-pique',
-    nome: 'POLO PIQUE',
-    categoria: 'Polo',
-    tecido: 'Malha Fio 30',
-    gramatura: '200g/m2',
-    preco: 'R$ 140,00',
-  },
-  {
-    id: 'polo-malha',
-    nome: 'POLO MALHA',
-    categoria: 'Polo',
-    tecido: 'Malha Fio 30',
-    gramatura: '200g/m2',
-    preco: 'R$ 140,00',
+    id: 'camiseta-noise-is-music',
+    nome: 'CAMISETA NOISE IS MUSIC',
+    categoria: 'Camiseta',
+    tecido: '100% Algodao',
+    gramatura: '180g/m2',
+    preco: 'R$ 119,00',
+    imagem: camisetaNoise,
   },
   {
     id: 'ecobag-basica',
-    nome: 'ECOBAG BASICA',
+    nome: 'ECOBAG BÁSICA',
     categoria: 'Ecobag',
     tecido: '100% Algodao',
     gramatura: '200g/m2',
     preco: 'R$ 22,00',
-    imagem: ecobag,
+    imagem: ecobagOriginal,
   },
 ]
 

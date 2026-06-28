@@ -6,6 +6,17 @@ import AuthNavCta from '../../components/ui/AuthNavCta'
 import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
 import hoodieseri from '../../assets/images/produtos/hoodieseri.jpg'
+import ecobagPortfolio from '../../assets/images/produtos/ecobag-portfolio.jpg'
+import crewneckCobra from '../../assets/images/produtos/crewneck-cobra.jpg'
+import camisetaDavid from '../../assets/images/produtos/camiseta-david.jpg'
+import crewneckTreinador from '../../assets/images/produtos/crewneck-treinador.jpg'
+import camisetaRqbt from '../../assets/images/produtos/camiseta-rqbt.jpg'
+import camisetaOlho from '../../assets/images/produtos/camiseta-olho.jpg'
+import camisetaScience from '../../assets/images/produtos/camiseta-science.jpg'
+import camisetaRqbtVerde from '../../assets/images/produtos/camiseta-rqbt-verde.jpg'
+import crewneckSeri from '../../assets/images/produtos/crewneck-seri.jpg'
+import regataBasquete from '../../assets/images/produtos/regata-basquete.jpg'
+import camisetaNoise from '../../assets/images/produtos/camiseta-noise.jpg'
 import './Home.css'
 
 // Declare spline-viewer web component for TypeScript
@@ -77,7 +88,18 @@ const STEPS = [
 ]
 
 const PORTFOLIO = [
-  { tag: 'Serigrafia', title: 'Moletom universitário', img: hoodieseri },
+  { tag: 'Ecobag', title: 'Ecobag Personalizada', img: ecobagPortfolio },
+  { tag: 'Camiseta', title: 'Ryan Queiroz Bodybuilding Team', img: camisetaRqbtVerde },
+  { tag: 'Moletom', title: 'Crewneck Seri. Estúdio', img: crewneckSeri },
+  { tag: 'Moletom', title: 'Moletom Universitário', img: hoodieseri },
+  { tag: 'Camiseta', title: 'Seri Basketball', img: crewneckCobra },
+  { tag: 'Camiseta', title: 'Arte David Serigrafia', img: camisetaDavid },
+  { tag: 'Camiseta', title: 'AR Treinador', img: crewneckTreinador },
+  { tag: 'Camiseta', title: 'Science PHD Bodybuilding', img: camisetaScience },
+  { tag: 'Camiseta', title: 'Ryan Queiroz Bodybuilding Team', img: camisetaRqbt },
+  { tag: 'Camiseta', title: 'Olho Serigrafia', img: camisetaOlho },
+  { tag: 'Regata', title: 'Regata NBA Serigrafia', img: regataBasquete },
+  { tag: 'Camiseta', title: 'Noise is Music', img: camisetaNoise },
 ]
 
 const CTA_FEATURES = [
