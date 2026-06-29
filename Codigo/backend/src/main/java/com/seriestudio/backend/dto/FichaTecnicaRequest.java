@@ -6,4 +6,5 @@ public class FichaTecnicaRequest {
     public String especificacoes;
     public String urlArte;
     public String cor;
+    public String artesPorPecaJson;
 }

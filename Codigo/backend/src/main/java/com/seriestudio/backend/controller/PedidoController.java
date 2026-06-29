@@ -74,8 +74,10 @@ public class PedidoController {
                     f.getIdentificacao(),
                     f.getProdutoTipo(),
                     f.getEspecificacoes(),
+                    f.getCor(),
                     f.getUrlArte(),
                     f.getUrlPreview(),
+                    f.getArtesPorPecaJson(),
                     f.getDataAbertura()
             );
         }

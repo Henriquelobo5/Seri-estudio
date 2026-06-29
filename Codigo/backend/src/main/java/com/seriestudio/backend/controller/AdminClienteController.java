@@ -95,8 +95,10 @@ public class AdminClienteController {
                     ficha.getIdentificacao(),
                     ficha.getProdutoTipo(),
                     ficha.getEspecificacoes(),
+                    ficha.getCor(),
                     ficha.getUrlArte(),
                     ficha.getUrlPreview(),
+                    ficha.getArtesPorPecaJson(),
                     ficha.getDataAbertura()
             );
         }

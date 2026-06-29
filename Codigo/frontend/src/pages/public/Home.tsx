@@ -444,8 +444,8 @@ export default function Home() {
               className="port-carousel-track"
               style={{ transform: `translateX(-${carouselIdx * 100}%)` }}
             >
-              {PORTFOLIO.map(({ tag, title, img }) => (
-                <div key={title} className="port-carousel-slide">
+              {PORTFOLIO.map(({ tag, title, img }, i) => (
+                <div key={`${title}-${i}`} className="port-carousel-slide">
                   <div className="port-card">
                     <img src={img} alt={title} className="port-img" />
                     <div className="port-overlay">
