@@ -5,7 +5,7 @@ import logo from '../../assets/images/logo.png'
 import { ROUTES } from '../../routes/routePaths'
 import { apiRequest } from '../../services/api'
 import { parseEspecificacoesFicha } from '../../utils/fichaEspecificacoes'
-import ThreeViewer from '../../components/ui/ThreeViewer'
+import ThreeViewer, { PosKey } from '../../components/ui/ThreeViewer'
 import './AdminKanban.css'
 import './AdminPedidos.css'
 
@@ -44,9 +44,11 @@ type AdminPedido = {
     identificacao?: string | null
     produtoTipo?: string | null
     especificacoes?: string | null
+    cor?: string | null
     dataAbertura?: string
     urlArte?: string | null
     urlPreview?: string | null
+    artesPorPecaJson?: string | null
   } | null
 }
 
@@ -275,6 +277,7 @@ export default function AdminPedidos() {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<PedidoFilter>('TODOS')
   const [drawerPedido, setDrawerPedido] = useState<AdminPedido | null>(null)
+  const [drawerPecaIdx, setDrawerPecaIdx] = useState(0)
   const [draftStatus, setDraftStatus] = useState<AdminStatus>('AGUARDANDO_ANALISE')
   const [draftEtapa, setDraftEtapa] = useState<EtapaProducao | ''>('')
   const [loading, setLoading] = useState(true)
@@ -303,6 +306,7 @@ export default function AdminPedidos() {
 
   function openDrawer(pedido: AdminPedido) {
     setDrawerPedido(pedido)
+    setDrawerPecaIdx(0)
     setDraftStatus(normalizeStatus(pedido.statusAtual))
     setDraftEtapa((pedido.etapaProducao?.toUpperCase() as EtapaProducao) || '')
     setSaveError('')
@@ -660,18 +664,44 @@ export default function AdminPedidos() {
 
             <div className="ap-dw-body">
               {/* Preview 3D */}
-              <div className="af-drawer-preview">
-                <ThreeViewer
-                  modelUrl={TIPO_MODEL_URL[(drawerPedido.fichaTecnica?.produtoTipo ?? '').split(',')[0].trim()] ?? TIPO_MODEL_URL['Camiseta']}
-                  artUrl={drawerPedido.fichaTecnica?.urlArte ?? null}
-                  pos="fc"
-                  moveMode={false}
-                  color={parseEspecificacoesFicha(drawerPedido.fichaTecnica?.especificacoes).cor}
-                  artRotation={0}
-                  artScale={1}
-                  flipH={false}
-                  flipV={false}
-                />
+              <div className="af-drawer-preview" style={{ position: 'relative' }}>
+                {(() => {
+                  const pecas = (drawerPedido.fichaTecnica?.produtoTipo ?? 'Camiseta')
+                    .split(',').map((t: string) => t.trim()).filter(Boolean)
+                  const tipo = pecas[drawerPecaIdx] ?? pecas[0] ?? 'Camiseta'
+                  let artesPorPeca: { tipo: string; pos: string; artRotation: number; artScale: number; flipH: boolean; flipV: boolean; urlArte?: string }[] = []
+                  try { artesPorPeca = JSON.parse(drawerPedido.fichaTecnica?.artesPorPecaJson ?? '[]') } catch { artesPorPeca = [] }
+                  const arteAtual = artesPorPeca.find(a => a.tipo === tipo) ?? artesPorPeca[0]
+                  return (
+                    <>
+                      <ThreeViewer
+                        modelUrl={TIPO_MODEL_URL[tipo] ?? TIPO_MODEL_URL['Camiseta']}
+                        artUrl={arteAtual?.urlArte || drawerPedido.fichaTecnica?.urlArte || null}
+                        pos={(arteAtual?.pos ?? 'fc') as PosKey}
+                        moveMode={false}
+                        color={(() => { const raw = drawerPedido.fichaTecnica?.cor ?? ''; const m = raw.match(new RegExp(`(?:^|,\\s*)${tipo}:\\s*([^,]+)`, 'i')); return m ? m[1].trim() : raw })()}
+                        artRotation={arteAtual?.artRotation ?? 0}
+                        artScale={arteAtual?.artScale ?? 1}
+                        flipH={arteAtual?.flipH ?? false}
+                        flipV={arteAtual?.flipV ?? false}
+                      />
+                      {pecas.length > 1 && (
+                        <>
+                          <button className="mp-prev-arrow mp-prev-arrow-left" onClick={() => setDrawerPecaIdx(i => (i - 1 + pecas.length) % pecas.length)} aria-label="Peça anterior">
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                          </button>
+                          <button className="mp-prev-arrow mp-prev-arrow-right" onClick={() => setDrawerPecaIdx(i => (i + 1) % pecas.length)} aria-label="Próxima peça">
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                          </button>
+                          <div className="mp-prev-indicator">
+                            <span className="mp-prev-label">{tipo}</span>
+                            <span className="mp-prev-counter">{drawerPecaIdx + 1} / {pecas.length}</span>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )
+                })()}
               </div>
 
               {/* Info grid */}

@@ -63,6 +63,20 @@ public class FichaTecnicaController {
         }
     }
 
+    @PostMapping("/{id}/arte-peca")
+    public ResponseEntity<?> uploadArtePeca(
+            @PathVariable Long id,
+            @RequestParam("tipo") String tipo,
+            @RequestParam("file") MultipartFile file,
+            Authentication auth) {
+        try {
+            String url = fichaTecnicaService.salvarArtePeca(id, tipo, file);
+            return ResponseEntity.ok(Map.of("url", url));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
     @GetMapping("/preview/{filename:.+}")
     public ResponseEntity<Resource> servirPreview(@PathVariable String filename) {
         try {
@@ -82,8 +96,10 @@ public class FichaTecnicaController {
                 f.getIdentificacao(),
                 f.getProdutoTipo(),
                 f.getEspecificacoes(),
+                f.getCor(),
                 f.getUrlArte(),
                 f.getUrlPreview(),
+                f.getArtesPorPecaJson(),
                 f.getDataAbertura()
         );
     }

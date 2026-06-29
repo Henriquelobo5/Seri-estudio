@@ -82,6 +82,7 @@ function startOfDay(date: Date) {
 type FichaUploads = {
   previewDataUrl?: string | null
   arteDataUrl?: string | null
+  artesPorPeca?: { tipo: string; dataUrl: string }[]
 }
 
 function getApiErrorMessage(error: any, fallback: string) {
@@ -118,11 +119,28 @@ async function uploadFichaAsset(fichaId: number, endpoint: 'preview' | 'arte', d
   })
 }
 
+async function uploadArtePeca(fichaId: number, tipo: string, dataUrl: string) {
+  const token = localStorage.getItem('auth_token')
+  const apiBase = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8080'
+  const blob = await fetch(dataUrl).then(r => r.blob())
+  const form = new FormData()
+  form.append('file', blob, 'arte.png')
+  await fetch(`${apiBase}/ficha-tecnica/${fichaId}/arte-peca?tipo=${encodeURIComponent(tipo)}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: form,
+  })
+}
+
 async function uploadFichaAssets(fichaId: number, uploads?: FichaUploads) {
-  await Promise.allSettled([
-    uploadFichaAsset(fichaId, 'preview', uploads?.previewDataUrl),
-    uploadFichaAsset(fichaId, 'arte', uploads?.arteDataUrl),
-  ])
+  await uploadFichaAsset(fichaId, 'preview', uploads?.previewDataUrl).catch(() => {})
+  if (uploads?.artesPorPeca?.length) {
+    for (const { tipo, dataUrl } of uploads.artesPorPeca) {
+      await uploadArtePeca(fichaId, tipo, dataUrl).catch(() => {})
+    }
+  } else if (uploads?.arteDataUrl) {
+    await uploadFichaAsset(fichaId, 'arte', uploads.arteDataUrl).catch(() => {})
+  }
 }
 
 export default function DetalhesPedido() {
@@ -252,6 +270,7 @@ export default function DetalhesPedido() {
             especificacoes,
             urlArte: '',
             cor: corFicha,
+            artesPorPecaJson: fichaData.artesPorPecaJson ?? null,
           }),
         })
         fichaId = ficha.codUnico

@@ -426,6 +426,13 @@ export default function DetalhesProduto() {
   async function continueToOrderDetails() {
     if (submitting) return
 
+    const artesPorPecaJson = JSON.stringify(
+      tiposSelecionados.map(t => {
+        const arte = files.find(f => f.produtoTipo === t) ?? files[0]
+        return { tipo: t, pos: arte?.pos ?? 'fc', artRotation: arte?.rotation ?? 0, artScale: arte?.scale ?? 1, flipH: arte?.flipH ?? false, flipV: arte?.flipV ?? false }
+      })
+    )
+
     const fichaDataAtualizada = {
       ...locState.fichaData,
       cor: corPorTipo[tiposSelecionados[0] ?? tipo] ?? CORES[0].nome,
@@ -439,16 +446,23 @@ export default function DetalhesProduto() {
         .map(item => `${item.produtoTipo} - ${item.arquivo}: ${item.largura || '0'}x${item.altura || '0'}cm${item.observacoes ? ` - ${item.observacoes}` : ''}`)
         .join('\n'),
       medidasEstampas,
+      artesPorPecaJson,
     }
 
     setSubmitting(true)
     setErro('')
     try {
-      const primeiraArte = visibleFiles[0]
-      const [previewDataUrl, arteDataUrl] = await Promise.all([
-        Promise.resolve(captureRef.current?.() ?? null),
-        urlToDataUrl(primeiraArte?.previewUrl),
-      ])
+      const previewDataUrl = captureRef.current?.() ?? null
+
+      // Convert each piece type's art to dataUrl (one per tipo)
+      const artesPorPecaUploads: { tipo: string; dataUrl: string }[] = []
+      for (const t of tiposSelecionados) {
+        const arteDoTipo = files.find(f => f.produtoTipo === t) ?? files[0] ?? null
+        if (arteDoTipo?.previewUrl) {
+          const dataUrl = await urlToDataUrl(arteDoTipo.previewUrl)
+          if (dataUrl) artesPorPecaUploads.push({ tipo: t, dataUrl })
+        }
+      }
 
       setMeasureConfirmOpen(false)
       navigate(ROUTES.DETALHES_PEDIDO, {
@@ -457,7 +471,7 @@ export default function DetalhesProduto() {
           fichaData: fichaDataAtualizada,
           fichaUploads: {
             previewDataUrl,
-            arteDataUrl,
+            artesPorPeca: artesPorPecaUploads,
           },
         },
       })

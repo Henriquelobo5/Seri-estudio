@@ -22,6 +22,22 @@ const TIPO_MODEL_URL: Record<string, string> = {
 
 type StatusKey = 'p' | 'a' | 'o' | 'r' | 't' | 'e' | 'c'
 
+interface ArtePeca {
+  tipo: string
+  pos: string
+  artRotation: number
+  artScale: number
+  flipH: boolean
+  flipV: boolean
+  urlArte?: string
+}
+
+interface Peca {
+  tipo: string
+  label: string
+  modelUrl: string
+}
+
 interface Pedido {
   pedidoId: number
   id: string
@@ -31,13 +47,23 @@ interface Pedido {
   emoji: string
   urlArte?: string
   urlPreview?: string
+  rawCor?: string
   primeiroTipo: string
+  pecas: Peca[]
+  artesPorPeca: ArtePeca[]
   detalhes: {
     tipoTamanhos: string
     modelagemGramatura: string
     cor: string
     posicao: string
   }
+}
+
+function extrairCorParaTipo(rawCor: string | undefined, tipo: string | undefined): string {
+  if (!rawCor || !tipo) return rawCor ?? ''
+  const match = rawCor.match(new RegExp(`(?:^|,\\s*)${tipo}:\\s*([^,]+)`, 'i'))
+  if (match) return match[1].trim()
+  return rawCor
 }
 
 // ── Helpers de mapeamento da API ──────────────────────────────────────────────
@@ -119,6 +145,10 @@ function PedidoCard({ pedido, isOpen, onToggle, onCancelar, onRefazer }: {
   onCancelar: (id: number) => void
   onRefazer: () => void
 }) {
+  const [pecaIdx, setPecaIdx] = useState(0)
+  // Once opened, keep ThreeViewer mounted (display:none when closed) so re-opens are instant
+  const hasBeenOpenedRef = useRef(isOpen)
+  if (isOpen) hasBeenOpenedRef.current = true
   const badgeClass = {
     p: 'mp-badge-p',
     a: 'mp-badge-a',
@@ -130,8 +160,11 @@ function PedidoCard({ pedido, isOpen, onToggle, onCancelar, onRefazer }: {
   }[pedido.status]
   const isEntregue = pedido.status === 'e'
   const isCancelado = pedido.status === 'c'
-  const { tipoTamanhos, modelagemGramatura, cor, posicao } = pedido.detalhes
-  const modelUrl = TIPO_MODEL_URL[pedido.primeiroTipo] ?? TIPO_MODEL_URL['Camiseta']
+  const { tipoTamanhos, modelagemGramatura, posicao } = pedido.detalhes
+  const pecaAtual = pedido.pecas[pecaIdx] ?? pedido.pecas[0]
+  const modelUrl = pecaAtual?.modelUrl ?? TIPO_MODEL_URL['Camiseta']
+  const cor = extrairCorParaTipo(pedido.rawCor, pecaAtual?.tipo) || pedido.detalhes.cor
+
   const whatsappHref = buildStudioWhatsappHref(
     `Olá, equipe Seri! Quero falar sobre o pedido ${pedido.id}.`,
   )
@@ -161,22 +194,54 @@ function PedidoCard({ pedido, isOpen, onToggle, onCancelar, onRefazer }: {
         </div>
       </div>
 
-      {isOpen && (
-        <div className="mp-pdetail">
+      {hasBeenOpenedRef.current && (
+        <div className="mp-pdetail" style={{ display: isOpen ? undefined : 'none' }}>
           <div className="mp-detail-layout">
             {/* ── Preview 3D ───────────────────────────────────── */}
-            <div className="mp-dpreview">
-              <ThreeViewer
-                modelUrl={modelUrl}
-                artUrl={pedido.urlArte ?? null}
-                pos="fc"
-                moveMode={false}
-                color={cor}
-                artRotation={0}
-                artScale={1}
-                flipH={false}
-                flipV={false}
-              />
+            <div className="mp-dpreview" style={{ position: 'relative' }}>
+              {(() => {
+                const arteAtual = pedido.artesPorPeca?.find(a => a.tipo === pecaAtual?.tipo) ?? pedido.artesPorPeca?.[0]
+                // Fallback chain: piece url → global url → any piece url → null
+                const artUrlParaPeca = arteAtual?.urlArte
+                  || pedido.urlArte
+                  || pedido.artesPorPeca?.find(a => a.urlArte)?.urlArte
+                  || null
+                return (
+                  <ThreeViewer
+                    modelUrl={modelUrl}
+                    artUrl={artUrlParaPeca}
+                    pos={(arteAtual?.pos ?? 'fc') as import('../../components/ui/ThreeViewer').PosKey}
+                    moveMode={false}
+                    color={cor}
+                    artRotation={arteAtual?.artRotation ?? 0}
+                    artScale={arteAtual?.artScale ?? 1}
+                    flipH={arteAtual?.flipH ?? false}
+                    flipV={arteAtual?.flipV ?? false}
+                  />
+                )
+              })()}
+              {pedido.pecas.length > 1 && (
+                <>
+                  <button
+                    className="mp-prev-arrow mp-prev-arrow-left"
+                    onClick={e => { e.stopPropagation(); setPecaIdx(i => (i - 1 + pedido.pecas.length) % pedido.pecas.length) }}
+                    aria-label="Peça anterior"
+                  >
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                  </button>
+                  <button
+                    className="mp-prev-arrow mp-prev-arrow-right"
+                    onClick={e => { e.stopPropagation(); setPecaIdx(i => (i + 1) % pedido.pecas.length) }}
+                    aria-label="Próxima peça"
+                  >
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                  <div className="mp-prev-indicator">
+                    <span className="mp-prev-label">{pecaAtual?.label}</span>
+                    <span className="mp-prev-counter">{pecaIdx + 1} / {pedido.pecas.length}</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* ── Detalhes ─────────────────────────────────────── */}
@@ -244,7 +309,7 @@ export default function MeusPedidos() {
   const firstName = getFirstName(user?.name)
 
   const [filtro,  setFiltro]  = useState<Filtro>('todos')
-  const [openId,  setOpenId]  = useState<string | null>(null)
+  const [openId,  setOpenId]  = useState<string | null>(() => sessionStorage.getItem('mp_openId'))
   const [busca,   setBusca]   = useState('')
   const [pedidos, setPedidos] = useState<Pedido[]>([])
 
@@ -284,6 +349,16 @@ export default function MeusPedidos() {
           .filter(Boolean)
           .join(', ') || esp.tamanhos || '—'
 
+        let artesPorPeca: ArtePeca[] = []
+        try { artesPorPeca = ficha.artesPorPecaJson ? JSON.parse(ficha.artesPorPecaJson) : [] } catch { artesPorPeca = [] }
+
+        const tipos = (ficha.produtoTipo ?? 'Camiseta').split(',').map((t: string) => t.trim()).filter(Boolean)
+        const pecas: Peca[] = tipos.map((tipo: string) => ({
+          tipo,
+          label: tipo,
+          modelUrl: TIPO_MODEL_URL[tipo] ?? TIPO_MODEL_URL['Camiseta'],
+        }))
+
         return {
           pedidoId: p.id,
           id: ficha.codigoDisplay ?? String(p.id),
@@ -291,9 +366,12 @@ export default function MeusPedidos() {
           meta: `${qtdTotal} peças · ${data_}`,
           status: statusFromApi(p.statusAtual ?? ''),
           emoji: EMOJI_MAP[ficha.produtoTipo ?? ''] ?? '👕',
-          urlArte: ficha.urlArte ?? undefined,
+          urlArte: ficha.urlArte || undefined,
           urlPreview: ficha.urlPreview ?? undefined,
-          primeiroTipo: (ficha.produtoTipo ?? 'Camiseta').split(',')[0].trim(),
+          rawCor: ficha.cor ?? undefined,
+          primeiroTipo: tipos[0] ?? 'Camiseta',
+          pecas,
+          artesPorPeca,
           detalhes: {
             tipoTamanhos,
             modelagemGramatura: esp.modelagemGramatura,
@@ -303,6 +381,16 @@ export default function MeusPedidos() {
         }
       })
       setPedidos(mapped)
+      // Preload GLB models + art images so ThreeViewer opens from cache
+      const preloadUrls = new Set<string>()
+      mapped.forEach(p => {
+        p.pecas.forEach(peca => preloadUrls.add(peca.modelUrl))
+        if (p.urlArte) preloadUrls.add(p.urlArte)
+        p.artesPorPeca.forEach(a => { if (a.urlArte) preloadUrls.add(a.urlArte) })
+      })
+      preloadUrls.forEach(url =>
+        fetch(url, { mode: 'cors', credentials: 'include' }).catch(() => {})
+      )
     }).catch(() => {})
   }, [])
 
@@ -320,7 +408,12 @@ export default function MeusPedidos() {
   })
 
   function toggleCard(id: string) {
-    setOpenId(prev => prev === id ? null : id)
+    setOpenId(prev => {
+      const next = prev === id ? null : id
+      if (next) sessionStorage.setItem('mp_openId', next)
+      else sessionStorage.removeItem('mp_openId')
+      return next
+    })
   }
 
   function focusSearch() {

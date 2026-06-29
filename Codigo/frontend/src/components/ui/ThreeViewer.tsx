@@ -73,14 +73,22 @@ type DecalPlacement = {
 const PT_COLOR_MAP: Record<string, string> = {
   'preto': '#1a1a1a',
   'branco': '#f5f5f5',
+  'natural': '#f0ece4',
+  'off-white': '#f0ece4',
   'cinza': '#888888',
+  'cinza claro': '#c0c0c0',
+  'cinza escuro': '#555555',
   'cinza mescla': '#a8a8a8',
   'azul': '#2563eb',
   'azul marinho': '#1e3a5f',
   'azul royal': '#4169e1',
   'azul claro': '#7ab8f5',
+  'azul bebe': '#89cff0',
+  'azul bebê': '#89cff0',
   'vermelho': '#dc2626',
   'verde': '#16a34a',
+  'verde limao': '#84cc16',
+  'verde limão': '#84cc16',
   'verde militar': '#4a5240',
   'verde musgo': '#606b3a',
   'amarelo': '#eab308',
@@ -88,11 +96,13 @@ const PT_COLOR_MAP: Record<string, string> = {
   'rosa': '#ec4899',
   'rosa claro': '#f9a8d4',
   'roxo': '#7c3aed',
-  'lilÃ¡s': '#c084fc',
-  'bordÃ´': '#7f1d1d',
+  'lilas': '#c084fc',
+  'lilás': '#c084fc',
+  'bordo': '#7f1d1d',
+  'bordô': '#7f1d1d',
+  'marrom': '#92400e',
   'caramelo': '#b45309',
   'caqui': '#a08040',
-  'off-white': '#f0ece4',
   'areia': '#d4b896',
 }
 
@@ -210,6 +220,7 @@ export default function ThreeViewer({
   const decalsRef = useRef<Map<string, THREE.Mesh>>(new Map())
   const textureRef = useRef<Map<string, THREE.Texture>>(new Map())
   const textureUrlRef = useRef<Map<string, string>>(new Map())
+  const urlTextureCacheRef = useRef<Map<string, THREE.Texture>>(new Map())
   const placementRef = useRef<Map<string, DecalPlacement>>(new Map())
   const posByIdRef = useRef<Map<string, PosKey>>(new Map())
   const artsRef = useRef<ViewerArt[]>(effectiveArts)
@@ -249,7 +260,8 @@ export default function ThreeViewer({
   }, [disposeDecal])
 
   const disposeAllTextures = useCallback(() => {
-    textureRef.current.forEach(texture => texture.dispose())
+    urlTextureCacheRef.current.forEach(texture => texture.dispose())
+    urlTextureCacheRef.current.clear()
     textureRef.current.clear()
     textureUrlRef.current.clear()
   }, [])
@@ -386,16 +398,19 @@ export default function ThreeViewer({
     let disposed = false
     setModelReady(false)
 
+    const w = mount.clientWidth || 300
+    const h = mount.clientHeight || 300
+
     const scene = new THREE.Scene()
     scene.background = new THREE.Color(0x0d0f0c)
     sceneRef.current = scene
 
-    const camera = new THREE.PerspectiveCamera(45, mount.clientWidth / mount.clientHeight, 0.01, 100)
+    const camera = new THREE.PerspectiveCamera(45, w / h, 0.01, 100)
     camera.position.set(0, 0.2, 3)
     cameraRef.current = camera
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true })
-    renderer.setSize(mount.clientWidth, mount.clientHeight)
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: !!captureRef })
+    renderer.setSize(w, h)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
@@ -429,6 +444,7 @@ export default function ThreeViewer({
     const loader = new GLTFLoader()
     loader.load(modelUrl, (gltf) => {
       if (disposed) return
+
       const model = gltf.scene
       const box = new THREE.Box3().setFromObject(model)
       const center = box.getCenter(new THREE.Vector3())
@@ -450,15 +466,23 @@ export default function ThreeViewer({
 
       scene.add(model)
       modelGroupRef.current = model
+      // Force world-matrix update on the whole hierarchy before setModelReady(true)
+      // so that defaultPlacementFor's raycast uses correct transforms (renderer.render
+      // hasn't run yet at this point, so matrixWorld is still stale from the loader).
+      model.updateMatrixWorld(true)
       applyColorToScene(scene, colorRef.current)
       setModelReady(true)
       onLoadRef.current?.()
+    }, undefined, () => {
+      if (!disposed) console.error('[ThreeViewer] Failed to load model:', modelUrl)
     })
 
     const ro = new ResizeObserver(() => {
-      camera.aspect = mount.clientWidth / mount.clientHeight
+      const rw = mount.clientWidth || 300
+      const rh = mount.clientHeight || 300
+      camera.aspect = rw / rh
       camera.updateProjectionMatrix()
-      renderer.setSize(mount.clientWidth, mount.clientHeight)
+      renderer.setSize(rw, rh)
     })
     ro.observe(mount)
 
@@ -476,7 +500,6 @@ export default function ThreeViewer({
       ro.disconnect()
       controls.dispose()
       disposeAllDecals()
-      disposeAllTextures()
       renderer.dispose()
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement)
       modelGroupRef.current = null
@@ -488,6 +511,10 @@ export default function ThreeViewer({
       posByIdRef.current.clear()
     }
   }, [disposeAllDecals, disposeAllTextures, modelUrl])
+
+  // Dispose textures only on unmount — keeps them cached across model/piece changes
+  // so switching pieces never has an async window where art disappears
+  useEffect(() => () => disposeAllTextures(), [disposeAllTextures])
 
   useEffect(() => {
     if (sceneRef.current) applyColorToScene(sceneRef.current, color)
@@ -604,7 +631,9 @@ export default function ThreeViewer({
 
     if (!currentArts.length) {
       disposeAllDecals()
-      disposeAllTextures()
+      // Do NOT clear urlTextureCacheRef here — it must survive piece switches
+      textureRef.current.clear()
+      textureUrlRef.current.clear()
       placementRef.current.clear()
       posByIdRef.current.clear()
       return
@@ -616,7 +645,7 @@ export default function ThreeViewer({
     })
     Array.from(textureRef.current.keys()).forEach(id => {
       if (!activeIds.has(id)) {
-        textureRef.current.get(id)?.dispose()
+        // Do NOT dispose — texture lives in urlTextureCacheRef (shared reference)
         textureRef.current.delete(id)
         textureUrlRef.current.delete(id)
       }
@@ -628,7 +657,10 @@ export default function ThreeViewer({
       if (!activeIds.has(id)) posByIdRef.current.delete(id)
     })
 
-    if (!modelReady) return
+    // modelReady can still be true from the previous model while the new one is loading
+    // (model cleanup nulls modelGroupRef before setModelReady(false) batches).
+    // Skip this run — the next run after setModelReady(true) will have a valid model.
+    if (!modelReady || !modelGroupRef.current) return
 
     currentArts.forEach((art) => {
       if (!placementRef.current.has(art.id) || posByIdRef.current.get(art.id) !== art.pos) {
@@ -640,22 +672,65 @@ export default function ThreeViewer({
       }
     })
 
-    let cancelled = false
-    const loader = new THREE.TextureLoader()
-    loader.setCrossOrigin('anonymous')
-    const texturesToLoad = currentArts.filter(art => textureUrlRef.current.get(art.id) !== art.url)
-
-    Promise.all(texturesToLoad.map(art => new Promise<{ art: ViewerArt; texture: THREE.Texture }>((resolve) => {
-      loader.load(art.url, texture => resolve({ art, texture }))
-    }))).then((loaded) => {
-      if (cancelled) {
-        loaded.forEach(({ texture }) => texture.dispose())
-        return
+    // Sync textureRef with URL-keyed cache for the current arts
+    currentArts.forEach(art => {
+      const cached = urlTextureCacheRef.current.get(art.url)
+      if (cached) {
+        textureRef.current.set(art.id, cached)
+        textureUrlRef.current.set(art.id, art.url)
       }
+    })
+
+    let cancelled = false
+    const texturesToLoad = currentArts.filter(art => !urlTextureCacheRef.current.has(art.url))
+
+    // All textures already cached — render synchronously (no async cancellation window)
+    if (!texturesToLoad.length) {
+      renderAllArts()
+      return () => { cancelled = true }
+    }
+
+    async function loadTextureSafe(url: string): Promise<THREE.Texture | null> {
+      // Primary: fetch → blob URL (evita bloqueio CORS no TextureLoader)
+      try {
+        const res = await fetch(url, { mode: 'cors', credentials: 'include' })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const blob = await res.blob()
+        const blobUrl = URL.createObjectURL(blob)
+        try {
+          return await new Promise<THREE.Texture>((resolve, reject) => {
+            new THREE.TextureLoader().load(blobUrl, resolve, undefined, reject)
+          })
+        } finally {
+          URL.revokeObjectURL(blobUrl)
+        }
+      } catch {
+        // Fallback: URL direta com cache-buster
+        return new Promise<THREE.Texture | null>((resolve) => {
+          const bust = url.includes('?') ? `${url}&_cb=${Date.now()}` : `${url}?_cb=${Date.now()}`
+          new THREE.TextureLoader().load(bust, resolve, undefined, () => resolve(null))
+        })
+      }
+    }
+
+    Promise.all(
+      texturesToLoad.map(art =>
+        loadTextureSafe(art.url)
+          .then(texture => (texture ? { art, texture } : null))
+          .catch(() => null)
+      )
+    ).then((results) => {
+      const loaded = results.filter((r): r is { art: ViewerArt; texture: THREE.Texture } => r !== null)
+
+      // Always cache by URL — even if cancelled so the next effect run finds it synchronously
+      loaded.forEach(({ art, texture }) => {
+        texture.colorSpace = THREE.SRGBColorSpace
+        urlTextureCacheRef.current.set(art.url, texture)
+      })
+
+      if (cancelled) return
 
       loaded.forEach(({ art, texture }) => {
-        textureRef.current.get(art.id)?.dispose()
-        texture.colorSpace = THREE.SRGBColorSpace
         textureRef.current.set(art.id, texture)
         textureUrlRef.current.set(art.id, art.url)
       })

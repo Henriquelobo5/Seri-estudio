@@ -6,7 +6,7 @@ import logo from '../../assets/images/logo.png'
 import { ROUTES } from '../../routes/routePaths'
 import { apiRequest } from '../../services/api'
 import { parseEspecificacoesFicha } from '../../utils/fichaEspecificacoes'
-import ThreeViewer from '../../components/ui/ThreeViewer'
+import ThreeViewer, { PosKey } from '../../components/ui/ThreeViewer'
 import EtapaLabelEditModal from './EtapaLabelEditModal'
 import './AdminKanban.css'
 
@@ -34,9 +34,11 @@ type AdminPedido = {
     identificacao?: string | null
     produtoTipo?: string | null
     especificacoes?: string | null
+    cor?: string | null
     dataAbertura?: string
     urlArte?: string | null
     urlPreview?: string | null
+    artesPorPecaJson?: string | null
   } | null
 }
 
@@ -395,6 +397,7 @@ export default function AdminKanban() {
 
   const [pedidos, setPedidos] = useState<AdminPedido[]>([])
   const [selectedPedidoId, setSelectedPedidoId] = useState<number | null>(null)
+  const [drawerPecaIdx, setDrawerPecaIdx] = useState(0)
   const [draggedPedidoId, setDraggedPedidoId] = useState<number | null>(null)
   const [dropStage, setDropStage] = useState<EtapaProducao | null>(null)
   const [loading, setLoading] = useState(true)
@@ -624,7 +627,7 @@ export default function AdminKanban() {
         type="button"
         className={`ak-card ${selectedPedidoId === pedido.id ? 'is-selected' : ''} ${movingPedidoId === pedido.id ? 'is-moving' : ''}`}
         draggable
-        onClick={() => setSelectedPedidoId(pedido.id)}
+        onClick={() => { setSelectedPedidoId(pedido.id); setDrawerPecaIdx(0) }}
         onDragStart={(event) => {
           event.dataTransfer.effectAllowed = 'move'
           event.dataTransfer.setData('text/plain', String(pedido.id))
@@ -916,18 +919,44 @@ export default function AdminKanban() {
               </button>
             </div>
 
-            <div className="af-drawer-preview">
-              <ThreeViewer
-                modelUrl={TIPO_MODEL_URL[(selectedPedido.fichaTecnica?.produtoTipo ?? '').split(',')[0].trim()] ?? TIPO_MODEL_URL['Camiseta']}
-                artUrl={selectedPedido.fichaTecnica?.urlArte ?? null}
-                pos="fc"
-                moveMode={false}
-                color={parseEspecificacoes(selectedPedido.fichaTecnica?.especificacoes).cor}
-                artRotation={0}
-                artScale={1}
-                flipH={false}
-                flipV={false}
-              />
+            <div className="af-drawer-preview" style={{ position: 'relative' }}>
+              {(() => {
+                const pecas = (selectedPedido.fichaTecnica?.produtoTipo ?? 'Camiseta')
+                  .split(',').map((t: string) => t.trim()).filter(Boolean)
+                const tipo = pecas[drawerPecaIdx] ?? pecas[0] ?? 'Camiseta'
+                let artesPorPeca: { tipo: string; pos: string; artRotation: number; artScale: number; flipH: boolean; flipV: boolean; urlArte?: string }[] = []
+                try { artesPorPeca = JSON.parse(selectedPedido.fichaTecnica?.artesPorPecaJson ?? '[]') } catch { artesPorPeca = [] }
+                const arteAtual = artesPorPeca.find(a => a.tipo === tipo) ?? artesPorPeca[0]
+                return (
+                  <>
+                    <ThreeViewer
+                      modelUrl={TIPO_MODEL_URL[tipo] ?? TIPO_MODEL_URL['Camiseta']}
+                      artUrl={arteAtual?.urlArte || selectedPedido.fichaTecnica?.urlArte || null}
+                      pos={(arteAtual?.pos ?? 'fc') as PosKey}
+                      moveMode={false}
+                      color={(() => { const raw = selectedPedido.fichaTecnica?.cor ?? ''; const m = raw.match(new RegExp(`(?:^|,\\s*)${tipo}:\\s*([^,]+)`, 'i')); return m ? m[1].trim() : raw })()}
+                      artRotation={arteAtual?.artRotation ?? 0}
+                      artScale={arteAtual?.artScale ?? 1}
+                      flipH={arteAtual?.flipH ?? false}
+                      flipV={arteAtual?.flipV ?? false}
+                    />
+                    {pecas.length > 1 && (
+                      <>
+                        <button className="mp-prev-arrow mp-prev-arrow-left" onClick={() => setDrawerPecaIdx(i => (i - 1 + pecas.length) % pecas.length)} aria-label="Peça anterior">
+                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                        </button>
+                        <button className="mp-prev-arrow mp-prev-arrow-right" onClick={() => setDrawerPecaIdx(i => (i + 1) % pecas.length)} aria-label="Próxima peça">
+                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                        <div className="mp-prev-indicator">
+                          <span className="mp-prev-label">{tipo}</span>
+                          <span className="mp-prev-counter">{drawerPecaIdx + 1} / {pecas.length}</span>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )
+              })()}
             </div>
 
             <div className="ak-drawer-section">

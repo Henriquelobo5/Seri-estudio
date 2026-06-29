@@ -5,7 +5,7 @@ import logo from '../../assets/images/logo.png'
 import { ROUTES } from '../../routes/routePaths'
 import { apiRequest } from '../../services/api'
 import { parseEspecificacoesFicha } from '../../utils/fichaEspecificacoes'
-import ThreeViewer from '../../components/ui/ThreeViewer'
+import ThreeViewer, { PosKey } from '../../components/ui/ThreeViewer'
 import './AdminKanban.css'
 import './AdminFichas.css'
 
@@ -43,9 +43,11 @@ type AdminPedido = {
     identificacao?: string | null
     produtoTipo?: string | null
     especificacoes?: string | null
+    cor?: string | null
     dataAbertura?: string
     urlArte?: string | null
     urlPreview?: string | null
+    artesPorPecaJson?: string | null
   } | null
 }
 
@@ -716,17 +718,28 @@ export default function AdminFichas() {
             </div>
 
             <div className="af-drawer-preview">
-              <ThreeViewer
-                modelUrl={TIPO_MODEL_URL[(selectedPedido.fichaTecnica?.produtoTipo ?? '').split(',')[0].trim()] ?? TIPO_MODEL_URL['Camiseta']}
-                artUrl={selectedPedido.fichaTecnica?.urlArte ?? null}
-                pos="fc"
-                moveMode={false}
-                color={parseEspecificacoes(selectedPedido.fichaTecnica?.especificacoes).cor}
-                artRotation={0}
-                artScale={1}
-                flipH={false}
-                flipV={false}
-              />
+              {selectedPedido.fichaTecnica?.urlPreview && !selectedPedido.fichaTecnica?.urlArte
+                ? <img src={selectedPedido.fichaTecnica.urlPreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute', inset: 0 }} />
+                : (() => {
+                    const tipo = (selectedPedido.fichaTecnica?.produtoTipo ?? '').split(',')[0].trim()
+                    let artesPorPeca: { tipo: string; pos: string; artRotation: number; artScale: number; flipH: boolean; flipV: boolean; urlArte?: string }[] = []
+                    try { artesPorPeca = JSON.parse(selectedPedido.fichaTecnica?.artesPorPecaJson ?? '[]') } catch { artesPorPeca = [] }
+                    const arteAtual = artesPorPeca.find(a => a.tipo === tipo) ?? artesPorPeca[0]
+                    return (
+                      <ThreeViewer
+                        modelUrl={TIPO_MODEL_URL[tipo] ?? TIPO_MODEL_URL['Camiseta']}
+                        artUrl={arteAtual?.urlArte || selectedPedido.fichaTecnica?.urlArte || null}
+                        pos={(arteAtual?.pos ?? 'fc') as PosKey}
+                        moveMode={false}
+                        color={(() => { const raw = selectedPedido.fichaTecnica?.cor ?? ''; const m = raw.match(new RegExp(`(?:^|,\\s*)${tipo}:\\s*([^,]+)`, 'i')); return m ? m[1].trim() : raw })()}
+                        artRotation={arteAtual?.artRotation ?? 0}
+                        artScale={arteAtual?.artScale ?? 1}
+                        flipH={arteAtual?.flipH ?? false}
+                        flipV={arteAtual?.flipV ?? false}
+                      />
+                    )
+                  })()
+              }
             </div>
 
             <div className="af-drawer-section">

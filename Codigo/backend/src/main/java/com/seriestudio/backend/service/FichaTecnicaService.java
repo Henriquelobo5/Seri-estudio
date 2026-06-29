@@ -5,6 +5,8 @@ import com.seriestudio.backend.model.FichaTecnica;
 import com.seriestudio.backend.model.usuario.Cliente;
 import com.seriestudio.backend.repository.ClienteRepository;
 import com.seriestudio.backend.repository.FichaTecnicaRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -43,6 +46,7 @@ public class FichaTecnicaService {
         ficha.setEspecificacoes(req.especificacoes);
         ficha.setUrlArte(req.urlArte);
         ficha.setCor(req.cor);
+        ficha.setArtesPorPecaJson(req.artesPorPecaJson);
         ficha.setCliente(cliente);
         ficha.setDataAbertura(LocalDateTime.now());
 
@@ -96,6 +100,51 @@ public class FichaTecnicaService {
             return url;
         } catch (IOException e) {
             throw new RuntimeException("Erro ao salvar arte: " + e.getMessage());
+        }
+    }
+
+    public String salvarArtePeca(Long fichaId, String tipo, MultipartFile file) {
+        FichaTecnica ficha = fichaTecnicaRepository.findById(fichaId)
+                .orElseThrow(() -> new RuntimeException("Ficha não encontrada"));
+
+        try {
+            Path dir = Paths.get(uploadDir);
+            Files.createDirectories(dir);
+            String filename = UUID.randomUUID() + ".png";
+            Files.write(dir.resolve(filename), file.getBytes());
+            String url = urlPrefix + "/" + filename;
+
+            // Inject urlArte into the matching tipo entry in artesPorPecaJson
+            String jsonAtual = ficha.getArtesPorPecaJson();
+            if (jsonAtual != null && !jsonAtual.isBlank()) {
+                ficha.setArtesPorPecaJson(injetarUrlArte(jsonAtual, tipo, url));
+            }
+
+            // Keep urlArte as the first art for backward compat
+            if (ficha.getUrlArte() == null || ficha.getUrlArte().isBlank()) {
+                ficha.setUrlArte(url);
+            }
+
+            fichaTecnicaRepository.save(ficha);
+            return url;
+        } catch (IOException e) {
+            throw new RuntimeException("Erro ao salvar arte da peça: " + e.getMessage());
+        }
+    }
+
+    private String injetarUrlArte(String json, String tipo, String url) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            List<Map<String, Object>> artes = mapper.readValue(json, new TypeReference<>() {});
+            for (Map<String, Object> arte : artes) {
+                if (tipo.equalsIgnoreCase(String.valueOf(arte.get("tipo")))) {
+                    arte.put("urlArte", url);
+                    break;
+                }
+            }
+            return mapper.writeValueAsString(artes);
+        } catch (Exception e) {
+            return json;
         }
     }
 

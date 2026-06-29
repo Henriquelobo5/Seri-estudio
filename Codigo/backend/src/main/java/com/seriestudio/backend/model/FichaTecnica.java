@@ -24,6 +24,8 @@ public class FichaTecnica {
     private String urlArte;
     private String urlPreview;
     @Column(columnDefinition = "TEXT")
+    private String artesPorPecaJson;
+    @Column(columnDefinition = "TEXT")
     private String cor;
     private LocalDateTime dataAbertura;
 

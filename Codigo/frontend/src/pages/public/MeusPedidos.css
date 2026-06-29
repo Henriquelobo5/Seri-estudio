@@ -323,6 +323,23 @@
   background: var(--mp-ink3); border-radius: var(--mp-r-sm);
   border: 1px solid var(--mp-border); overflow: hidden;
 }
+.mp-prev-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  z-index: 10; background: rgba(0,0,0,.55); border: none;
+  border-radius: 50%; width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: #fff; transition: background .15s;
+}
+.mp-prev-arrow:hover { background: rgba(0,0,0,.8); }
+.mp-prev-arrow-left  { left: 8px; }
+.mp-prev-arrow-right { right: 8px; }
+.mp-prev-indicator {
+  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: rgba(0,0,0,.5); border-radius: 6px; padding: 3px 10px;
+}
+.mp-prev-label  { font-size: 11px; color: #fff; font-weight: 500; }
+.mp-prev-counter { font-size: 10px; color: rgba(255,255,255,.6); }
 .mp-dleft { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 300px; }
 .mp-dgrid {
   display: grid; grid-template-columns: repeat(2, 1fr);
