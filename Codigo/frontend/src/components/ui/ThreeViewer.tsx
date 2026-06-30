@@ -71,7 +71,7 @@ type DecalPlacement = {
 }
 
 const PT_COLOR_MAP: Record<string, string> = {
-  'preto': '#1a1a1a',
+  'preto': '#181818',
   'branco': '#f5f5f5',
   'natural': '#f0ece4',
   'off-white': '#f0ece4',
@@ -144,6 +144,7 @@ interface Props {
   hideMeshMaterials?: string[]
   posRayOriginOffset?: Partial<Record<PosKey, [number, number, number]>>
   captureRef?: React.MutableRefObject<(() => string | null) | null>
+  transparent?: boolean
 }
 
 function resolveColor(c: string | undefined): THREE.Color {
@@ -192,6 +193,7 @@ export default function ThreeViewer({
   hideMeshMaterials = [],
   posRayOriginOffset = {},
   captureRef,
+  transparent = false,
 }: Props) {
   const effectiveArts = useMemo<ViewerArt[]>(() => {
     if (arts?.length) return arts
@@ -231,6 +233,7 @@ export default function ThreeViewer({
   const hideMeshMaterialsRef = useRef(hideMeshMaterials)
   const posRayOriginOffsetRef = useRef(posRayOriginOffset)
   const isDraggingRef = useRef(false)
+  const lightsRef = useRef<{ hemi: THREE.HemisphereLight; key: THREE.DirectionalLight; fill: THREE.DirectionalLight; back: THREE.DirectionalLight } | null>(null)
   const animRef = useRef<number>(0)
   const viewAnimRef = useRef<number>(0)
   const moveRafRef = useRef<number>(0)
@@ -402,14 +405,14 @@ export default function ThreeViewer({
     const h = mount.clientHeight || 300
 
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x0d0f0c)
+    if (!transparent) scene.background = new THREE.Color(0x0d0f0c)
     sceneRef.current = scene
 
     const camera = new THREE.PerspectiveCamera(45, w / h, 0.01, 100)
     camera.position.set(0, 0.2, 3)
     cameraRef.current = camera
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: !!captureRef })
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: transparent, preserveDrawingBuffer: !!captureRef })
     renderer.setSize(w, h)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.outputColorSpace = THREE.SRGBColorSpace
@@ -421,16 +424,21 @@ export default function ThreeViewer({
       captureRef.current = () => renderer.domElement.toDataURL('image/png')
     }
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x888888, 2.5))
-    const key = new THREE.DirectionalLight(0xffffff, 1.2)
+    const resolved = resolveColor(colorRef.current)
+    const lum = 0.299 * resolved.r + 0.587 * resolved.g + 0.114 * resolved.b
+    const isDark = lum < 0.15
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x888888, isDark ? 5.0 : 1.4)
+    scene.add(hemi)
+    const key = new THREE.DirectionalLight(0xffffff, isDark ? 2.5 : 0.7)
     key.position.set(2, 4, 5)
     scene.add(key)
-    const fill = new THREE.DirectionalLight(0xffffff, 0.5)
+    const fill = new THREE.DirectionalLight(0xffffff, isDark ? 1.2 : 0.3)
     fill.position.set(-3, 1, -5)
     scene.add(fill)
-    const back = new THREE.DirectionalLight(0xffffff, 0.4)
+    const back = new THREE.DirectionalLight(0xffffff, isDark ? 0.8 : 0.2)
     back.position.set(0, 2, -6)
     scene.add(back)
+    lightsRef.current = { hemi, key, fill, back }
 
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
@@ -510,7 +518,7 @@ export default function ThreeViewer({
       placementRef.current.clear()
       posByIdRef.current.clear()
     }
-  }, [disposeAllDecals, disposeAllTextures, modelUrl])
+  }, [disposeAllDecals, disposeAllTextures, modelUrl, transparent])
 
   // Dispose textures only on unmount — keeps them cached across model/piece changes
   // so switching pieces never has an async window where art disappears
@@ -518,6 +526,15 @@ export default function ThreeViewer({
 
   useEffect(() => {
     if (sceneRef.current) applyColorToScene(sceneRef.current, color)
+    const l = lightsRef.current
+    if (!l) return
+    const resolved = resolveColor(color)
+    const lum = 0.299 * resolved.r + 0.587 * resolved.g + 0.114 * resolved.b
+    const dark = lum < 0.15
+    l.hemi.intensity = dark ? 5.0 : 1.4
+    l.key.intensity  = dark ? 2.5 : 0.7
+    l.fill.intensity = dark ? 1.2 : 0.3
+    l.back.intensity = dark ? 0.8 : 0.2
   }, [color])
 
   useEffect(() => {

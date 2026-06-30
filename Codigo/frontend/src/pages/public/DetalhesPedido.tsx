@@ -287,6 +287,9 @@ export default function DetalhesPedido() {
         body: JSON.stringify({ fichaId, quantidades: quantidadesStr, observacoes: observacoesComPrazo }),
       })
       const codigoDisplay = pedido.fichaTecnica?.codigoDisplay ?? codigoDisplayCriado
+      // Limpa artes salvas — pedido finalizado, não há motivo para restaurar
+      sessionStorage.removeItem(`seri-dp-arts-${fichaId}`)
+      sessionStorage.removeItem('seri-dp-arts-tmp')
       navigate(ROUTES.CONFIRMACAO, { state: { total, codigoDisplay, fichaData: { ...fichaData, quantidadesPorTamanho: qtds, enderecoEntrega } } })
     } catch (e: any) {
       setErro(getApiErrorMessage(e, 'Erro ao salvar pedido. Tente novamente.'))

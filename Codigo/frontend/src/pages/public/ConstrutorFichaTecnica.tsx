@@ -428,86 +428,89 @@ export default function ConstrutorFichaTecnica() {
                     </svg>
                   </div>
                   <div>
-                    <div className="cf-ch-title">Gramatura e Modelagem</div>
-                    <div className="cf-ch-sub">Escolha a base do produto e os tamanhos</div>
+                    <div className="cf-ch-title">Gramatura e tamanhos</div>
+                    <div className="cf-ch-sub">
+                      {itensSelecionados.length > 1
+                        ? `Configure cada peça — ${safeSpecIdx + 1} de ${itensSelecionados.length}`
+                        : 'Escolha a base do produto e os tamanhos'}
+                    </div>
                   </div>
-                  {totalPecas > 0 ? (
+                  {totalPecas > 0 && (
                     <div className="cf-qtd-total">
-                      <span>Total de peças</span>
+                      <span>Peças</span>
                       <strong>{totalPecas}</strong>
                     </div>
-                  ) : null}
+                  )}
                 </div>
-                <div className="cf-card-body">
-                  {itensSelecionados.length === 0 ? (
-                    <div className="cf-empty-selection">Selecione pelo menos um tipo de peça para informar gramatura, tamanhos e quantidades.</div>
-                  ) : (
-                    <div className="cf-spec-carousel">
-                      {itensSelecionados.length > 1 ? (
-                        <div className="cf-spec-nav">
-                          <button
-                            type="button"
-                            className="cf-spec-arrow"
-                            onClick={() => goSpec(-1)}
-                            disabled={safeSpecIdx === 0}
-                            aria-label="Produto anterior"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-                          </button>
-                          <div className="cf-spec-nav-center">
-                            <strong>{itensSelecionados[safeSpecIdx]?.tipo}</strong>
-                            <span>{safeSpecIdx + 1} de {itensSelecionados.length}</span>
-                          </div>
-                          <button
-                            type="button"
-                            className="cf-spec-arrow"
-                            onClick={() => goSpec(1)}
-                            disabled={safeSpecIdx === itensSelecionados.length - 1}
-                            aria-label="Próximo produto"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                          </button>
-                        </div>
-                      ) : null}
 
+                {itensSelecionados.length === 0 ? (
+                  <div className="cf-card-body">
+                    <div className="cf-empty-selection">Selecione pelo menos um tipo de peça para informar gramatura, tamanhos e quantidades.</div>
+                  </div>
+                ) : (
+                  <>
+                    {/* barra de progresso entre peças */}
+                    {itensSelecionados.length > 1 && (
+                      <div className="cf-peca-progress">
+                        <div className="cf-peca-track">
+                          <div
+                            className="cf-peca-fill"
+                            style={{ width: `${((safeSpecIdx + 1) / itensSelecionados.length) * 100}%` }}
+                          />
+                        </div>
+                        <div className="cf-peca-steps">
+                          {itensSelecionados.map((it, idx) => {
+                            const done = getItemTotal(it) > 0
+                            const active = idx === safeSpecIdx
+                            return (
+                              <button
+                                key={it.tipo}
+                                type="button"
+                                className={`cf-peca-step${active ? ' active' : ''}${done ? ' done' : ''}`}
+                                onClick={() => jumpSpec(idx)}
+                              >
+                                {done && !active && (
+                                  <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                )}
+                                {it.tipo}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="cf-card-body" style={{ overflow: 'hidden' }}>
                       {itensSelecionados.map((item, idx) => {
                         if (idx !== safeSpecIdx) return null
-
                         const opcoesModelagem = getModelagensPorTipo(item.tipo)
                         const gruposTamanho = getGruposTamanhoPorTipo(item.tipo)
                         const modelagemSelecionada = opcoesModelagem.includes(item.modelagemGramatura)
-                          ? item.modelagemGramatura
-                          : opcoesModelagem[0] ?? ''
+                          ? item.modelagemGramatura : opcoesModelagem[0] ?? ''
                         const itemTotal = getItemTotal(item)
 
                         return (
                           <section key={item.tipo} className={`cf-spec-item cf-spec-slide ${specDir >= 0 ? 'dir-next' : 'dir-prev'}`}>
-                            <div className="cf-spec-item-head">
-                              <div>
-                                <strong>{item.tipo}</strong>
-                                <span>{itemTotal > 0 ? `${itemTotal} peça${itemTotal !== 1 ? 's' : ''}` : 'Aguardando quantidade'}</span>
+                            {itensSelecionados.length > 1 && (
+                              <div className="cf-spec-item-head">
+                                <div>
+                                  <strong>{item.tipo}</strong>
+                                  <span>{itemTotal > 0 ? `${itemTotal} peça${itemTotal !== 1 ? 's' : ''}` : 'Aguardando quantidade'}</span>
+                                </div>
                               </div>
-                            </div>
-
+                            )}
                             <div className="cf-spec-row">
                               <div className="cf-fld">
                                 <label>Gramatura e Modelagem</label>
-                                <select
-                                  className="cf-select"
-                                  value={modelagemSelecionada}
-                                  onChange={e => setModelagemTipo(item.tipo, e.target.value)}
-                                >
+                                <select className="cf-select" value={modelagemSelecionada} onChange={e => setModelagemTipo(item.tipo, e.target.value)}>
                                   {opcoesModelagem.map(opcao => <option key={opcao}>{opcao}</option>)}
                                 </select>
                               </div>
                             </div>
-
                             <div className="cf-fld">
                               <label>
                                 Tamanhos{' '}
-                                <span style={{ fontSize: 10, color: 'rgba(250,250,248,.22)', textTransform: 'none', letterSpacing: 0 }}>
-                                  (selecione um ou mais)
-                                </span>
+                                <span style={{ fontSize: 10, color: 'rgba(250,250,248,.22)', textTransform: 'none', letterSpacing: 0 }}>(selecione um ou mais)</span>
                               </label>
                               <div className="cf-tam-groups">
                                 {gruposTamanho.map(grupo => (
@@ -518,32 +521,25 @@ export default function ConstrutorFichaTecnica() {
                                         const selecionado = item.tamanhos.includes(t)
                                         return (
                                           <div key={t} className={`cf-tam-item ${t.length > 12 ? 'wide' : ''} ${selecionado ? 'sel' : ''}`}>
-                                            <button
-                                              type="button"
-                                              className={`cf-tam-btn ${selecionado ? 'sel' : ''}`}
-                                              onClick={() => toggleTam(item.tipo, t)}
-                                            >{formatTamanhoLabel(t)}</button>
-                                            {selecionado ? (
+                                            <button type="button" className={`cf-tam-btn ${selecionado ? 'sel' : ''}`} onClick={() => toggleTam(item.tipo, t)}>
+                                              {formatTamanhoLabel(t)}
+                                            </button>
+                                            {selecionado && (
                                               <label className="cf-tam-qty">
                                                 <span>Qtd.</span>
                                                 <input
-                                                  type="text"
-                                                  inputMode="numeric"
-                                                  pattern="[0-9]*"
+                                                  type="text" inputMode="numeric" pattern="[0-9]*"
                                                   value={item.quantidadesPorTamanho[t] ?? 0}
                                                   onKeyDown={e => {
-                                                    const controlKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End']
-                                                    if (e.ctrlKey || e.metaKey || controlKeys.includes(e.key)) return
+                                                    const ctrl = ['Backspace','Delete','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Tab','Home','End']
+                                                    if (e.ctrlKey || e.metaKey || ctrl.includes(e.key)) return
                                                     if (!/^\d$/.test(e.key)) e.preventDefault()
                                                   }}
-                                                  onPaste={e => {
-                                                    e.preventDefault()
-                                                    setQuantidadeTam(item.tipo, t, e.clipboardData.getData('text'))
-                                                  }}
+                                                  onPaste={e => { e.preventDefault(); setQuantidadeTam(item.tipo, t, e.clipboardData.getData('text')) }}
                                                   onChange={e => setQuantidadeTam(item.tipo, t, e.target.value)}
                                                 />
                                               </label>
-                                            ) : null}
+                                            )}
                                           </div>
                                         )
                                       })}
@@ -556,22 +552,32 @@ export default function ConstrutorFichaTecnica() {
                         )
                       })}
 
-                      {itensSelecionados.length > 1 ? (
-                        <div className="cf-spec-dots">
-                          {itensSelecionados.map((item, idx) => (
-                            <button
-                              key={item.tipo}
-                              type="button"
-                              className={`cf-spec-dot ${idx === safeSpecIdx ? 'on' : ''}`}
-                              onClick={() => jumpSpec(idx)}
-                              aria-label={`Ir para ${item.tipo}`}
-                            />
-                          ))}
+                      {/* navegação entre peças dentro do card */}
+                      {itensSelecionados.length > 1 && (
+                        <div className="cf-peca-nav">
+                          <button
+                            type="button"
+                            className="cf-peca-nav-btn"
+                            disabled={safeSpecIdx === 0}
+                            onClick={() => goSpec(-1)}
+                          >
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                            {itensSelecionados[safeSpecIdx - 1]?.tipo ?? 'Anterior'}
+                          </button>
+                          <button
+                            type="button"
+                            className="cf-peca-nav-btn primary"
+                            disabled={safeSpecIdx === itensSelecionados.length - 1}
+                            onClick={() => goSpec(1)}
+                          >
+                            {itensSelecionados[safeSpecIdx + 1]?.tipo ?? 'Próxima'}
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                          </button>
                         </div>
-                      ) : null}
+                      )}
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
 
               {/* ── IDENTIFICAÇÃO ─────────────────────────────────────────── */}
@@ -647,42 +653,22 @@ export default function ConstrutorFichaTecnica() {
             </div>
           )}
 
-          {/* ── FOOTER NAV ───────────────────────────────────────────────── */}
           <div className="cf-footer-row">
-            {currentStep < STEPS.length ? (
-              <>
-                <button type="button" className="cf-btn-back" onClick={handleBack}>
-                  ← Voltar
-                </button>
-                <button
-                  className={`cf-btn-next ${btnNextOn || currentStep > 1 ? 'on' : ''}`}
-                  onClick={() => {
-                    if (currentStep === 1) {
-                      if (!btnNextOn) return
-                      navigate(ROUTES.DETALHES_PRODUTO, {
-                        state: {
-                          fichaData: buildFichaData(),
-                        },
-                      })
-                    } else {
-                      setCurrentStep(s => s + 1)
-                    }
-                  }}
-                >
-                  {currentStep === 1 ? 'Próximo: Detalhes do produto' : `Próximo: ${STEPS[currentStep].label}`}
-                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
-                  </svg>
-                </button>
-              </>
-            ) : (
-              <button className="cf-btn-next on">
-                Finalizar e enviar orçamento
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
-                </svg>
-              </button>
-            )}
+            <button type="button" className="cf-btn-back" onClick={handleBack}>
+              ← Voltar
+            </button>
+            <button
+              className={`cf-btn-next ${btnNextOn ? 'on' : ''}`}
+              onClick={() => {
+                if (!btnNextOn) return
+                navigate(ROUTES.DETALHES_PRODUTO, { state: { fichaData: buildFichaData() } })
+              }}
+            >
+              Próximo: Arte e estampa
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
+              </svg>
+            </button>
           </div>
 
         </div>{/* /cf-main */}

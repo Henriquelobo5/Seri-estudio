@@ -37,6 +37,28 @@ type UploadedArt = {
   obsMedidas: string
 }
 
+type SavedArtData = {
+  savedAt?: number
+  tipos?: string[]
+  produtoTipo: string
+  fileName: string
+  previewDataUrl: string
+  pos: PosKey
+  rotation: number
+  scale: number
+  flipH: boolean
+  flipV: boolean
+  largura: string
+  altura: string
+  obsMedidas: string
+}
+
+type SavedArtStore = {
+  savedAt: number
+  tipos: string[]
+  arts: SavedArtData[]
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const EXT_COLORS: Record<string, [string, string]> = {
@@ -174,16 +196,16 @@ export default function DetalhesProduto() {
     () => getTiposSelecionadosFromDetails(locState.fichaData, tipo),
     [locState.fichaData, tipo],
   )
-  const previewOptions = useMemo(
-    () => tiposSelecionados.filter((option) => PREVIEW_MODEL_TYPES.includes(option)),
-    [tiposSelecionados],
-  )
-  const fallbackPreviewTipo = previewOptions[0] ?? (PREVIEW_MODEL_TYPES.includes(tipo) ? tipo : 'Camiseta')
-  const canSwitchPreview = previewOptions.length > 0
-  const [previewTipo, setPreviewTipo] = useState(fallbackPreviewTipo)
-  const previewProduto = canSwitchPreview ? previewTipo : (tiposSelecionados[0] ?? tipo)
-  const previewLabel = previewProduto
-  const config = getProductConfig(previewProduto)
+  const storageKey = `seri-dp-arts-${locState.fichaId ?? 'tmp'}`
+
+  const [pecaIdx, setPecaIdx] = useState(0)
+  const currentTipo = tiposSelecionados[pecaIdx] ?? tiposSelecionados[0] ?? tipo
+  const previewProduto = currentTipo
+  const previewLabel = currentTipo
+  const config = getProductConfig(currentTipo)
+  const isMultiPeca = tiposSelecionados.length > 1
+  const isFirstPeca = pecaIdx === 0
+  const isLastPeca = pecaIdx === tiposSelecionados.length - 1
 
   const artObjUrlRef = useRef<string[]>([])
   const captureRef = useRef<(() => string | null) | null>(null)
@@ -221,27 +243,60 @@ export default function DetalhesProduto() {
   const selectedColor = CORES.find(item => item.nome === currentCor) ?? CORES[0]
 
   useEffect(() => {
-    if (!canSwitchPreview || previewOptions.includes(previewTipo)) return
-
-    setPreviewTipo(fallbackPreviewTipo)
-    setModelLoaded(false)
-  }, [canSwitchPreview, fallbackPreviewTipo, previewOptions, previewTipo])
+    try {
+      const saved = sessionStorage.getItem(storageKey)
+      if (!saved) return
+      const store: SavedArtStore = JSON.parse(saved)
+      // Descarta se os tipos não batem com o pedido atual
+      if (JSON.stringify(store.tipos) !== JSON.stringify(tiposSelecionados)) {
+        sessionStorage.removeItem(storageKey)
+        return
+      }
+      // Descarta se mais de 2 horas
+      if (Date.now() - store.savedAt > 2 * 60 * 60 * 1000) {
+        sessionStorage.removeItem(storageKey)
+        return
+      }
+      if (!store.arts?.length) return
+      const restored: UploadedArt[] = store.arts.map(s => ({
+        id: `restored-${s.produtoTipo}-${crypto.randomUUID()}`,
+        produtoTipo: s.produtoTipo,
+        file: new File([], s.fileName, { type: 'image/png' }),
+        previewUrl: s.previewDataUrl,
+        isObjectUrl: false,
+        pos: s.pos,
+        rotation: s.rotation,
+        scale: s.scale,
+        flipH: s.flipH,
+        flipV: s.flipV,
+        largura: s.largura,
+        altura: s.altura,
+        obsMedidas: s.obsMedidas,
+      }))
+      setFiles(restored)
+      setHintGone(true)
+      const firstForTipo = restored.find(r => r.produtoTipo === tiposSelecionados[0])
+      setActiveArtId(firstForTipo?.id ?? restored[0]?.id ?? null)
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (visibleFiles.length > 0) return
-
     setActiveArtId(null)
     setMoveMode(false)
   }, [previewProduto, visibleFiles.length])
 
   const handleModelLoad = useCallback(() => setModelLoaded(true), [])
 
-  function handlePreviewTypeChange(nextTipo: string) {
-    if (nextTipo === previewTipo || !previewOptions.includes(nextTipo)) return
-
-    setPreviewTipo(nextTipo)
-    setModelLoaded(false)
+  function goToPeca(idx: number) {
+    const clamped = Math.max(0, Math.min(idx, tiposSelecionados.length - 1))
+    if (clamped === pecaIdx) return
+    setPecaIdx(clamped)
+    const nextTipo = tiposSelecionados[clamped]
     setActiveArtId(files.find(art => art.produtoTipo === nextTipo)?.id ?? null)
+    setMoveMode(false)
+    setModelLoaded(false)
   }
 
   function sanitizeMeasure(value: string) {
@@ -459,10 +514,37 @@ export default function DetalhesProduto() {
       for (const t of tiposSelecionados) {
         const arteDoTipo = files.find(f => f.produtoTipo === t) ?? files[0] ?? null
         if (arteDoTipo?.previewUrl) {
-          const dataUrl = await urlToDataUrl(arteDoTipo.previewUrl)
+          const dataUrl = arteDoTipo.previewUrl.startsWith('data:')
+            ? arteDoTipo.previewUrl
+            : await urlToDataUrl(arteDoTipo.previewUrl)
           if (dataUrl) artesPorPecaUploads.push({ tipo: t, dataUrl })
         }
       }
+
+      // Persist arts so browser-back from step 3 restores them
+      try {
+        const store: SavedArtStore = {
+          savedAt: Date.now(),
+          tipos: tiposSelecionados,
+          arts: artesPorPecaUploads.map(u => {
+            const art = files.find(f => f.produtoTipo === u.tipo)
+            return {
+              produtoTipo: u.tipo,
+              fileName: art?.file.name ?? u.tipo,
+              previewDataUrl: u.dataUrl,
+              pos: art?.pos ?? 'fc',
+              rotation: art?.rotation ?? 0,
+              scale: art?.scale ?? 1,
+              flipH: art?.flipH ?? false,
+              flipV: art?.flipV ?? false,
+              largura: art?.largura ?? '20',
+              altura: art?.altura ?? '25',
+              obsMedidas: art?.obsMedidas ?? '',
+            }
+          }),
+        }
+        sessionStorage.setItem(storageKey, JSON.stringify(store))
+      } catch { /* ignore quota errors */ }
 
       setMeasureConfirmOpen(false)
       navigate(ROUTES.DETALHES_PEDIDO, {
@@ -484,7 +566,9 @@ export default function DetalhesProduto() {
   }
 
   function handleNextClick() {
-    if (!btnNextOn || submitting) return
+    if (submitting) return
+    if (!isLastPeca) { goToPeca(pecaIdx + 1); return }
+    if (!btnNextOn) return
 
     const hasMissingMeasure = files.some(art => !art.largura.trim() || !art.altura.trim())
     if (hasMissingMeasure) {
@@ -551,8 +635,39 @@ export default function DetalhesProduto() {
         <div className="dp-side">
           <div className="dp-side-scroll">
 
+            {isMultiPeca && (
+              <div className="dp-blk">
+                <div className="dp-bh">Peças do pedido</div>
+                <div className="dp-bb">
+                  <div className="dp-peca-chips">
+                    {tiposSelecionados.map((t, i) => {
+                      const hasArt = files.some(f => f.produtoTipo === t)
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          className={`dp-peca-chip${i === pecaIdx ? ' active' : ''}${hasArt ? ' has-art' : ''}`}
+                          onClick={() => goToPeca(i)}
+                        >
+                          {hasArt && (
+                            <span className="dp-peca-check">
+                              <svg width="8" height="8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            </span>
+                          )}
+                          {t}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <p className="dp-peca-progress">
+                    {tiposSelecionados.filter(t => files.some(f => f.produtoTipo === t)).length} de {tiposSelecionados.length} peças com arte
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="dp-blk">
-              <div className="dp-bh">Arte da estampa</div>
+              <div className="dp-bh">Arte da estampa{isMultiPeca ? ` — ${currentTipo}` : ''}</div>
               <div className="dp-bb">
                 <label className="dp-btn-up">
                   <input
@@ -739,15 +854,31 @@ export default function DetalhesProduto() {
           </div>
 
           <div className="dp-side-footer">
-            <button className="dp-btn-back" onClick={() => navigate(ROUTES.CRIAR_FICHA)}>
-              ← Voltar
-            </button>
+            <div className="dp-footer-nav">
+              <button
+                className="dp-btn-back"
+                onClick={() => isFirstPeca ? navigate(ROUTES.CRIAR_FICHA) : goToPeca(pecaIdx - 1)}
+              >
+                {isFirstPeca ? '← Voltar' : '← Anterior'}
+              </button>
+              <button
+                className={`dp-btn-next${(!isLastPeca || btnNextOn) ? ' on' : ''}`}
+                disabled={isLastPeca && (!btnNextOn || submitting)}
+                onClick={handleNextClick}
+              >
+                {submitting
+                  ? 'Salvando...'
+                  : isLastPeca
+                    ? 'Confirmar →'
+                    : `Próxima: ${tiposSelecionados[pecaIdx + 1]} →`}
+              </button>
+            </div>
           </div>
         </div>
 
         <aside className="dp-color-rail" aria-label="Cor da peça">
           <div className="dp-color-head">
-            <div className="dp-color-title">Cor da peça{canSwitchPreview ? ` — ${previewProduto}` : ''}</div>
+            <div className="dp-color-title">Cor da peça{isMultiPeca ? ` — ${currentTipo}` : ''}</div>
             <div className="dp-color-selected">
               Selecionado: <strong>{currentCor}</strong>
             </div>
@@ -778,20 +909,29 @@ export default function DetalhesProduto() {
 
         {/* VIEWER */}
         <div className="dp-viewer" id="dp-vw">
-          {canSwitchPreview && (
-            <div className="dp-preview-switch" aria-label="Selecionar preview 3D">
-              <span>Preview 3D</span>
+          {isMultiPeca && (
+            <div className="dp-preview-switch" aria-label="Peça atual">
+              <span>Peça {pecaIdx + 1} / {tiposSelecionados.length}</span>
               <div className="dp-preview-options">
-                {previewOptions.map(option => (
-                  <button
-                    key={option}
-                    type="button"
-                    className={previewTipo === option ? 'active' : ''}
-                    onClick={() => handlePreviewTypeChange(option)}
-                  >
-                    {option}
-                  </button>
-                ))}
+                <button
+                  type="button"
+                  disabled={isFirstPeca}
+                  onClick={() => goToPeca(pecaIdx - 1)}
+                  style={{ minWidth: 28, opacity: isFirstPeca ? .3 : 1 }}
+                >
+                  ←
+                </button>
+                <span style={{ padding: '0 4px', color: 'var(--dp-white)', fontWeight: 700 }}>
+                  {currentTipo}
+                </span>
+                <button
+                  type="button"
+                  disabled={isLastPeca}
+                  onClick={() => goToPeca(pecaIdx + 1)}
+                  style={{ minWidth: 28, opacity: isLastPeca ? .3 : 1 }}
+                >
+                  →
+                </button>
               </div>
             </div>
           )}
@@ -890,6 +1030,29 @@ export default function DetalhesProduto() {
                     <div className="dp-pdet">{locState.fichaData ? `${locState.fichaData.tipo} · ${[...new Set(Object.values(corPorTipo))].join(', ')} · ${(locState.fichaData.tamanhos ?? []).join(', ')}` : 'Concluído'}</div>
                   </div>
                 </div>
+                {isMultiPeca ? (
+                  tiposSelecionados.map((t, i) => {
+                    const artPeca = files.filter(f => f.produtoTipo === t)
+                    const isCurrent = i === pecaIdx
+                    return (
+                      <div key={t} className="dp-pi" style={{ cursor: 'pointer' }} onClick={() => goToPeca(i)}>
+                        <div className={`dp-pidot${artPeca.length ? ' done' : isCurrent ? ' active' : ''}`}>
+                          {artPeca.length
+                            ? <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                            : i + 2}
+                        </div>
+                        <div>
+                          <div className={`dp-pname${artPeca.length ? ' done' : isCurrent ? ' active' : ''}`}>{t}</div>
+                          <div className="dp-pdet">
+                            {artPeca.length
+                              ? `Arte personalizada · ${corPorTipo[t] ?? ''}`
+                              : isCurrent ? 'Aguardando arte...' : 'Não personalizada ainda'}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })
+                ) : (
                 <div className="dp-pi">
                   <div className="dp-pidot active">2</div>
                   <div>
@@ -903,6 +1066,7 @@ export default function DetalhesProduto() {
                     </div>
                   </div>
                 </div>
+                )}
                 <div className="dp-pi">
                   <div className="dp-pidot">3</div>
                   <div>
