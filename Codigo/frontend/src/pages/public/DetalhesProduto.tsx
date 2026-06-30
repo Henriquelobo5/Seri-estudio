@@ -159,7 +159,6 @@ const PRODUCT_CONFIG: Record<string, ProductConfig> = {
 
 // ── Componente ────────────────────────────────────────────────────────────────
 
-const PREVIEW_MODEL_TYPES = ['Camiseta', 'Moletom', 'Regata', 'Polo', 'Ecobag']
 const MAX_MEASURE_DIGITS = 4
 
 function getProductConfig(tipoProduto: string) {

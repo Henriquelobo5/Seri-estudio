@@ -135,10 +135,10 @@ interface Props {
   pos: PosKey
   moveMode: boolean
   color?: string
-  artRotation: number
-  artScale: number
-  flipH: boolean
-  flipV: boolean
+  artRotation?: number
+  artScale?: number
+  flipH?: boolean
+  flipV?: boolean
   onLoad?: () => void
   onActiveArtChange?: (id: string) => void
   hideMeshMaterials?: string[]
@@ -184,10 +184,10 @@ export default function ThreeViewer({
   pos,
   moveMode,
   color,
-  artRotation,
-  artScale,
-  flipH,
-  flipV,
+  artRotation = 0,
+  artScale = 1,
+  flipH = false,
+  flipV = false,
   onLoad,
   onActiveArtChange,
   hideMeshMaterials = [],
