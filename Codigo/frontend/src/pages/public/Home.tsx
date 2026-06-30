@@ -6,6 +6,7 @@ import PageTransition from '../../components/PageTransition'
 import AuthNavCta from '../../components/ui/AuthNavCta'
 import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
+import ThreeViewer from '../../components/ui/ThreeViewer'
 import antiVisagism01 from '../../assets/images/home-carousel/anti-visagism-01.jpg'
 import antiVisagism02 from '../../assets/images/home-carousel/anti-visagism-02.jpg'
 import antiVisagism03 from '../../assets/images/home-carousel/anti-visagism-03.jpg'
@@ -13,22 +14,6 @@ import antiVisagism04 from '../../assets/images/home-carousel/anti-visagism-04.j
 import antiVisagism05 from '../../assets/images/home-carousel/anti-visagism-05.jpg'
 import './Home.css'
 
-// Declare spline-viewer web component for TypeScript
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace JSX {
-    interface IntrinsicElements {
-      'spline-viewer': React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement> & {
-          url?: string
-          'loading-anim-type'?: string
-          background?: string
-        },
-        HTMLElement
-      >
-    }
-  }
-}
 
 const MARQUEE_ITEMS = [
   'Serigrafia','Camisetas','Moletons','Ecobags','Estamparia',
@@ -104,7 +89,6 @@ export default function Home() {
   const eyebrowRef  = useRef<HTMLSpanElement>(null)
   const stepsRef    = useRef<HTMLDivElement>(null)
   const statsRef    = useRef<HTMLDivElement>(null)
-  const splineRef      = useRef<HTMLElement>(null)
   const [carouselIdx, setCarouselIdx] = useState(0)
   const currentCarouselItem = HOME_CAROUSEL[carouselIdx]
   const prevCarouselItem = HOME_CAROUSEL[(carouselIdx - 1 + HOME_CAROUSEL.length) % HOME_CAROUSEL.length]
@@ -282,29 +266,6 @@ export default function Home() {
     return () => obs.disconnect()
   }, [])
 
-  // ── Hide Spline logo ──────────────────────────────────────────────────────────
-  useEffect(() => {
-    const sv = splineRef.current as (HTMLElement & { shadowRoot: ShadowRoot | null }) | null
-    if (!sv) return
-    const tryHide = () => {
-      const sh = sv.shadowRoot
-      if (!sh) return
-      const style = sh.querySelector('#hide-logo-style') ?? document.createElement('style')
-      style.id = 'hide-logo-style'
-      style.textContent = `
-        #logo, [id*="logo"], a[href*="spline.design"],
-        div[class*="logo"], canvas + div, canvas ~ a,
-        div[style*="z-index: 10"], div[style*="z-index:10"] {
-          display: none !important; opacity: 0 !important; pointer-events: none !important;
-        }
-      `
-      if (!sh.querySelector('#hide-logo-style')) sh.appendChild(style)
-    }
-    sv.addEventListener('load', () => { tryHide(); setTimeout(tryHide, 500); setTimeout(tryHide, 1500) })
-    const t1 = setTimeout(tryHide, 1000)
-    const t2 = setTimeout(tryHide, 2500)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, [])
 
   // ── Build h1 with split chars ─────────────────────────────────────────────────
   const buildH1 = () => {
@@ -383,14 +344,16 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Spline 3D */}
+          {/* 3D hero */}
           <div className="hero-right">
             <div className="hero-spline">
-              <spline-viewer
-                ref={splineRef as React.RefObject<HTMLElement>}
-                url="https://prod.spline.design/rfUuD0pkFEL3StiT/scene.splinecode"
-                loading-anim-type="none"
-                background="rgba(13,15,12,0)"
+              <ThreeViewer
+                modelUrl="/models/tshirt.glb"
+                artUrl={null}
+                pos="fc"
+                moveMode={false}
+                color="branco"
+                transparent
               />
             </div>
           </div>
