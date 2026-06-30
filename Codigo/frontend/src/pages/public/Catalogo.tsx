@@ -5,14 +5,9 @@ import AuthNavCta from '../../components/ui/AuthNavCta'
 import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import { ROUTES } from '../../routes/routePaths'
 import logo from '../../assets/images/logo.png'
-import seri1 from '../../assets/images/produtos/seri1.jpg'
 import seri2 from '../../assets/images/produtos/seri2.jpg'
 import seri3 from '../../assets/images/produtos/seri3.jpg'
-import seri4 from '../../assets/images/produtos/seri4.jpg'
-import seri5 from '../../assets/images/produtos/seri5.jpg'
-import seri6 from '../../assets/images/produtos/seri6.jpg'
 import ecobag from '../../assets/images/produtos/ecobag-portfolio.jpg'
-import ecobagOriginal from '../../assets/images/produtos/ecobag.png'
 import crewneckCobra from '../../assets/images/produtos/crewneck-cobra.jpg'
 import camisetaDavid from '../../assets/images/produtos/camiseta-david.jpg'
 import crewneckTreinador from '../../assets/images/produtos/crewneck-treinador.jpg'
@@ -22,7 +17,6 @@ import camisetaScience from '../../assets/images/produtos/camiseta-science.jpg'
 import camisetaRqbtVerde from '../../assets/images/produtos/camiseta-rqbt-verde.jpg'
 import crewneckSeri from '../../assets/images/produtos/crewneck-seri.jpg'
 import regataBasquete from '../../assets/images/produtos/regata-basquete.jpg'
-import camisetaNoise from '../../assets/images/produtos/camiseta-noise.jpg'
 import './Home.css'
 import './Catalogo.css'
 
@@ -48,25 +42,6 @@ type Produto = {
 }
 
 const TODOS_PRODUTOS: Produto[] = [
-  // ── linha 1: branca · preta · verde ─────────────────────────────────────
-  {
-    id: 'ecobag-personalizada',
-    nome: 'ECOBAG PERSONALIZADA',
-    categoria: 'Ecobag',
-    tecido: '100% Algodao',
-    gramatura: '200g/m2',
-    preco: 'R$ 22,00',
-    imagem: ecobag,
-  },
-  {
-    id: 'camiseta-holloway',
-    nome: 'CAMISETA HOLLOWAY',
-    categoria: 'Camiseta',
-    tecido: '100% Algodao',
-    gramatura: '180g/m2',
-    preco: 'R$ 119,00',
-    imagem: seri1,
-  },
   {
     id: 'camiseta-rqbt-verde',
     nome: 'CAMISETA RYAN QUEIROZ BT',
@@ -76,7 +51,6 @@ const TODOS_PRODUTOS: Produto[] = [
     preco: 'R$ 119,00',
     imagem: camisetaRqbtVerde,
   },
-  // ── linha 2: preta · verde · preta ───────────────────────────────────────
   {
     id: 'camiseta-chorão',
     nome: 'CAMISETA CHORÃO',
@@ -104,7 +78,6 @@ const TODOS_PRODUTOS: Produto[] = [
     preco: 'R$ 90,00',
     imagem: seri3,
   },
-  // ── linha 3: preta · preta · preta ───────────────────────────────────────
   {
     id: 'camiseta-david',
     nome: 'CAMISETA ARTE DAVID',
@@ -115,15 +88,6 @@ const TODOS_PRODUTOS: Produto[] = [
     imagem: camisetaDavid,
   },
   {
-    id: 'camiseta-arrascaeta',
-    nome: 'CAMISETA ARRASCAETA',
-    categoria: 'Camiseta',
-    tecido: '100% Algodao',
-    gramatura: '180g/m2',
-    preco: 'R$ 124,00',
-    imagem: seri4,
-  },
-  {
     id: 'camiseta-seri-basketball',
     nome: 'CAMISETA SERI BASKETBALL',
     categoria: 'Camiseta',
@@ -131,16 +95,6 @@ const TODOS_PRODUTOS: Produto[] = [
     gramatura: '180g/m2',
     preco: 'R$ 119,00',
     imagem: crewneckCobra,
-  },
-  // ── linha 4 ──────────────────────────────────────────────────────────────
-  {
-    id: 'camiseta-seri-memorias',
-    nome: 'CAMISETA SERI MEMÓRIAS',
-    categoria: 'Camiseta',
-    tecido: '100% Algodao',
-    gramatura: '160g/m2',
-    preco: 'R$ 120,00',
-    imagem: seri5,
   },
   {
     id: 'camiseta-science-phd',
@@ -151,17 +105,6 @@ const TODOS_PRODUTOS: Produto[] = [
     preco: 'R$ 119,00',
     imagem: camisetaScience,
   },
-  {
-    id: 'camiseta-anti-visagism-club',
-    nome: 'CAMISETA ANTI VISAGISM CLUB',
-    categoria: 'Camiseta',
-    tecido: 'Malha Fio 30',
-    gramatura: '180g/m2',
-    preco: 'R$ 110,00',
-    imagem: seri6,
-    badge: 'Novo',
-  },
-  // ── linha 5 ──────────────────────────────────────────────────────────────
   {
     id: 'camiseta-ar-treinador',
     nome: 'CAMISETA AR TREINADOR',
@@ -189,7 +132,6 @@ const TODOS_PRODUTOS: Produto[] = [
     preco: 'R$ 119,00',
     imagem: camisetaOlho,
   },
-  // ── linha 6 ──────────────────────────────────────────────────────────────
   {
     id: 'regata-nba',
     nome: 'REGATA NBA SERIGRAFIA',
@@ -200,22 +142,13 @@ const TODOS_PRODUTOS: Produto[] = [
     imagem: regataBasquete,
   },
   {
-    id: 'camiseta-noise-is-music',
-    nome: 'CAMISETA NOISE IS MUSIC',
-    categoria: 'Camiseta',
-    tecido: '100% Algodao',
-    gramatura: '180g/m2',
-    preco: 'R$ 119,00',
-    imagem: camisetaNoise,
-  },
-  {
-    id: 'ecobag-basica',
-    nome: 'ECOBAG BÁSICA',
+    id: 'ecobag-personalizada',
+    nome: 'ECOBAG PERSONALIZADA',
     categoria: 'Ecobag',
     tecido: '100% Algodao',
     gramatura: '200g/m2',
     preco: 'R$ 22,00',
-    imagem: ecobagOriginal,
+    imagem: ecobag,
   },
 ]
 
