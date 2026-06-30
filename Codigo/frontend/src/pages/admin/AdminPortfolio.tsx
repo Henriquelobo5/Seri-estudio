@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import logo from '../../assets/images/logo.png'
@@ -28,11 +28,11 @@ const SIDEBAR_ITEMS = [
   { label: 'PRODUÇÃO', section: 'title' as const },
   { label: 'Fluxo de produção', route: ROUTES.ADMIN_KANBAN },
   { label: 'Estoque', route: ROUTES.ADMIN_ESTOQUE },
-  { label: 'VITRINE', section: 'title' as const },
-  { label: 'Portfólio', active: true, route: ROUTES.ADMIN_PORTFOLIO },
   { label: 'RELATÓRIOS', section: 'title' as const },
   { label: 'Custos e lucro', route: ROUTES.ADMIN_CUSTOS },
   { label: 'Dashboard financeiro', route: ROUTES.ADMIN_FINANCEIRO_DASHBOARD },
+  { label: 'VITRINE', section: 'title' as const },
+  { label: 'Portfólio', active: true, route: ROUTES.ADMIN_PORTFOLIO },
 ]
 
 function getInitials(name?: string | null) {
@@ -477,3 +477,4 @@ export default function AdminPortfolio() {
     </div>
   )
 }
+

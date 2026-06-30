@@ -1,22 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ROUTES } from '../../routes/routePaths'
+import { useAuth } from '../../context/AuthContext'
 import PageTransition from '../../components/PageTransition'
 import AuthNavCta from '../../components/ui/AuthNavCta'
 import MyOrdersLink from '../../components/ui/MyOrdersLink'
 import logo from '../../assets/images/logo.png'
-import hoodieseri from '../../assets/images/produtos/hoodieseri.jpg'
-import ecobagPortfolio from '../../assets/images/produtos/ecobag-portfolio.jpg'
-import crewneckCobra from '../../assets/images/produtos/crewneck-cobra.jpg'
-import camisetaDavid from '../../assets/images/produtos/camiseta-david.jpg'
-import crewneckTreinador from '../../assets/images/produtos/crewneck-treinador.jpg'
-import camisetaRqbt from '../../assets/images/produtos/camiseta-rqbt.jpg'
-import camisetaOlho from '../../assets/images/produtos/camiseta-olho.jpg'
-import camisetaScience from '../../assets/images/produtos/camiseta-science.jpg'
-import camisetaRqbtVerde from '../../assets/images/produtos/camiseta-rqbt-verde.jpg'
-import crewneckSeri from '../../assets/images/produtos/crewneck-seri.jpg'
-import regataBasquete from '../../assets/images/produtos/regata-basquete.jpg'
-import camisetaNoise from '../../assets/images/produtos/camiseta-noise.jpg'
+import antiVisagism01 from '../../assets/images/home-carousel/anti-visagism-01.jpg'
+import antiVisagism02 from '../../assets/images/home-carousel/anti-visagism-02.jpg'
+import antiVisagism03 from '../../assets/images/home-carousel/anti-visagism-03.jpg'
+import antiVisagism04 from '../../assets/images/home-carousel/anti-visagism-04.jpg'
+import antiVisagism05 from '../../assets/images/home-carousel/anti-visagism-05.jpg'
 import './Home.css'
 
 // Declare spline-viewer web component for TypeScript
@@ -87,21 +81,6 @@ const STEPS = [
   },
 ]
 
-const PORTFOLIO = [
-  { tag: 'Ecobag', title: 'Ecobag Personalizada', img: ecobagPortfolio },
-  { tag: 'Camiseta', title: 'Ryan Queiroz Bodybuilding Team', img: camisetaRqbtVerde },
-  { tag: 'Moletom', title: 'Crewneck Seri. Estúdio', img: crewneckSeri },
-  { tag: 'Moletom', title: 'Moletom Universitário', img: hoodieseri },
-  { tag: 'Camiseta', title: 'Seri Basketball', img: crewneckCobra },
-  { tag: 'Camiseta', title: 'Arte David Serigrafia', img: camisetaDavid },
-  { tag: 'Camiseta', title: 'AR Treinador', img: crewneckTreinador },
-  { tag: 'Camiseta', title: 'Science PHD Bodybuilding', img: camisetaScience },
-  { tag: 'Camiseta', title: 'Ryan Queiroz Bodybuilding Team', img: camisetaRqbt },
-  { tag: 'Camiseta', title: 'Olho Serigrafia', img: camisetaOlho },
-  { tag: 'Regata', title: 'Regata NBA Serigrafia', img: regataBasquete },
-  { tag: 'Camiseta', title: 'Noise is Music', img: camisetaNoise },
-]
-
 const CTA_FEATURES = [
   'Upload PDF, PNG ou JPEG',
   'Código único por pedido',
@@ -109,8 +88,17 @@ const CTA_FEATURES = [
   'Status em tempo real',
 ]
 
+const HOME_CAROUSEL = [
+  { src: antiVisagism01, alt: 'Camiseta Anti Visagism Club marrom na entrada da loja', aspect: '9 / 16' },
+  { src: antiVisagism02, alt: 'Camiseta Anti Visagism Club marrom vista de costas', aspect: '3 / 4' },
+  { src: antiVisagism03, alt: 'Camiseta Anti Visagism Club marrom em detalhe frontal', aspect: '3 / 4' },
+  { src: antiVisagism04, alt: 'Camiseta Anti Visagism Club preta vista de costas', aspect: '3 / 4' },
+  { src: antiVisagism05, alt: 'Camiseta Anti Visagism Club preta em detalhe de costas', aspect: '3 / 4' },
+]
+
 export default function Home() {
   const location = useLocation()
+  const { isAdmin } = useAuth()
   const marqueeRef  = useRef<HTMLDivElement>(null)
   const glowRef     = useRef<HTMLDivElement>(null)
   const eyebrowRef  = useRef<HTMLSpanElement>(null)
@@ -118,8 +106,12 @@ export default function Home() {
   const statsRef    = useRef<HTMLDivElement>(null)
   const splineRef      = useRef<HTMLElement>(null)
   const [carouselIdx, setCarouselIdx] = useState(0)
-  const prevSlide = () => setCarouselIdx(i => (i - 1 + PORTFOLIO.length) % PORTFOLIO.length)
-  const nextSlide = () => setCarouselIdx(i => (i + 1) % PORTFOLIO.length)
+  const currentCarouselItem = HOME_CAROUSEL[carouselIdx]
+  const prevCarouselItem = HOME_CAROUSEL[(carouselIdx - 1 + HOME_CAROUSEL.length) % HOME_CAROUSEL.length]
+  const nextCarouselItem = HOME_CAROUSEL[(carouselIdx + 1) % HOME_CAROUSEL.length]
+  const prevSlide = () => setCarouselIdx(i => (i - 1 + HOME_CAROUSEL.length) % HOME_CAROUSEL.length)
+  const nextSlide = () => setCarouselIdx(i => (i + 1) % HOME_CAROUSEL.length)
+  const portfolioRoute = isAdmin ? ROUTES.ADMIN_PORTFOLIO : ROUTES.CATALOGO
 
   useEffect(() => {
     const hash = location.hash.replace('#', '')
@@ -349,7 +341,7 @@ export default function Home() {
           </Link>
           <div className="nav-links">
             <Link to={ROUTES.HOME} className="nav-link-active">Home</Link>
-            <Link to={ROUTES.CATALOGO}>{'Portf\u00F3lio'}</Link>
+            <Link to={portfolioRoute}>{'Portf\u00F3lio'}</Link>
             <a href="#como-funciona">Como funciona</a>
             <a href="#contato">Contato</a>
             <MyOrdersLink hideForAdmin>Meus pedidos</MyOrdersLink>
@@ -373,7 +365,7 @@ export default function Home() {
                   <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
                 </svg>
               </Link>
-              <a href="#portfolio" className="btn-secondary">Ver portfólio</a>
+              <Link to={portfolioRoute} className="btn-secondary">Ver portfólio</Link>
             </div>
             <div className="hero-stats" ref={statsRef}>
               <div>
@@ -428,58 +420,65 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── PORTFÓLIO ──────────────────────────────────────────────────── */}
-        <section id="portfolio" className="section-portfolio">
-          <div className="portfolio-header reveal">
-            <div>
-              <p className="section-label">Portfólio</p>
-              <h2 className="section-h2" style={{ marginBottom: 0 }}>Nossos <em>Trabalhos.</em></h2>
-            </div>
-            <Link to={ROUTES.CATALOGO} className="btn-secondary" style={{ fontSize: 13, padding: '10px 22px' }}>
-              Ver todos →
-            </Link>
+        {/* ── CTA ────────────────────────────────────────────────────────── */}
+        <section id="portfolio" className="section-portfolio-home">
+          <div className="portfolio-home-header reveal">
+            <p className="section-label">Portfólio</p>
+            <h2 className="section-h2" style={{ marginBottom: 0 }}>
+              Um pouco dos nossos <em>Trabalhos.</em>
+            </h2>
           </div>
-          <div className="port-carousel reveal">
-            <div
-              className="port-carousel-track"
-              style={{ transform: `translateX(-${carouselIdx * 100}%)` }}
-            >
-              {PORTFOLIO.map(({ tag, title, img }, i) => (
-                <div key={`${title}-${i}`} className="port-carousel-slide">
-                  <div className="port-card">
-                    <img src={img} alt={title} className="port-img" />
-                    <div className="port-overlay">
-                      <span className="port-tag">{tag}</span>
-                      <div className="port-title">{title}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+
+          <div className="portfolio-home-carousel reveal">
+            <button className="portfolio-side portfolio-side-left" onClick={prevSlide} aria-label="Imagem anterior">
+              <div className="portfolio-side-frame">
+                <img src={prevCarouselItem.src} alt={prevCarouselItem.alt} className="portfolio-side-img" />
+              </div>
+            </button>
+
+            <div className="portfolio-main">
+              <div
+                className="portfolio-home-frame"
+                style={{ aspectRatio: currentCarouselItem.aspect }}
+              >
+                <img
+                  src={currentCarouselItem.src}
+                  alt={currentCarouselItem.alt}
+                  className="portfolio-home-img is-active"
+                />
+              </div>
+
+              <button className="portfolio-arrow portfolio-arrow-prev" onClick={prevSlide} aria-label="Imagem anterior">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path d="M15 18l-6-6 6-6"/>
+                </svg>
+              </button>
+              <button className="portfolio-arrow portfolio-arrow-next" onClick={nextSlide} aria-label="Próxima imagem">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 18l6-6-6-6"/>
+                </svg>
+              </button>
             </div>
-            <button className="port-arrow port-arrow-prev" onClick={prevSlide} aria-label="Anterior">
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path d="M15 18l-6-6 6-6"/>
-              </svg>
+
+            <button className="portfolio-side portfolio-side-right" onClick={nextSlide} aria-label="Próxima imagem">
+              <div className="portfolio-side-frame">
+                <img src={nextCarouselItem.src} alt={nextCarouselItem.alt} className="portfolio-side-img" />
+              </div>
             </button>
-            <button className="port-arrow port-arrow-next" onClick={nextSlide} aria-label="Próximo">
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
-            </button>
-            <div className="port-dots">
-              {PORTFOLIO.map((_, i) => (
+
+            <div className="portfolio-dots">
+              {HOME_CAROUSEL.map((_, index) => (
                 <button
-                  key={i}
-                  className={`port-dot${i === carouselIdx ? ' is-active' : ''}`}
-                  onClick={() => setCarouselIdx(i)}
-                  aria-label={`Slide ${i + 1}`}
+                  key={index}
+                  className={`portfolio-dot${index === carouselIdx ? ' is-active' : ''}`}
+                  onClick={() => setCarouselIdx(index)}
+                  aria-label={`Imagem ${index + 1}`}
                 />
               ))}
             </div>
           </div>
         </section>
 
-        {/* ── CTA ────────────────────────────────────────────────────────── */}
         <section className="section-cta">
           <div className="cta-inner reveal">
             <p className="section-label" style={{ marginBottom: 20 }}>Pronto para começar?</p>
